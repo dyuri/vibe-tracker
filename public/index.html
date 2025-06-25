@@ -26,10 +26,14 @@
 			.then(data => {
 				if (data.items && data.items.length > 0) {
 					const lastLocation = data.items[0];
-					const { latitude, longitude } = lastLocation;
+					const { latitude, longitude, altitude, speed, heart_rate } = lastLocation;
 					map.setView([latitude, longitude], 15);
 					L.marker([latitude, longitude]).addTo(map)
-						.bindPopup('Latest recorded location.')
+						.bindPopup(`
+							<b>Altitude:</b> ${altitude} m<br>
+							<b>Speed:</b> ${speed} km/h<br>
+							<b>Heart Rate:</b> ${heart_rate} bpm
+						`)
 						.openPopup();
 				}
 			});
