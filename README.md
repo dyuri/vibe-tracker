@@ -2,6 +2,8 @@
 
 A simple location tracker web application built with Go, PocketBase, and Leaflet.js.
 
+![Vibe Tracker Screenshot](vibe-tracker.jpg)
+
 ## Features
 
 *   **Location Tracking:** Track location data (latitude, longitude, altitude, speed, heart rate) via a simple API.
