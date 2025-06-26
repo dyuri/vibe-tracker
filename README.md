@@ -53,3 +53,9 @@ curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer YOUR_
 ```bash
 curl "http://127.0.0.1:8090/api/track?token=YOUR_USER_TOKEN&latitude=47.51&longitude=18.93&altitude=200&speed=60&heart_rate=120&session=your_session_id"
 ```
+
+### GET Session LineString Request
+
+```bash
+curl "http://127.0.0.1:8090/api/session/your_username/your_session_id"
+```

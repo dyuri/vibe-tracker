@@ -82,6 +82,61 @@ func main() {
 			return c.JSON(http.StatusOK, response)
 		})
 
+		e.Router.GET("/api/session/:username/:session", func(c echo.Context) error {
+			username := c.PathParam("username")
+			session := c.PathParam("session")
+
+			user, err := findUserByUsername(app.Dao(), username)
+			if err != nil {
+				return apis.NewNotFoundError("User not found", err)
+			}
+
+			records, err := app.Dao().FindRecordsByFilter(
+				"locations",
+				"user = {:user} && session = {:session}",
+				"timestamp", // Order by timestamp to ensure correct LineString order
+				0,           // No limit
+				0,           // No offset
+				dbx.Params{"user": user.Id, "session": session},
+			)
+
+			if err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to fetch session data", err)
+			}
+
+			if len(records) == 0 {
+				return apis.NewNotFoundError("No locations found for this session", nil)
+			}
+
+			coordinates := make([][]float64, len(records))
+			for i, record := range records {
+				coordinates[i] = []float64{
+					record.GetFloat("longitude"),
+					record.GetFloat("latitude"),
+					record.GetFloat("altitude"),
+				}
+			}
+
+			// Get properties from the first record for the LineString properties
+			firstRecord := records[0]
+			properties := map[string]interface{}{
+				"session": firstRecord.GetString("session"),
+				"start_time": firstRecord.GetDateTime("timestamp").Time().Unix(),
+				"end_time": records[len(records)-1].GetDateTime("timestamp").Time().Unix(),
+			}
+
+			geoJSON := map[string]interface{}{
+				"type": "Feature",
+				"geometry": map[string]interface{}{
+					"type":        "LineString",
+					"coordinates": coordinates,
+				},
+				"properties": properties,
+			}
+
+			return c.JSON(http.StatusOK, geoJSON)
+		})
+
 		e.Router.GET("/api/track", func(c echo.Context) error {
 			token := c.QueryParam("token")
 			user, err := findUserByToken(app.Dao(), token)
