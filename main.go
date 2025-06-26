@@ -117,24 +117,54 @@ func main() {
 				}
 			}
 
-			// Get properties from the first record for the LineString properties
-			firstRecord := records[0]
-			properties := map[string]interface{}{
-				"session": firstRecord.GetString("session"),
-				"start_time": firstRecord.GetDateTime("timestamp").Time().Unix(),
-				"end_time": records[len(records)-1].GetDateTime("timestamp").Time().Unix(),
+			// LineString Feature
+			lineStringProperties := map[string]interface{}{
+				"session":    records[0].GetString("session"),
+				"start_time": records[0].GetDateTime("timestamp").Time().Unix(),
+				"end_time":   records[len(records)-1].GetDateTime("timestamp").Time().Unix(),
 			}
-
-			geoJSON := map[string]interface{}{
+			lineStringFeature := map[string]interface{}{
 				"type": "Feature",
 				"geometry": map[string]interface{}{
 					"type":        "LineString",
 					"coordinates": coordinates,
 				},
-				"properties": properties,
+				"properties": lineStringProperties,
 			}
 
-			return c.JSON(http.StatusOK, geoJSON)
+			// Latest Point Feature
+			latestRecord := records[len(records)-1]
+			pointCoordinates := []float64{
+				latestRecord.GetFloat("longitude"),
+				latestRecord.GetFloat("latitude"),
+				latestRecord.GetFloat("altitude"),
+			}
+			pointProperties := map[string]interface{}{
+				"timestamp":  latestRecord.GetDateTime("timestamp").Time().Unix(),
+				"speed":      latestRecord.GetFloat("speed"),
+				"heart_rate": latestRecord.GetFloat("heart_rate"),
+				"session":    latestRecord.GetString("session"),
+			}
+			pointFeature := map[string]interface{}{
+				"type": "Feature",
+				"geometry": map[string]interface{}{
+					"type":        "Point",
+					"coordinates": pointCoordinates,
+				},
+				"properties": pointProperties,
+				"when": map[string]interface{}{
+					"properties": map[string]interface{}{
+						"DateTime": latestRecord.GetDateTime("timestamp").Time().Format(time.RFC3339),
+					},
+				},
+			}
+
+			featureCollection := map[string]interface{}{
+				"type":     "FeatureCollection",
+				"features": []interface{}{lineStringFeature, pointFeature},
+			}
+
+			return c.JSON(http.StatusOK, featureCollection)
 		})
 
 		e.Router.GET("/api/track", func(c echo.Context) error {

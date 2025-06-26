@@ -29,7 +29,34 @@ if (username) {
 			return response.json();
 		})
 		.then(data => {
-			if (data.geometry.type === 'Point') {
+			if (data.type === 'FeatureCollection') {
+				L.geoJSON(data, {
+					onEachFeature: function (feature, layer) {
+						if (feature.properties) {
+							if (feature.geometry.type === 'LineString') {
+								const startTime = new Date(feature.properties.start_time * 1000).toLocaleString();
+								const endTime = new Date(feature.properties.end_time * 1000).toLocaleString();
+								layer.bindPopup(`
+									<b>Session:</b> ${feature.properties.session}<br>
+									<b>Start Time:</b> ${startTime}<br>
+									<b>End Time:</b> ${endTime}
+								`);
+							} else if (feature.geometry.type === 'Point') {
+								const [longitude, latitude, altitude] = feature.geometry.coordinates;
+								const { speed, heart_rate, timestamp, session } = feature.properties;
+								layer.bindPopup(`
+									<b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>
+									<b>Session:</b> ${session || 'N/A'}<br>
+									<b>Altitude:</b> ${altitude} m<br>
+									<b>Speed:</b> ${speed} km/h<br>
+									<b>Heart Rate:</b> ${heart_rate} bpm
+								`);
+							}
+						}
+					}
+				}).addTo(map);
+				map.fitBounds(L.geoJSON(data).getBounds());
+			} else if (data.geometry.type === 'Point') {
 				const [longitude, latitude, altitude] = data.geometry.coordinates;
 				const { speed, heart_rate, timestamp, session } = data.properties;
 
@@ -43,24 +70,8 @@ if (username) {
 						<b>Heart Rate:</b> ${heart_rate} bpm
 					`)
 					.openPopup();
-			} else if (data.geometry.type === 'LineString') {
-				const geojsonLayer = L.geoJSON(data, {
-					onEachFeature: function (feature, layer) {
-						if (feature.properties && feature.properties.session) {
-							const startTime = new Date(feature.properties.start_time * 1000).toLocaleString();
-							const endTime = new Date(feature.properties.end_time * 1000).toLocaleString();
-							layer.bindPopup(`
-								<b>Session:</b> ${feature.properties.session}<br>
-								<b>Start Time:</b> ${startTime}<br>
-								<b>End Time:</b> ${endTime}
-							`);
-						}
-					}
-				}).addTo(map);
-
-				map.fitBounds(geojsonLayer.getBounds());
 			}
-		})
+    })
 		.catch(error => {
 			mapEl.style.display = 'none';
 			errorMessage.style.display = 'block';
