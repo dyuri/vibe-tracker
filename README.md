@@ -33,7 +33,7 @@ A simple location tracker web application built with Go, PocketBase, and Leaflet
 ### POST Request
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer YOUR_USER_TOKEN" -d '{
   "type": "Feature",
   "geometry": {
     "type": "Point",
@@ -50,5 +50,5 @@ curl -X POST -H "Content-Type: application/json" -d '{
 ### GET Request
 
 ```bash
-curl "http://127.0.0.1:8090/api/track?latitude=47.51&longitude=18.93&altitude=200&speed=60&heart_rate=120"
+curl "http://127.0.0.1:8090/api/track?token=YOUR_USER_TOKEN&latitude=47.51&longitude=18.93&altitude=200&speed=60&heart_rate=120"
 ```
