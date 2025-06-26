@@ -42,12 +42,16 @@ func main() {
 
 		e.Router.POST("/api/track", func(c echo.Context) error {
 			var data struct {
-				Timestamp int64   `json:"timestamp"`
-				Latitude  float64 `json:"latitude"`
-				Longitude float64 `json:"longitude"`
-				Altitude  float64 `json:"altitude,omitempty"`
-				Speed     float64 `json:"speed,omitempty"`
-				HeartRate float64 `json:"heart_rate,omitempty"`
+				Type     string `json:"type"`
+				Geometry struct {
+					Type        string    `json:"type"`
+					Coordinates []float64 `json:"coordinates"`
+				} `json:"geometry"`
+				Properties struct {
+					Timestamp int64   `json:"timestamp"`
+					Speed     float64 `json:"speed,omitempty"`
+					HeartRate float64 `json:"heart_rate,omitempty"`
+				} `json:"properties"`
 			}
 
 			if err := c.Bind(&data); err != nil {
@@ -61,11 +65,13 @@ func main() {
 
 			record := models.NewRecord(collection)
 			record.Set("timestamp", types.NowDateTime())
-			record.Set("latitude", data.Latitude)
-			record.Set("longitude", data.Longitude)
-			record.Set("altitude", data.Altitude)
-			record.Set("speed", data.Speed)
-			record.Set("heart_rate", data.HeartRate)
+			record.Set("longitude", data.Geometry.Coordinates[0])
+			record.Set("latitude", data.Geometry.Coordinates[1])
+			if len(data.Geometry.Coordinates) > 2 {
+				record.Set("altitude", data.Geometry.Coordinates[2])
+			}
+			record.Set("speed", data.Properties.Speed)
+			record.Set("heart_rate", data.Properties.HeartRate)
 
 			if err := app.Dao().SaveRecord(record); err != nil {
 				return apis.NewApiError(http.StatusInternalServerError, "Failed to save tracking data", err)

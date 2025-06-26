@@ -34,11 +34,16 @@ A simple location tracker web application built with Go, PocketBase, and Leaflet
 
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{
-  "latitude": 47.51,
-  "longitude": 18.93,
-  "altitude": 200,
-  "speed": 60,
-  "heart_rate": 120
+  "type": "Feature",
+  "geometry": {
+    "type": "Point",
+    "coordinates": [18.93, 47.51, 200]
+  },
+  "properties": {
+    "timestamp": 1672531200,
+    "speed": 60,
+    "heart_rate": 120
+  }
 }' http://127.0.0.1:8090/api/track
 ```
 
