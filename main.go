@@ -4,6 +4,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
@@ -14,12 +16,37 @@ import (
 	"github.com/pocketbase/pocketbase/models/schema"
 	"github.com/pocketbase/pocketbase/tools/security"
 	"github.com/pocketbase/pocketbase/tools/types"
+	"github.com/pocketbase/dbx"
 )
 
 func main() {
 	app := pocketbase.New()
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+		e.Router.GET("/api/location/:username", func(c echo.Context) error {
+			username := c.PathParam("username")
+			user, err := findUserByUsername(app.Dao(), username)
+			if err != nil {
+				return apis.NewNotFoundError("User not found", err)
+			}
+
+			records, _ := app.Dao().FindRecordsByFilter(
+				"locations",
+				"user = {:user}", 
+				"-created",
+				1,
+				0,
+				dbx.Params{"user": user.Id},
+			)
+
+			if len(records) == 0 {
+				log.Printf("No locations found for user %s\n", user.Id)
+				return apis.NewNotFoundError("No location found for this user", nil)
+			}
+
+			return c.JSON(http.StatusOK, records[0])
+		})
+
 		e.Router.GET("/api/track", func(c echo.Context) error {
 			token := c.QueryParam("token")
 			user, err := findUserByToken(app.Dao(), token)
@@ -35,6 +62,12 @@ func main() {
 			record := models.NewRecord(collection)
 			record.Set("user", user.Id)
 			record.Set("timestamp", types.NowDateTime())
+			if c.QueryParam("timestamp") != "" {
+				if ts, err := strconv.ParseInt(c.QueryParam("timestamp"), 10, 64); err == nil {
+					timeStamp, _ := types.ParseDateTime(time.Unix(ts, 0))
+					record.Set("timestamp", timeStamp)
+				}
+			}
 			record.Set("latitude", c.QueryParam("latitude"))
 			record.Set("longitude", c.QueryParam("longitude"))
 			record.Set("altitude", c.QueryParam("altitude"))
@@ -79,7 +112,12 @@ func main() {
 
 			record := models.NewRecord(collection)
 			record.Set("user", user.Id)
-			record.Set("timestamp", types.NowDateTime())
+			if data.Properties.Timestamp == 0 {
+				record.Set("timestamp", types.NowDateTime())
+			} else {
+								timeStamp, _ := types.ParseDateTime(time.Unix(data.Properties.Timestamp, 0))
+				record.Set("timestamp", timeStamp)
+			}
 			record.Set("longitude", data.Geometry.Coordinates[0])
 			record.Set("latitude", data.Geometry.Coordinates[1])
 			if len(data.Geometry.Coordinates) > 2 {
@@ -120,15 +158,24 @@ func findUserByToken(dao *daos.Dao, token string) (*models.Record, error) {
 		token = token[7:]
 	}
 
-	return dao.FindFirstRecordByFilter("users", "token = {:token}", daos.Params{"token": token})
+	return dao.FindFirstRecordByFilter("users", "token = {:token}", dbx.Params{"token": token})
+}
+
+func findUserByUsername(dao *daos.Dao, username string) (*models.Record, error) {
+	if username == "" {
+		return nil, errors.New("username is missing")
+	}
+	return dao.FindFirstRecordByFilter("users", "username = {:username}", dbx.Params{"username": username})
 }
 
 func ensureUsersCollection(dao *daos.Dao) {
 	collection, err := dao.FindCollectionByNameOrId("users")
 	if err == nil && collection != nil {
+		// TODO check if token field exists, extend if not
 		return // collection already exists
 	}
 
+	// TODO ?
 	usersCollection := &models.Collection{
 		Name:       "users",
 		Type:       models.CollectionTypeAuth,
@@ -142,7 +189,6 @@ func ensureUsersCollection(dao *daos.Dao) {
 				Name:     "token",
 				Type:     schema.FieldTypeText,
 				Required: true,
-				Unique:   true,
 				Options: &schema.TextOptions{
 					Min:     types.Pointer(8),
 					Max:     types.Pointer(16),
@@ -157,11 +203,15 @@ func ensureUsersCollection(dao *daos.Dao) {
 	}
 
 	// create a default user
-	user := &models.Record{}
-	user.RefreshId()
-	user.Set("token", security.RandomString(12))
-	if err := dao.SaveRecord(user); err != nil {
-		log.Fatalf("Failed to create default user: %v", err)
+	user, err := dao.FindAuthRecordByEmail("users", "default")
+	if err != nil || user == nil {
+		user := &models.Record{}
+		user.RefreshId()
+		user.SetUsername("default")
+		user.Set("token", security.RandomString(12))
+		if err := dao.SaveRecord(user); err != nil {
+			log.Fatalf("Failed to create default user: %v", err)
+		}
 	}
 }
 
@@ -183,16 +233,13 @@ func ensureLocationsCollection(dao *daos.Dao) {
 		Schema: schema.NewSchema(
 			&schema.SchemaField{
 				Name:     "user",
-				Type:     schema.FieldTypeRelation,
+				Type:     schema.FieldTypeText,
 				Required: true,
-				Options: &schema.RelationOptions{
-					CollectionId: "users",
-				},
 			},
 			&schema.SchemaField{
 				Name:     "timestamp",
 				Type:     schema.FieldTypeDate,
-				Required: true,
+				Required: false,
 			},
 			&schema.SchemaField{
 				Name:     "latitude",
