@@ -30,13 +30,22 @@ func main() {
 				return apis.NewNotFoundError("User not found", err)
 			}
 
+			filter := "user = {:user}"
+			params := dbx.Params{"user": user.Id}
+
+			session := c.QueryParam("session")
+			if session != "" {
+				filter += " && session = {:session}"
+				params["session"] = session
+			}
+
 			records, _ := app.Dao().FindRecordsByFilter(
 				"locations",
-				"user = {:user}", 
+				filter,
 				"-created",
 				1,
 				0,
-				dbx.Params{"user": user.Id},
+				params,
 			)
 
 			if len(records) == 0 {
@@ -44,7 +53,32 @@ func main() {
 				return apis.NewNotFoundError("No location found for this user", nil)
 			}
 
-			return c.JSON(http.StatusOK, records[0])
+			latestRecord := records[0]
+
+			// Construct GeoJSON response
+			timestamp := latestRecord.GetDateTime("timestamp").Time()
+			response := map[string]any{
+				"type": "Feature",
+				"geometry": map[string]any{
+					"type":        "Point",
+					"coordinates": []float64{
+						latestRecord.GetFloat("longitude"),
+						latestRecord.GetFloat("latitude"),
+						latestRecord.GetFloat("altitude"),
+					},
+				},
+				"properties": map[string]any{
+					"timestamp":  timestamp.Unix(),
+					"speed":      latestRecord.GetFloat("speed"),
+					"heart_rate": latestRecord.GetFloat("heart_rate"),
+				},
+				"when": map[string]any{
+					"start": timestamp.Format(time.RFC3339),
+					"type": "Instant",
+				},
+			}
+
+			return c.JSON(http.StatusOK, response)
 		})
 
 		e.Router.GET("/api/track", func(c echo.Context) error {
@@ -73,6 +107,7 @@ func main() {
 			record.Set("altitude", c.QueryParam("altitude"))
 			record.Set("speed", c.QueryParam("speed"))
 			record.Set("heart_rate", c.QueryParam("heart_rate"))
+			record.Set("session", c.QueryParam("session"))
 
 			if err := app.Dao().SaveRecord(record); err != nil {
 				return apis.NewApiError(http.StatusInternalServerError, "Failed to save tracking data", err)
@@ -98,6 +133,7 @@ func main() {
 					Timestamp int64   `json:"timestamp"`
 					Speed     float64 `json:"speed,omitempty"`
 					HeartRate float64 `json:"heart_rate,omitempty"`
+					Session   string  `json:"session,omitempty"`
 				} `json:"properties"`
 			}
 
@@ -115,7 +151,7 @@ func main() {
 			if data.Properties.Timestamp == 0 {
 				record.Set("timestamp", types.NowDateTime())
 			} else {
-								timeStamp, _ := types.ParseDateTime(time.Unix(data.Properties.Timestamp, 0))
+					timeStamp, _ := types.ParseDateTime(time.Unix(data.Properties.Timestamp, 0))
 				record.Set("timestamp", timeStamp)
 			}
 			record.Set("longitude", data.Geometry.Coordinates[0])
@@ -125,6 +161,7 @@ func main() {
 			}
 			record.Set("speed", data.Properties.Speed)
 			record.Set("heart_rate", data.Properties.HeartRate)
+			record.Set("session", data.Properties.Session)
 
 			if err := app.Dao().SaveRecord(record); err != nil {
 				return apis.NewApiError(http.StatusInternalServerError, "Failed to save tracking data", err)
@@ -262,6 +299,11 @@ func ensureLocationsCollection(dao *daos.Dao) {
 			&schema.SchemaField{
 				Name: "heart_rate",
 				Type: schema.FieldTypeNumber,
+			},
+			&schema.SchemaField{
+				Name: "session",
+				Type: schema.FieldTypeText,
+				Required: false,
 			},
 		),
 	}

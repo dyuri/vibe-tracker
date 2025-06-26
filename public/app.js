@@ -4,13 +4,20 @@ const errorMessage = document.getElementById('error-message');
 
 const urlParams = new URLSearchParams(window.location.search);
 const username = urlParams.get('username');
+const session = urlParams.get('session');
 
 if (username) {
 	L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 	}).addTo(map);
 
-	fetch(`/api/location/${username}`)
+	let apiUrl = `/api/location/${username}`;
+	
+	if (session) {
+		apiUrl += `?session=${session}`;
+	}
+
+	fetch(apiUrl)
 		.then(response => {
 			if (!response.ok) {
 				throw new Error('User not found or no location data available.');
@@ -18,10 +25,14 @@ if (username) {
 			return response.json();
 		})
 		.then(data => {
-			const { latitude, longitude, altitude, speed, heart_rate } = data;
+			const [longitude, latitude, altitude] = data.geometry.coordinates;
+			const { speed, heart_rate, timestamp, session } = data.properties;
+
 			map.setView([latitude, longitude], 15);
 			L.marker([latitude, longitude]).addTo(map)
 				.bindPopup(`
+					<b>Time:</b> ${new Date(timestamp).toLocaleString()}<br>
+					<b>Session:</b> ${session || 'N/A'}<br>
 					<b>Altitude:</b> ${altitude} m<br>
 					<b>Speed:</b> ${speed} km/h<br>
 					<b>Heart Rate:</b> ${heart_rate} bpm
