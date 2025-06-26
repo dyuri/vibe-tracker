@@ -71,6 +71,7 @@ func main() {
 					"timestamp":  timestamp.Unix(),
 					"speed":      latestRecord.GetFloat("speed"),
 					"heart_rate": latestRecord.GetFloat("heart_rate"),
+					"session":    latestRecord.GetString("session"),
 				},
 				"when": map[string]any{
 					"start": timestamp.Format(time.RFC3339),

@@ -31,7 +31,7 @@ if (username) {
 			map.setView([latitude, longitude], 15);
 			L.marker([latitude, longitude]).addTo(map)
 				.bindPopup(`
-					<b>Time:</b> ${new Date(timestamp).toLocaleString()}<br>
+					<b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>
 					<b>Session:</b> ${session || 'N/A'}<br>
 					<b>Altitude:</b> ${altitude} m<br>
 					<b>Speed:</b> ${speed} km/h<br>
