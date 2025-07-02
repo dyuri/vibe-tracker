@@ -59,3 +59,17 @@ curl "http://127.0.0.1:8090/api/track?token=YOUR_USER_TOKEN&latitude=47.51&longi
 ```bash
 curl "http://127.0.0.1:8090/api/session/your_username/your_session_id"
 ```
+
+## Docker
+
+Build the Docker image:
+
+```bash
+docker build -t vibe-tracker .
+```
+
+Run the Docker container:
+
+```bash
+docker run -p 8090:8090 -v $(pwd)/pb_data:/app/pb_data vibe-tracker
+```
