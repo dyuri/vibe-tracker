@@ -91,6 +91,21 @@ func main() {
 				return apis.NewNotFoundError("User not found", err)
 			}
 
+			if session == "_latest" {
+				latestRecords, err := app.Dao().FindRecordsByFilter(
+					"locations",
+					"user = {:user}",
+					"-created",
+					1,
+					0,
+					dbx.Params{"user": user.Id},
+				)
+				if err != nil || len(latestRecords) == 0 {
+					return apis.NewNotFoundError("No location data found for this user", err)
+				}
+				session = latestRecords[0].GetString("session")
+			}
+
 			records, err := app.Dao().FindRecordsByFilter(
 				"locations",
 				"user = {:user} && session = {:session}",
