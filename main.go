@@ -294,11 +294,26 @@ func findUserByUsername(dao *daos.Dao, username string) (*models.Record, error) 
 func ensureUsersCollection(dao *daos.Dao) {
 	collection, err := dao.FindCollectionByNameOrId("users")
 	if err == nil && collection != nil {
-		// TODO check if token field exists, extend if not
+		if collection.Schema.GetFieldByName("token") == nil {
+			// token field is missing, add it
+			tokenField := &schema.SchemaField{
+				Name:     "token",
+				Type:     schema.FieldTypeText,
+				Required: true,
+				Options: &schema.TextOptions{
+					Min:     types.Pointer(8),
+					Max:     types.Pointer(16),
+					Pattern: "^[a-zA-Z0-9]+$",
+				},
+			}
+			collection.Schema.AddField(tokenField)
+			if err := dao.SaveCollection(collection); err != nil {
+				log.Fatalf("Failed to add token field to users collection: %v", err)
+			}
+		}
 		return // collection already exists
 	}
 
-	// TODO ?
 	usersCollection := &models.Collection{
 		Name:       "users",
 		Type:       models.CollectionTypeAuth,
