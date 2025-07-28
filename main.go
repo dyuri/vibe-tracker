@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v5"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -16,7 +17,6 @@ import (
 	"github.com/pocketbase/pocketbase/models/schema"
 	"github.com/pocketbase/pocketbase/tools/security"
 	"github.com/pocketbase/pocketbase/tools/types"
-	"github.com/pocketbase/dbx"
 )
 
 func main() {
@@ -60,7 +60,7 @@ func main() {
 			response := map[string]any{
 				"type": "Feature",
 				"geometry": map[string]any{
-					"type":        "Point",
+					"type": "Point",
 					"coordinates": []float64{
 						latestRecord.GetFloat("longitude"),
 						latestRecord.GetFloat("latitude"),
@@ -75,7 +75,7 @@ func main() {
 				},
 				"when": map[string]any{
 					"start": timestamp.Format(time.RFC3339),
-					"type": "Instant",
+					"type":  "Instant",
 				},
 			}
 
@@ -252,7 +252,7 @@ func main() {
 			if data.Properties.Timestamp == 0 {
 				record.Set("timestamp", types.NowDateTime())
 			} else {
-					timeStamp, _ := types.ParseDateTime(time.Unix(data.Properties.Timestamp, 0))
+				timeStamp, _ := types.ParseDateTime(time.Unix(data.Properties.Timestamp, 0))
 				record.Set("timestamp", timeStamp)
 			}
 			record.Set("longitude", data.Geometry.Coordinates[0])
@@ -417,8 +417,8 @@ func ensureLocationsCollection(dao *daos.Dao) {
 				Type: schema.FieldTypeNumber,
 			},
 			&schema.SchemaField{
-				Name: "session",
-				Type: schema.FieldTypeText,
+				Name:     "session",
+				Type:     schema.FieldTypeText,
 				Required: false,
 			},
 		),
