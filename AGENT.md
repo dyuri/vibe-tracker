@@ -3,6 +3,10 @@
 This is a simple location tracker website built with Go/PocketBase for the backend and
 Leaflet.js for the frontend.
 
+## Generic rules
+
+- Always **PLAN** first, and only start coding when I approved the plan.
+
 ## Build & Commands
 
 - Run dev server: `go run . serve`
@@ -22,3 +26,4 @@ Leaflet.js for the frontend.
 - Indent HTML, JavaScript and CSS code with 2 spaces.
 - Try to use max. 100 characters per line.
 - I'm an old school guy, so use semi-colons in JavaScript.
+

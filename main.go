@@ -123,60 +123,33 @@ func main() {
 				return apis.NewNotFoundError("No locations found for this session", nil)
 			}
 
-			coordinates := make([][]float64, len(records))
+			features := make([]interface{}, len(records))
 			for i, record := range records {
-				coordinates[i] = []float64{
+				pointCoordinates := []float64{
 					record.GetFloat("longitude"),
 					record.GetFloat("latitude"),
 					record.GetFloat("altitude"),
 				}
-			}
-
-			// LineString Feature
-			lineStringProperties := map[string]interface{}{
-				"session":    records[0].GetString("session"),
-				"start_time": records[0].GetDateTime("timestamp").Time().Unix(),
-				"end_time":   records[len(records)-1].GetDateTime("timestamp").Time().Unix(),
-			}
-			lineStringFeature := map[string]interface{}{
-				"type": "Feature",
-				"geometry": map[string]interface{}{
-					"type":        "LineString",
-					"coordinates": coordinates,
-				},
-				"properties": lineStringProperties,
-			}
-
-			// Latest Point Feature
-			latestRecord := records[len(records)-1]
-			pointCoordinates := []float64{
-				latestRecord.GetFloat("longitude"),
-				latestRecord.GetFloat("latitude"),
-				latestRecord.GetFloat("altitude"),
-			}
-			pointProperties := map[string]interface{}{
-				"timestamp":  latestRecord.GetDateTime("timestamp").Time().Unix(),
-				"speed":      latestRecord.GetFloat("speed"),
-				"heart_rate": latestRecord.GetFloat("heart_rate"),
-				"session":    latestRecord.GetString("session"),
-			}
-			pointFeature := map[string]interface{}{
-				"type": "Feature",
-				"geometry": map[string]interface{}{
-					"type":        "Point",
-					"coordinates": pointCoordinates,
-				},
-				"properties": pointProperties,
-				"when": map[string]interface{}{
-					"properties": map[string]interface{}{
-						"DateTime": latestRecord.GetDateTime("timestamp").Time().Format(time.RFC3339),
+				pointProperties := map[string]interface{}{
+					"timestamp":  record.GetDateTime("timestamp").Time().Unix(),
+					"speed":      record.GetFloat("speed"),
+					"heart_rate": record.GetFloat("heart_rate"),
+					"session":    record.GetString("session"),
+				}
+				pointFeature := map[string]interface{}{
+					"type": "Feature",
+					"geometry": map[string]interface{}{
+						"type":        "Point",
+						"coordinates": pointCoordinates,
 					},
-				},
+					"properties": pointProperties,
+				}
+				features[i] = pointFeature
 			}
 
 			featureCollection := map[string]interface{}{
 				"type":     "FeatureCollection",
-				"features": []interface{}{lineStringFeature, pointFeature},
+				"features": features,
 			}
 
 			return c.JSON(http.StatusOK, featureCollection)
