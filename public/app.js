@@ -53,34 +53,52 @@ function displayFeatureCollection(data) {
 
   const latestPoint = points[points.length - 1];
 
-  // Add each point to the map
-  points.forEach((point, index) => {
-    const [longitude, latitude, altitude] = point.geometry.coordinates;
-    const { speed, heart_rate, timestamp, session } = point.properties;
-    const popupContent = `
+  // Create a transparent, clickable line
+  const clickableLine = L.polyline(points.map(p => [p.geometry.coordinates[1], p.geometry.coordinates[0]]), { opacity: 0, weight: 10 });
+  clickableLine.on('click', function (e) {
+    let closestPoint = null;
+    let minDistance = Infinity;
+
+    points.forEach(p => {
+      const latlng = L.latLng(p.geometry.coordinates[1], p.geometry.coordinates[0]);
+      const distance = e.latlng.distanceTo(latlng);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestPoint = p;
+      }
+    });
+
+    if (closestPoint) {
+      const { speed, heart_rate, timestamp, session } = closestPoint.properties;
+      const altitude = closestPoint.geometry.coordinates[2];
+      const popupContent = `
 						<b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>
 						<b>Session:</b> ${session || "N/A"}<br>
 						<b>Altitude:</b> ${altitude} m<br>
 						<b>Speed:</b> ${speed} km/h<br>
 						<b>Heart Rate:</b> ${heart_rate} bpm
 					`;
-
-    let marker;
-    if (index === points.length - 1) {
-      // Latest point as a marker
-      marker = L.marker([latitude, longitude]);
-    } else {
-      // Other points as small circles
-      marker = L.circleMarker([latitude, longitude], {
-        radius: 3,
-        color: 'black',
-        fillColor: '#333',
-        fillOpacity: 0.8
-      });
+      L.popup()
+        .setLatLng(e.latlng)
+        .setContent(popupContent)
+        .openOn(map);
     }
-    marker.bindPopup(popupContent);
-    dataLayerGroup.addLayer(marker);
   });
+  dataLayerGroup.addLayer(clickableLine);
+
+  // Add only the latest point as a marker
+  const [longitude, latitude, altitude] = latestPoint.geometry.coordinates;
+  const marker = L.marker([latitude, longitude]);
+  const { speed, heart_rate, timestamp, session } = latestPoint.properties;
+  const popupContent = `
+						<b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>
+						<b>Session:</b> ${session || "N/A"}<br>
+						<b>Altitude:</b> ${altitude} m<br>
+						<b>Speed:</b> ${speed} km/h<br>
+						<b>Heart Rate:</b> ${heart_rate} bpm
+					`;
+  marker.bindPopup(popupContent);
+  dataLayerGroup.addLayer(marker);
 
   map.fitBounds(L.geoJSON(data).getBounds());
 
