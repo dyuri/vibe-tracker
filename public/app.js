@@ -4,24 +4,32 @@ const errorMessage = document.getElementById("error-message");
 const locationWidget = document.querySelector("location-widget");
 const dataLayerGroup = L.layerGroup().addTo(map);
 
-// Using the Cubehelix color formula
-// https://gist.github.com/gka/1654896
-function cubehelix(t, start, rotations, hue, gamma) {
-  const cos = Math.cos;
-  const sin = Math.sin;
-  const PI2 = Math.PI * 2;
+function interpolateColor(ratio, colorStops) {
+  const numStops = colorStops.length;
+  if (ratio <= 0) return colorStops[0];
+  if (ratio >= 1) return colorStops[numStops - 1];
 
-  const a = hue * t * (1 - t) / 2;
-  const r = t + a * (-0.14861 * cos(PI2 * (start / 3 + rotations * t + 2 / 3)));
-  const g = t + a * (-0.29227 * cos(PI2 * (start / 3 + rotations * t + 1 / 3)));
-  const b = t + a * (1.97294 * cos(PI2 * (start / 3 + rotations * t)));
+  const segment = 1 / (numStops - 1);
+  const segmentIndex = Math.floor(ratio / segment);
+  const localRatio = (ratio % segment) / segment;
 
-  return [
-    Math.max(0, Math.min(255, 255 * Math.pow(r, gamma))),
-    Math.max(0, Math.min(255, 255 * Math.pow(g, gamma))),
-    Math.max(0, Math.min(255, 255 * Math.pow(b, gamma))),
-  ];
+  const color1 = colorStops[segmentIndex];
+  const color2 = colorStops[Math.min(segmentIndex + 1, numStops - 1)];
+
+  const r = Math.round(color1[0] + (color2[0] - color1[0]) * localRatio);
+  const g = Math.round(color1[1] + (color2[1] - color1[1]) * localRatio);
+  const b = Math.round(color1[2] + (color2[2] - color1[2]) * localRatio);
+
+  return [r, g, b];
 }
+
+const colorScale = [
+  [0, 0, 255],    // Blue
+  [0, 255, 0],    // Green
+  [255, 255, 0],  // Yellow
+  [255, 165, 0],  // Orange
+  [255, 0, 0]     // Red
+];
 
 const urlParams = new URLSearchParams(window.location.search);
 const username = urlParams.get("username");
@@ -112,7 +120,7 @@ function getHeartRateColor(heartRate, min, max) {
     return "#808080"; // Grey for no data
   }
   const ratio = (heartRate - min) / (max - min);
-  const rgb = cubehelix(ratio, 0.5, -1.5, 1, 1);
+  const rgb = interpolateColor(ratio, colorScale);
   return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
 }
 
