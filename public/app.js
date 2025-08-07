@@ -49,7 +49,15 @@ function displayFeatureCollection(data) {
   const minHeartRate = Math.min(...heartRates);
   const maxHeartRate = Math.max(...heartRates);
 
-  // Create a multi-colored line
+  // Create black outlines first
+  for (let i = 0; i < points.length - 1; i++) {
+    const startPoint = points[i];
+    const endPoint = points[i+1];
+    const outline = L.polyline([[startPoint.geometry.coordinates[1], startPoint.geometry.coordinates[0]], [endPoint.geometry.coordinates[1], endPoint.geometry.coordinates[0]]], { color: 'black', weight: 7 });
+    dataLayerGroup.addLayer(outline);
+  }
+
+  // Create colored lines on top
   for (let i = 0; i < points.length - 1; i++) {
     const startPoint = points[i];
     const endPoint = points[i+1];
