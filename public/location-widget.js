@@ -10,6 +10,7 @@ class LocationWidget extends HTMLElement {
           right: 20px;
           font-family: sans-serif;
           z-index: 1000;
+          pointer-events: none;
         }
         #toggle-button {
           background-color: #007bff;
@@ -24,6 +25,7 @@ class LocationWidget extends HTMLElement {
           align-items: center;
           cursor: pointer;
           box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+          pointer-events: auto;
         }
         #info-panel {
           display: none; /* Hidden by default */
@@ -34,6 +36,7 @@ class LocationWidget extends HTMLElement {
           box-shadow: 0 4px 8px rgba(0,0,0,0.1);
           margin-top: 10px;
           position: relative;
+          pointer-events: auto;
         }
         #close-button {
           position: absolute;
