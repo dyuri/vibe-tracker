@@ -21,8 +21,6 @@ Leaflet.js for the frontend.
 - Go: code is formatted with `go fmt`
   - Use `go fmt` to format the code before committing.
   - Indent go code with tabs.
-- JavaScript: code is formatted with `prettier`
-- CSS: code is formatted with `prettier`
 - Indent HTML, JavaScript and CSS code with 2 spaces.
 - Try to use max. 100 characters per line.
 - I'm an old school guy, so use semi-colons in JavaScript.
