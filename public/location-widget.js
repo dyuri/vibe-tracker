@@ -5,8 +5,43 @@ class LocationWidget extends HTMLElement {
     this.shadowRoot.innerHTML = `
 			<style>
 				:host {
-					display: none;
-          font-family: sans-serif;
+					position: fixed;
+					bottom: 20px;
+					right: 20px;
+					font-family: sans-serif;
+					z-index: 1000;
+				}
+				#toggle-button {
+					background-color: #007bff;
+					color: white;
+					border: none;
+					border-radius: 50%;
+					width: 40px;
+					height: 40px;
+					font-size: 20px;
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					cursor: pointer;
+					box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+				}
+				#info-panel {
+					display: none; /* Hidden by default */
+					background-color: white;
+					border: 1px solid #ccc;
+					border-radius: 8px;
+					padding: 25px 25px 15px 15px;
+					box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+					margin-top: 10px;
+					position: relative;
+				}
+				#close-button {
+					position: absolute;
+					top: 5px;
+					right: 10px;
+					font-size: 20px;
+					cursor: pointer;
+					color: #888;
 				}
 				.property {
 					margin-bottom: 5px;
@@ -20,13 +55,17 @@ class LocationWidget extends HTMLElement {
           padding-top: 10px;
         }
 			</style>
-			<div id="widget-content"></div>
-        <div class="refresh-container">
-          <label>
-            <input type="checkbox" id="refresh-checkbox">
-            Refresh
-          </label>
-        </div>
+			<div id="toggle-button">ℹ</div>
+			<div id="info-panel">
+				<span id="close-button">×</span>
+				<div id="widget-content"></div>
+				<div class="refresh-container">
+					<label>
+						<input type="checkbox" id="refresh-checkbox">
+						Refresh
+					</label>
+				</div>
+			</div>
 		`;
 
     this.shadowRoot
@@ -39,6 +78,20 @@ class LocationWidget extends HTMLElement {
         });
         this.dispatchEvent(event);
       });
+
+    const toggleButton = this.shadowRoot.getElementById("toggle-button");
+    const infoPanel = this.shadowRoot.getElementById("info-panel");
+    const closeButton = this.shadowRoot.getElementById("close-button");
+
+    toggleButton.addEventListener("click", () => {
+      infoPanel.style.display = "block";
+      toggleButton.style.display = "none";
+    });
+
+    closeButton.addEventListener("click", () => {
+      infoPanel.style.display = "none";
+      toggleButton.style.display = "flex"; // Use flex to center the 'i'
+    });
   }
 
   update(feature) {
@@ -52,7 +105,7 @@ class LocationWidget extends HTMLElement {
       this.showProperty("Speed", `${speed.toFixed(2)} km/h`);
       this.showProperty("Heart Rate", `${heart_rate} bpm`);
     }
-    this.style.display = "block";
+    // Do not set display here, it's controlled by toggle/close buttons
   }
 
   showProperty(label, value) {
