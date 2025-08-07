@@ -29,5 +29,7 @@ COPY public ./public
 # Expose the port the app runs on
 EXPOSE 8090
 
+VOLUME /app/pb_data
+
 # Run the application
 CMD ["./vibe-tracker", "serve", "--http=0.0.0.0:8090"]
