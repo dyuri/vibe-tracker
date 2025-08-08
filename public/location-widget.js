@@ -5,11 +5,7 @@ class LocationWidget extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         :host {
-          position: fixed;
-          bottom: 20px;
-          right: 20px;
           font-family: sans-serif;
-          z-index: 1000;
         }
         #toggle-button {
           background-color: #007bff;
