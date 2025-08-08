@@ -3,6 +3,7 @@ const mapEl = document.getElementById("map");
 const errorMessage = document.getElementById("error-message");
 const locationWidget = document.querySelector("location-widget");
 const dataLayerGroup = L.layerGroup().addTo(map);
+const currentPositionLayerGroup = L.layerGroup().addTo(map);
 
 function interpolateColor(ratio, colorStops) {
   const numStops = colorStops.length;
@@ -203,6 +204,30 @@ if (username) {
       }
     }
   });
+
+  locationWidget.addEventListener("show-current-position", (e) => {
+    currentPositionLayerGroup.clearLayers();
+    const { latitude, longitude, accuracy } = e.detail.coords;
+    const marker = L.circleMarker([latitude, longitude], {
+      radius: 4,
+      color: "#ff901e",
+      fillColor: "#ff901e",
+      fillOpacity: 1,
+    });
+    const circle = L.circle([latitude, longitude], {
+      radius: accuracy,
+      color: "#ff901e",
+      fillColor: "#ff901e",
+      fillOpacity: 0.2,
+    });
+    currentPositionLayerGroup.addLayer(marker);
+    currentPositionLayerGroup.addLayer(circle);
+  });
+
+  locationWidget.addEventListener("hide-current-position", (e) => {
+    currentPositionLayerGroup.clearLayers();
+  });
+
 
   fetchData(true);
 } else {

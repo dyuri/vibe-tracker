@@ -68,6 +68,10 @@ class LocationWidget extends HTMLElement {
             <input type="checkbox" id="wake-lock-checkbox">
             Wake Lock
           </label>
+          <label>
+            <input type="checkbox" id="show-position-checkbox">
+            Show my position
+          </label>
         </div>
       </div>
     `;
@@ -82,6 +86,44 @@ class LocationWidget extends HTMLElement {
         });
         this.dispatchEvent(event);
       });
+
+    this.watchId = null;
+    this.shadowRoot.getElementById("show-position-checkbox").addEventListener("change", (e) => {
+      if (e.target.checked) {
+        this.watchId = navigator.geolocation.watchPosition(
+          (position) => {
+            const event = new CustomEvent("show-current-position", {
+              detail: {
+                coords: {
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                  accuracy: position.coords.accuracy,
+                }
+              },
+              bubbles: true,
+              composed: true,
+            });
+            this.dispatchEvent(event);
+          },
+          (error) => {
+            console.error("Error getting position", error);
+          },
+          {
+            enableHighAccuracy: true,
+          }
+        );
+      } else {
+        if (this.watchId) {
+          navigator.geolocation.clearWatch(this.watchId);
+          this.watchId = null;
+          const event = new CustomEvent("hide-current-position", {
+            bubbles: true,
+            composed: true,
+          });
+          this.dispatchEvent(event);
+        }
+      }
+    });
 
     this.wakeLockSentinel = null;
     const wakeLockCheckbox = this.shadowRoot.getElementById("wake-lock-checkbox");
