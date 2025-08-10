@@ -248,6 +248,14 @@ func main() {
 	})
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+		e.Router.GET("/u/:username", func(c echo.Context) error {
+			return c.File("public/index.html")
+		})
+
+		e.Router.GET("/u/:username/s/:session", func(c echo.Context) error {
+			return c.File("public/index.html")
+		})
+
 		ensureUsersCollection(app.Dao())
 		ensureLocationsCollection(app.Dao())
 		e.Router.Static("/", "public")

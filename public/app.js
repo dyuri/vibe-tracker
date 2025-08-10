@@ -2,9 +2,22 @@ const mapWidget = document.querySelector('map-widget');
 const errorMessage = document.getElementById("error-message");
 const locationWidget = document.querySelector("location-widget");
 
-const urlParams = new URLSearchParams(window.location.search);
-const username = urlParams.get("username");
-const session = urlParams.get("session");
+let username, session;
+
+// Try to parse the new path-based format first
+const path = window.location.pathname;
+const match = path.match(/^\/u\/([^\/]+)(?:\/s\/([^\/]+))?$/);
+
+if (match) {
+  username = match[1];
+  session = match[2];
+} else {
+  // Fallback to URL parameters for backward compatibility
+  const urlParams = new URLSearchParams(window.location.search);
+  username = urlParams.get("username");
+  session = urlParams.get("session");
+}
+
 let refreshIntervalId = null;
 
 function fetchData(isInitialLoad = false) {
@@ -66,5 +79,5 @@ if (username) {
   mapWidget.style.display = "none";
   errorMessage.style.display = "block";
   errorMessage.textContent =
-    "Username not provided in the URL. Please add ?username=your_username to the URL.";
+    "Username not provided. Use the format /u/your_username or ?username=your_username in the URL.";
 }
