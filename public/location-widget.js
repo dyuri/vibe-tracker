@@ -65,20 +65,20 @@ class LocationWidget extends HTMLElement {
             Refresh
           </label>
           <label>
-            <input type="checkbox" id="wake-lock-checkbox">
-            Wake Lock
-          </label>
-          <label>
             <input type="checkbox" id="show-position-checkbox">
             Show my position
+          </label>
+          <label>
+            <input type="checkbox" id="wake-lock-checkbox">
+            Wake Lock
           </label>
         </div>
       </div>
     `;
 
-    this.shadowRoot
-      .getElementById("refresh-checkbox")
-      .addEventListener("change", (e) => {
+    const refreshCheckbox = this.shadowRoot.getElementById("refresh-checkbox");
+    refreshCheckbox.addEventListener("change", (e) => {
+        localStorage.setItem("refresh-enabled", e.target.checked);
         const event = new CustomEvent("refresh-change", {
           detail: { checked: e.target.checked },
           bubbles: true,
@@ -88,7 +88,9 @@ class LocationWidget extends HTMLElement {
       });
 
     this.watchId = null;
-    this.shadowRoot.getElementById("show-position-checkbox").addEventListener("change", (e) => {
+    const showPositionCheckbox = this.shadowRoot.getElementById("show-position-checkbox");
+    showPositionCheckbox.addEventListener("change", (e) => {
+      localStorage.setItem("show-position-enabled", e.target.checked);
       if (e.target.checked) {
         this.watchId = navigator.geolocation.watchPosition(
           (position) => {
@@ -125,6 +127,19 @@ class LocationWidget extends HTMLElement {
       }
     });
 
+    // Restore settings
+    const savedRefresh = localStorage.getItem("refresh-enabled");
+    if (savedRefresh !== null) {
+      refreshCheckbox.checked = savedRefresh === "true";
+      refreshCheckbox.dispatchEvent(new Event('change'));
+    }
+
+    const savedShowPosition = localStorage.getItem("show-position-enabled");
+    if (savedShowPosition !== null) {
+      showPositionCheckbox.checked = savedShowPosition === "true";
+      showPositionCheckbox.dispatchEvent(new Event('change'));
+    }
+
     this.wakeLockSentinel = null;
     const wakeLockCheckbox = this.shadowRoot.getElementById("wake-lock-checkbox");
 
@@ -157,12 +172,21 @@ class LocationWidget extends HTMLElement {
     toggleButton.addEventListener("click", () => {
       infoPanel.style.display = "block";
       toggleButton.style.display = "none";
+      localStorage.setItem("widget-open", "true");
     });
 
     closeButton.addEventListener("click", () => {
       infoPanel.style.display = "none";
       toggleButton.style.display = "flex"; // Use flex to center the 'i'
+      localStorage.setItem("widget-open", "false");
     });
+
+    // Restore widget open state
+    const savedWidgetOpen = localStorage.getItem("widget-open");
+    if (savedWidgetOpen === "true") {
+      infoPanel.style.display = "block";
+      toggleButton.style.display = "none";
+    }
   }
 
   disconnectedCallback() {
