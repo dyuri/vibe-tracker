@@ -34,6 +34,35 @@ class MapWidget extends HTMLElement {
     }).addTo(this.map);
     this.dataLayerGroup = L.layerGroup().addTo(this.map);
     this.currentPositionLayerGroup = L.layerGroup().addTo(this.map);
+
+    this.map.on('moveend', () => this.updateUrlHash());
+    this.map.on('zoomend', () => this.updateUrlHash());
+
+    this.setViewFromUrlHash();
+  }
+
+  setViewFromUrlHash() {
+    const hash = window.location.hash;
+    if (hash.startsWith('#map=')) {
+      const parts = hash.substring(5).split('/');
+      if (parts.length === 3) {
+        const lat = parseFloat(parts[0]);
+        const lon = parseFloat(parts[1]);
+        const zoom = parseInt(parts[2], 10);
+        if (!isNaN(lat) && !isNaN(lon) && !isNaN(zoom)) {
+          this.map.setView([lat, lon], zoom);
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  updateUrlHash() {
+    const center = this.map.getCenter();
+    const zoom = this.map.getZoom();
+    const hash = `#map=${center.lat.toFixed(6)}/${center.lng.toFixed(6)}/${zoom}`;
+    history.replaceState(null, null, hash);
   }
 
   displayData(data) {
@@ -124,7 +153,9 @@ class MapWidget extends HTMLElement {
     marker.bindPopup(popupContent);
     this.dataLayerGroup.addLayer(marker);
 
-    this.map.fitBounds(L.geoJSON(data).getBounds());
+    if (!this.setViewFromUrlHash()) {
+      this.map.fitBounds(L.geoJSON(data).getBounds());
+    }
 
     if (latestPoint) {
       this.dispatchEvent(new CustomEvent('location-update', { detail: latestPoint, bubbles: true, composed: true }));
@@ -136,7 +167,9 @@ class MapWidget extends HTMLElement {
     const [longitude, latitude, altitude] = data.geometry.coordinates;
     const { speed, heart_rate, timestamp, session } = data.properties;
 
-    this.map.setView([latitude, longitude], 15);
+    if (!this.setViewFromUrlHash()) {
+      this.map.setView([latitude, longitude], 15);
+    }
     const marker = L.marker([latitude, longitude])
       .bindPopup(
         `
