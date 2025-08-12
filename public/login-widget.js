@@ -11,7 +11,7 @@ class LoginWidget extends HTMLElement {
           font-family: sans-serif;
         }
         #toggle-button {
-          background-color: #28a745;
+          background-color: var(--user-bg-color, #28a745);
           color: white;
           border: none;
           border-radius: 50%;
@@ -154,6 +154,22 @@ class LoginWidget extends HTMLElement {
     });
   }
 
+  generateUserColor(username) {
+    if (!username) return null;
+    
+    // Generate a consistent hash from username
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) {
+      hash = username.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    // Map hash to hue (0-360 degrees)
+    const hue = Math.abs(hash) % 360;
+    
+    // Return HSL color with fixed saturation and lightness for vivid, readable colors
+    return `hsl(${hue}, 70%, 45%)`;
+  }
+
   connectedCallback() {
     // Initialize with current auth state
     if (window.authService) {
@@ -219,6 +235,12 @@ class LoginWidget extends HTMLElement {
       this.toggleButton.textContent = this.user.username ? this.user.username.charAt(0).toUpperCase() : "U";
       this.toggleButton.classList.remove("logged-out");
       
+      // Set dynamic background color based on username
+      const userColor = this.generateUserColor(this.user.username);
+      if (userColor) {
+        this.toggleButton.style.setProperty('--user-bg-color', userColor);
+      }
+      
       this.loginForm.style.display = "none";
       this.userMenu.style.display = "block";
       
@@ -228,6 +250,9 @@ class LoginWidget extends HTMLElement {
       // Logged out state
       this.toggleButton.textContent = "?";
       this.toggleButton.classList.add("logged-out");
+      
+      // Clear the dynamic color variable (falls back to logged-out gray)
+      this.toggleButton.style.removeProperty('--user-bg-color');
       
       this.loginForm.style.display = "block";
       this.userMenu.style.display = "none";
