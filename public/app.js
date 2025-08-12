@@ -1,6 +1,7 @@
 const mapWidget = document.querySelector('map-widget');
 const errorMessage = document.getElementById("error-message");
 const locationWidget = document.querySelector("location-widget");
+const loginWidget = document.querySelector("login-widget");
 
 let username, session;
 
@@ -19,6 +20,19 @@ if (match) {
 }
 
 let refreshIntervalId = null;
+
+// Initialize authentication
+document.addEventListener('auth-change', (e) => {
+  console.log('Auth state changed:', e.detail);
+  
+  // You can add logic here to handle authentication state changes
+  // For example, showing/hiding certain features based on login status
+  if (e.detail.isAuthenticated) {
+    console.log('User logged in:', e.detail.user);
+  } else {
+    console.log('User logged out');
+  }
+});
 
 function fetchData(isInitialLoad = false) {
   let apiUrl;

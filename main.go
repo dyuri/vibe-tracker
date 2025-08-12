@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v5"
@@ -17,6 +18,7 @@ import (
 	"github.com/pocketbase/pocketbase/models/schema"
 	"github.com/pocketbase/pocketbase/tools/security"
 	"github.com/pocketbase/pocketbase/tools/types"
+	"github.com/pocketbase/pocketbase/tokens"
 )
 
 func main() {
@@ -155,11 +157,97 @@ func main() {
 			return c.JSON(http.StatusOK, featureCollection)
 		})
 
-		e.Router.GET("/api/track", func(c echo.Context) error {
-			token := c.QueryParam("token")
-			user, err := findUserByToken(app.Dao(), token)
+		// Add JWT authentication endpoints
+		e.Router.POST("/api/login", func(c echo.Context) error {
+			data := struct {
+				Email    string `json:"email"`
+				Password string `json:"password"`
+			}{}
+
+			if err := c.Bind(&data); err != nil {
+				return apis.NewBadRequestError("Invalid request data", err)
+			}
+
+			// Find user by email
+			record, err := app.Dao().FindAuthRecordByEmail("users", data.Email)
+			if err != nil {
+				return apis.NewUnauthorizedError("Invalid credentials", err)
+			}
+
+			// Validate password
+			if !record.ValidatePassword(data.Password) {
+				return apis.NewUnauthorizedError("Invalid credentials", nil)
+			}
+
+			// Generate auth token
+			token, err := tokens.NewRecordAuthToken(app, record)
+			if err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to generate token", err)
+			}
+
+			return c.JSON(http.StatusOK, map[string]any{
+				"token": token,
+				"user": map[string]any{
+					"id":       record.Id,
+					"username": record.Username(),
+					"email":    record.Email(),
+				},
+			})
+		})
+
+		e.Router.POST("/api/auth/refresh", func(c echo.Context) error {
+			authHeader := c.Request().Header.Get("Authorization")
+			if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+				return apis.NewUnauthorizedError("Missing or invalid token", nil)
+			}
+
+			token := authHeader[7:]
+			
+			// Verify and parse the existing token
+			record, err := getAuthRecordFromToken(app, token)
+			if err != nil {
+				return apis.NewUnauthorizedError("Invalid or expired token", err)
+			}
+
+			// Generate new token
+			newToken, err := tokens.NewRecordAuthToken(app, record)
+			if err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to generate new token", err)
+			}
+
+			return c.JSON(http.StatusOK, map[string]any{
+				"token": newToken,
+				"user": map[string]any{
+					"id":       record.Id,
+					"username": record.Username(),
+					"email":    record.Email(),
+				},
+			})
+		})
+
+		e.Router.GET("/api/me", func(c echo.Context) error {
+			authHeader := c.Request().Header.Get("Authorization")
+			if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+				return apis.NewUnauthorizedError("Missing token", nil)
+			}
+
+			token := authHeader[7:]
+			record, err := getAuthRecordFromToken(app, token)
 			if err != nil {
 				return apis.NewUnauthorizedError("Invalid token", err)
+			}
+
+			return c.JSON(http.StatusOK, map[string]any{
+				"id":       record.Id,
+				"username": record.Username(),
+				"email":    record.Email(),
+			})
+		})
+
+		e.Router.GET("/api/track", func(c echo.Context) error {
+			user, err := authenticateTrackRequest(c, app)
+			if err != nil {
+				return apis.NewUnauthorizedError("Invalid authentication", err)
 			}
 
 			collection, err := app.Dao().FindCollectionByNameOrId("locations")
@@ -191,10 +279,9 @@ func main() {
 		})
 
 		e.Router.POST("/api/track", func(c echo.Context) error {
-			token := c.Request().Header.Get("Authorization")
-			user, err := findUserByToken(app.Dao(), token)
+			user, err := authenticateTrackRequest(c, app)
 			if err != nil {
-				return apis.NewUnauthorizedError("Invalid token", err)
+				return apis.NewUnauthorizedError("Invalid authentication", err)
 			}
 
 			var data struct {
@@ -266,6 +353,43 @@ func main() {
 		log.Fatal(err)
 	}
 }
+
+func authenticateTrackRequest(c echo.Context, app *pocketbase.PocketBase) (*models.Record, error) {
+	// Try JWT first (Authorization: Bearer <jwt>)
+	authHeader := c.Request().Header.Get("Authorization")
+	if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
+		// Use PocketBase's built-in middleware approach
+		// Set the request header and use the APIs auth middleware
+		token := authHeader[7:]
+		
+		// Try to get the auth record from the context (after middleware processing)
+		if info := c.Get(apis.ContextAuthRecordKey); info != nil {
+			if record, ok := info.(*models.Record); ok {
+				return record, nil
+			}
+		}
+		
+		// If not available via context, try basic token verification
+		if record, err := getAuthRecordFromToken(app, token); err == nil {
+			return record, nil
+		}
+	}
+
+	// Fallback to custom token (query param or header)
+	customToken := c.QueryParam("token")
+	if customToken == "" && !strings.HasPrefix(authHeader, "Bearer ") {
+		customToken = authHeader
+	}
+
+	return findUserByToken(app.Dao(), customToken)
+}
+
+func getAuthRecordFromToken(app *pocketbase.PocketBase, token string) (*models.Record, error) {
+	// For now, let's disable JWT authentication for /api/track
+	// and rely on custom tokens only until we can properly implement JWT parsing
+	return nil, errors.New("JWT authentication not yet implemented for track endpoints")
+}
+
 
 func findUserByToken(dao *daos.Dao, token string) (*models.Record, error) {
 	if token == "" {
