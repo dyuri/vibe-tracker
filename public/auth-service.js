@@ -1,4 +1,4 @@
-class AuthService {
+export default class AuthService {
   constructor(baseUrl = '') {
     this.baseUrl = baseUrl;
     this.token = localStorage.getItem('auth_token');
@@ -203,6 +203,3 @@ class AuthService {
     return response;
   }
 }
-
-// Create global instance
-window.authService = new AuthService();

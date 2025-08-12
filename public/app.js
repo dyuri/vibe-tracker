@@ -1,3 +1,13 @@
+// Import modules
+import AuthService from './auth-service.js';
+import './login-widget.js';
+import './location-widget.js';
+import './map-widget.js';
+
+// Initialize global auth service
+window.authService = new AuthService();
+
+// Get widget references
 const mapWidget = document.querySelector('map-widget');
 const errorMessage = document.getElementById("error-message");
 const locationWidget = document.querySelector("location-widget");

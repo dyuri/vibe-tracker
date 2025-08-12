@@ -1,4 +1,4 @@
-class MapWidget extends HTMLElement {
+export default class MapWidget extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });

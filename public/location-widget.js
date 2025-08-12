@@ -1,4 +1,4 @@
-class LocationWidget extends HTMLElement {
+export default class LocationWidget extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });

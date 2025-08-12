@@ -1,4 +1,6 @@
-class LoginWidget extends HTMLElement {
+import { generateUserColor } from './utils.js';
+
+export default class LoginWidget extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -154,22 +156,6 @@ class LoginWidget extends HTMLElement {
     });
   }
 
-  generateUserColor(username) {
-    if (!username) return null;
-    
-    // Generate a consistent hash from username
-    let hash = 0;
-    for (let i = 0; i < username.length; i++) {
-      hash = username.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    // Map hash to hue (0-360 degrees)
-    const hue = Math.abs(hash) % 360;
-    
-    // Return HSL color with fixed saturation and lightness for vivid, readable colors
-    return `hsl(${hue}, 70%, 45%)`;
-  }
-
   connectedCallback() {
     // Initialize with current auth state
     if (window.authService) {
@@ -236,7 +222,7 @@ class LoginWidget extends HTMLElement {
       this.toggleButton.classList.remove("logged-out");
       
       // Set dynamic background color based on username
-      const userColor = this.generateUserColor(this.user.username);
+      const userColor = generateUserColor(this.user.username);
       if (userColor) {
         this.toggleButton.style.setProperty('--user-bg-color', userColor);
       }
