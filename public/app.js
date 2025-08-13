@@ -7,6 +7,15 @@ import './map-widget.js';
 // Initialize global auth service
 window.authService = new AuthService();
 
+// Dispatch initial auth state to ensure all widgets are properly initialized
+// This fixes the issue where widgets don't get the initial auth state on page reload
+// Use setTimeout to ensure DOM elements are fully initialized before dispatching
+setTimeout(() => {
+  if (window.authService.isAuthenticated()) {
+    window.authService.dispatchAuthChange();
+  }
+}, 0);
+
 // Get widget references
 const mapWidget = document.querySelector('map-widget');
 const errorMessage = document.getElementById("error-message");

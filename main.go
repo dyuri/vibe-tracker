@@ -191,6 +191,7 @@ func main() {
 					"id":       record.Id,
 					"username": record.Username(),
 					"email":    record.Email(),
+					"avatar":   record.GetString("avatar"),
 				},
 			})
 		})
@@ -221,6 +222,7 @@ func main() {
 					"id":       record.Id,
 					"username": record.Username(),
 					"email":    record.Email(),
+					"avatar":   record.GetString("avatar"),
 				},
 			})
 		})
@@ -241,6 +243,7 @@ func main() {
 				"id":       record.Id,
 				"username": record.Username(),
 				"email":    record.Email(),
+				"avatar":   record.GetString("avatar"),
 			})
 		})
 

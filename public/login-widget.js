@@ -27,6 +27,18 @@ export default class LoginWidget extends HTMLElement {
           cursor: pointer;
           box-shadow: 0 2px 5px rgba(0,0,0,0.2);
           text-transform: uppercase;
+          padding: 5px;
+          box-sizing: border-box;
+        }
+        #toggle-button .avatar-image {
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          object-fit: cover;
+          display: block;
+        }
+        #toggle-button .initial-text {
+          display: block;
         }
         #toggle-button.logged-out {
           background-color: #6c757d;
@@ -106,7 +118,9 @@ export default class LoginWidget extends HTMLElement {
           background-color: #c82333;
         }
       </style>
-      <div id="toggle-button" class="logged-out">?</div>
+      <div id="toggle-button" class="logged-out">
+        <span class="initial-text">?</span>
+      </div>
       <div id="auth-panel">
         <span id="close-button">×</span>
         <div id="login-form">
@@ -144,6 +158,7 @@ export default class LoginWidget extends HTMLElement {
     this.errorMessage = this.shadowRoot.getElementById("error-message");
     this.userName = this.shadowRoot.getElementById("user-name");
     this.userEmail = this.shadowRoot.getElementById("user-email");
+    this.initialText = this.shadowRoot.querySelector(".initial-text");
 
     this.setupEventListeners();
     this.updateUI();
@@ -158,10 +173,17 @@ export default class LoginWidget extends HTMLElement {
 
   connectedCallback() {
     // Initialize with current auth state
+    this.initializeAuthState();
+  }
+
+  initializeAuthState() {
     if (window.authService) {
       this.isAuthenticated = window.authService.isAuthenticated();
       this.user = window.authService.user;
       this.updateUI();
+    } else {
+      // Retry after a short delay if AuthService isn't ready yet
+      setTimeout(() => this.initializeAuthState(), 10);
     }
   }
 
@@ -218,13 +240,22 @@ export default class LoginWidget extends HTMLElement {
   updateUI() {
     if (this.isAuthenticated && this.user) {
       // Logged in state
-      this.toggleButton.textContent = this.user.username ? this.user.username.charAt(0).toUpperCase() : "U";
       this.toggleButton.classList.remove("logged-out");
       
       // Set dynamic background color based on username
       const userColor = generateUserColor(this.user.username);
       if (userColor) {
         this.toggleButton.style.setProperty('--user-bg-color', userColor);
+      }
+      
+      // Clear any existing content
+      this.clearButtonContent();
+      
+      // Check if user has an avatar
+      if (this.user.avatar) {
+        this.showAvatarImage(this.user.avatar);
+      } else {
+        this.showInitialText(this.user.username ? this.user.username.charAt(0).toUpperCase() : "U");
       }
       
       this.loginForm.style.display = "none";
@@ -234,11 +265,13 @@ export default class LoginWidget extends HTMLElement {
       this.userEmail.textContent = this.user.email || "";
     } else {
       // Logged out state
-      this.toggleButton.textContent = "?";
       this.toggleButton.classList.add("logged-out");
       
       // Clear the dynamic color variable (falls back to logged-out gray)
       this.toggleButton.style.removeProperty('--user-bg-color');
+      
+      this.clearButtonContent();
+      this.showInitialText("?");
       
       this.loginForm.style.display = "block";
       this.userMenu.style.display = "none";
@@ -278,6 +311,45 @@ export default class LoginWidget extends HTMLElement {
       // Force logout even if there's an error
       window.authService.logout();
       this.hidePanel();
+    }
+  }
+
+  clearButtonContent() {
+    // Remove any existing avatar images
+    const existingAvatar = this.toggleButton.querySelector('.avatar-image');
+    if (existingAvatar) {
+      existingAvatar.remove();
+    }
+    
+    // Hide initial text
+    if (this.initialText) {
+      this.initialText.style.display = 'none';
+    }
+  }
+
+  showAvatarImage(avatarFilename) {
+    // Construct PocketBase file URL: /api/files/{collection}/{record_id}/{filename}
+    const avatarUrl = `/api/files/users/${this.user.id}/${avatarFilename}`;
+    
+    const img = document.createElement('img');
+    img.className = 'avatar-image';
+    img.src = avatarUrl;
+    img.alt = 'User avatar';
+    
+    // Handle image loading errors - fallback to initials
+    img.onerror = () => {
+      img.remove();
+      const fallbackText = this.user.username ? this.user.username.charAt(0).toUpperCase() : "U";
+      this.showInitialText(fallbackText);
+    };
+    
+    this.toggleButton.appendChild(img);
+  }
+
+  showInitialText(text) {
+    if (this.initialText) {
+      this.initialText.textContent = text;
+      this.initialText.style.display = 'block';
     }
   }
 
