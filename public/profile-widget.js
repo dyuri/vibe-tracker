@@ -8,18 +8,18 @@ export default class ProfileWidget extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         :host {
-          font-family: sans-serif;
+          font-family: var(--font-family-base, sans-serif);
           display: block;
           max-width: 600px;
-          margin: 20px auto;
-          padding: 20px;
+          margin: var(--spacing-lg) auto;
+          padding: var(--spacing-lg);
         }
         .not-authenticated {
           text-align: center;
-          padding: 40px;
-          background-color: #f8f9fa;
-          border-radius: 8px;
-          color: #6c757d;
+          padding: var(--spacing-xxl);
+          background-color: var(--bg-secondary);
+          border-radius: var(--border-radius-md);
+          color: var(--text-muted);
         }
         .profile-content {
           display: none;
@@ -28,29 +28,29 @@ export default class ProfileWidget extends HTMLElement {
           display: block;
         }
         .profile-section {
-          background-color: white;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          padding: 20px;
-          margin-bottom: 20px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          background-color: var(--bg-panel);
+          border: 1px solid var(--border-light);
+          border-radius: var(--border-radius-md);
+          padding: var(--spacing-lg);
+          margin-bottom: var(--spacing-lg);
+          box-shadow: var(--shadow-light);
         }
         .section-title {
-          font-size: 18px;
-          font-weight: bold;
-          margin-bottom: 15px;
-          color: #333;
-          border-bottom: 2px solid #007bff;
-          padding-bottom: 5px;
+          font-size: var(--font-size-xlarge);
+          font-weight: var(--font-weight-bold);
+          margin-bottom: var(--spacing-md);
+          color: var(--text-primary);
+          border-bottom: 2px solid var(--color-primary);
+          padding-bottom: var(--spacing-xs);
         }
         .form-group {
-          margin-bottom: 15px;
+          margin-bottom: var(--spacing-md);
         }
         label {
           display: block;
-          margin-bottom: 5px;
-          font-weight: bold;
-          color: #555;
+          margin-bottom: var(--spacing-xs);
+          font-weight: var(--font-weight-bold);
+          color: var(--text-secondary);
         }
         input[type="text"], 
         input[type="email"], 
@@ -58,109 +58,112 @@ export default class ProfileWidget extends HTMLElement {
         input[type="file"] {
           width: 100%;
           padding: 8px 12px;
-          border: 1px solid #ccc;
-          border-radius: 4px;
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius-sm);
           box-sizing: border-box;
-          font-size: 14px;
+          font-size: var(--font-size-base);
+          background-color: var(--bg-primary);
+          color: var(--text-primary);
         }
         input[type="file"] {
           padding: 6px;
         }
         button {
-          background-color: #007bff;
-          color: white;
+          background-color: var(--color-primary);
+          color: var(--text-inverse);
           border: none;
-          padding: 10px 20px;
-          border-radius: 4px;
+          padding: var(--spacing-sm) var(--spacing-lg);
+          border-radius: var(--border-radius-sm);
           cursor: pointer;
-          font-size: 14px;
-          margin-right: 10px;
-          margin-bottom: 10px;
+          font-size: var(--font-size-base);
+          margin-right: var(--spacing-sm);
+          margin-bottom: var(--spacing-sm);
         }
         button:hover {
-          background-color: #0056b3;
+          background-color: var(--color-primary-hover);
         }
         button:disabled {
-          background-color: #ccc;
+          background-color: var(--color-logged-out);
           cursor: not-allowed;
         }
         .btn-danger {
-          background-color: #dc3545;
+          background-color: var(--color-danger);
         }
         .btn-danger:hover {
-          background-color: #c82333;
+          background-color: var(--color-danger-hover);
         }
         .btn-secondary {
-          background-color: #6c757d;
+          background-color: var(--color-logged-out);
         }
         .btn-secondary:hover {
-          background-color: #5a6268;
+          background-color: var(--text-muted);
         }
         .error {
-          color: #dc3545;
-          font-size: 14px;
-          margin-top: 5px;
+          color: var(--color-danger);
+          font-size: var(--font-size-base);
+          margin-top: var(--spacing-xs);
         }
         .success {
-          color: #28a745;
-          font-size: 14px;
-          margin-top: 5px;
+          color: var(--color-success);
+          font-size: var(--font-size-base);
+          margin-top: var(--spacing-xs);
         }
         .avatar-section {
           display: flex;
           align-items: center;
-          gap: 20px;
-          margin-bottom: 15px;
+          gap: var(--spacing-lg);
+          margin-bottom: var(--spacing-md);
         }
         .current-avatar {
           width: 80px;
           height: 80px;
-          border-radius: 50%;
-          border: 2px solid #ddd;
+          border-radius: var(--border-radius-full);
+          border: 2px solid var(--border-light);
           display: flex;
           align-items: center;
           justify-content: center;
-          background-color: #f8f9fa;
+          background-color: var(--bg-secondary);
           font-size: 24px;
-          font-weight: bold;
-          color: #6c757d;
+          font-weight: var(--font-weight-bold);
+          color: var(--text-muted);
           overflow: hidden;
         }
         .current-avatar img {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          border-radius: 50%;
+          border-radius: var(--border-radius-full);
         }
         .avatar-controls {
           flex: 1;
         }
         .token-display {
-          background-color: #f8f9fa;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          padding: 10px;
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--border-light);
+          border-radius: var(--border-radius-sm);
+          padding: var(--spacing-sm);
           font-family: monospace;
-          font-size: 14px;
+          font-size: var(--font-size-base);
           word-break: break-all;
-          margin-bottom: 10px;
+          margin-bottom: var(--spacing-sm);
+          color: var(--text-primary);
         }
         .token-warning {
           background-color: #fff3cd;
           border: 1px solid #ffeaa7;
-          border-radius: 4px;
-          padding: 10px;
-          font-size: 14px;
+          border-radius: var(--border-radius-sm);
+          padding: var(--spacing-sm);
+          font-size: var(--font-size-base);
           color: #856404;
-          margin-top: 10px;
+          margin-top: var(--spacing-sm);
         }
         .current-info {
-          background-color: #e9ecef;
-          border-radius: 4px;
+          background-color: var(--bg-secondary);
+          border-radius: var(--border-radius-sm);
           padding: 8px;
-          font-size: 14px;
-          color: #6c757d;
-          margin-bottom: 10px;
+          font-size: var(--font-size-base);
+          color: var(--text-muted);
+          margin-bottom: var(--spacing-sm);
         }
       </style>
       

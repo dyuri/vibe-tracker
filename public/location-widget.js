@@ -8,10 +8,10 @@ export default class LocationWidget extends HTMLElement {
           font-family: sans-serif;
         }
         #toggle-button {
-          background-color: #007bff;
-          color: white;
+          background-color: var(--color-primary);
+          color: var(--text-inverse);
           border: none;
-          border-radius: 50%;
+          border-radius: var(--border-radius-full);
           width: 40px;
           height: 40px;
           font-size: 20px;
@@ -19,39 +19,42 @@ export default class LocationWidget extends HTMLElement {
           justify-content: center;
           align-items: center;
           cursor: pointer;
-          box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+          box-shadow: var(--shadow-heavy);
         }
         #info-panel {
           display: none; /* Hidden by default */
-          background-color: white;
-          border: 1px solid #ccc;
-          border-radius: 8px;
-          padding: 25px 25px 15px 15px;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-          margin-top: 10px;
+          background-color: var(--bg-panel);
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius-md);
+          padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md) var(--spacing-md);
+          box-shadow: var(--shadow-medium);
+          margin-top: var(--spacing-sm);
           position: relative;
         }
         #close-button {
           position: absolute;
-          top: 5px;
-          right: 10px;
+          top: var(--spacing-xs);
+          right: var(--spacing-sm);
           font-size: 20px;
           cursor: pointer;
-          color: #888;
+          color: var(--text-muted);
         }
         .property {
-          margin-bottom: 5px;
+          margin-bottom: var(--spacing-xs);
+          color: var(--text-primary);
         }
         .label {
-          font-weight: bold;
+          font-weight: var(--font-weight-bold);
+          color: var(--text-secondary);
         }
         .refresh-container {
-          margin-top: 10px;
-          border-top: 1px solid #ccc;
-          padding-top: 10px;
+          margin-top: var(--spacing-sm);
+          border-top: 1px solid var(--border-color);
+          padding-top: var(--spacing-sm);
           & label {
             display: block;
-            margin: 5px 0;
+            margin: var(--spacing-xs) 0;
+            color: var(--text-primary);
           }
         }
       </style>

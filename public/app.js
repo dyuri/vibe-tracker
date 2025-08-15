@@ -3,6 +3,7 @@ import AuthService from './auth-service.js';
 import './login-widget.js';
 import './location-widget.js';
 import './map-widget.js';
+import './theme-init.js';
 
 // Initialize global auth service
 window.authService = new AuthService();

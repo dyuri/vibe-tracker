@@ -10,30 +10,30 @@ export default class LoginWidget extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         :host {
-          font-family: sans-serif;
+          font-family: var(--font-family-base, sans-serif);
         }
         #toggle-button {
-          background-color: var(--user-bg-color, #28a745);
-          color: white;
+          background-color: var(--user-bg-color, var(--color-success));
+          color: var(--text-inverse);
           border: none;
-          border-radius: 50%;
+          border-radius: var(--border-radius-full);
           width: 40px;
           height: 40px;
-          font-size: 16px;
-          font-weight: bold;
+          font-size: var(--font-size-large);
+          font-weight: var(--font-weight-bold);
           display: flex;
           justify-content: center;
           align-items: center;
           cursor: pointer;
-          box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+          box-shadow: var(--shadow-heavy);
           text-transform: uppercase;
-          padding: 5px;
+          padding: var(--spacing-xs);
           box-sizing: border-box;
         }
         #toggle-button .avatar-image {
           width: 30px;
           height: 30px;
-          border-radius: 50%;
+          border-radius: var(--border-radius-full);
           object-fit: cover;
           display: block;
         }
@@ -41,88 +41,92 @@ export default class LoginWidget extends HTMLElement {
           display: block;
         }
         #toggle-button.logged-out {
-          background-color: #6c757d;
+          background-color: var(--color-logged-out);
         }
         #auth-panel {
           display: none;
-          background-color: white;
-          border: 1px solid #ccc;
-          border-radius: 8px;
-          padding: 25px 25px 15px 15px;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-          margin-top: 10px;
+          background-color: var(--bg-panel);
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius-md);
+          padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md) var(--spacing-md);
+          box-shadow: var(--shadow-medium);
+          margin-top: var(--spacing-sm);
           position: relative;
           min-width: 250px;
         }
         #close-button {
           position: absolute;
-          top: 5px;
-          right: 10px;
+          top: var(--spacing-xs);
+          right: var(--spacing-sm);
           font-size: 20px;
           cursor: pointer;
-          color: #888;
+          color: var(--text-muted);
         }
         .form-group {
-          margin-bottom: 15px;
+          margin-bottom: var(--spacing-md);
         }
         label {
           display: block;
-          margin-bottom: 5px;
-          font-weight: bold;
+          margin-bottom: var(--spacing-xs);
+          font-weight: var(--font-weight-bold);
+          color: var(--text-primary);
         }
         input[type="email"], input[type="password"] {
           width: 100%;
           padding: 8px;
-          border: 1px solid #ccc;
-          border-radius: 4px;
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius-sm);
           box-sizing: border-box;
+          background-color: var(--bg-primary);
+          color: var(--text-primary);
         }
         button {
-          background-color: #007bff;
-          color: white;
+          background-color: var(--color-primary);
+          color: var(--text-inverse);
           border: none;
-          padding: 10px 20px;
-          border-radius: 4px;
+          padding: var(--spacing-sm) var(--spacing-lg);
+          border-radius: var(--border-radius-sm);
           cursor: pointer;
           width: 100%;
+          font-size: var(--font-size-base);
         }
         button:hover {
-          background-color: #0056b3;
+          background-color: var(--color-primary-hover);
         }
         button:disabled {
-          background-color: #ccc;
+          background-color: var(--color-logged-out);
           cursor: not-allowed;
         }
         .error {
-          color: #dc3545;
-          font-size: 14px;
-          margin-top: 5px;
+          color: var(--color-danger);
+          font-size: var(--font-size-base);
+          margin-top: var(--spacing-xs);
         }
         .user-info {
           text-align: center;
-          margin-bottom: 15px;
+          margin-bottom: var(--spacing-md);
         }
         .username {
-          font-weight: bold;
-          font-size: 16px;
-          margin-bottom: 5px;
-          color: #333;
+          font-weight: var(--font-weight-bold);
+          font-size: var(--font-size-large);
+          margin-bottom: var(--spacing-xs);
+          color: var(--text-primary);
           text-decoration: none;
           display: block;
         }
         .username:hover {
-          color: #007bff;
+          color: var(--color-primary);
           text-decoration: underline;
         }
         .email {
-          color: #666;
-          font-size: 14px;
+          color: var(--text-muted);
+          font-size: var(--font-size-base);
         }
         .logout-button {
-          background-color: #dc3545;
+          background-color: var(--color-danger);
         }
         .logout-button:hover {
-          background-color: #c82333;
+          background-color: var(--color-danger-hover);
         }
       </style>
       <div id="toggle-button" class="logged-out">

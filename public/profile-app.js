@@ -2,6 +2,7 @@
 import AuthService from './auth-service.js';
 import './login-widget.js';
 import './profile-widget.js';
+import './theme-toggle.js';
 
 // Initialize global auth service
 window.authService = new AuthService();
