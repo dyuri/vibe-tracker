@@ -16,9 +16,9 @@ import (
 	"github.com/pocketbase/pocketbase/daos"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/models/schema"
+	"github.com/pocketbase/pocketbase/tokens"
 	"github.com/pocketbase/pocketbase/tools/security"
 	"github.com/pocketbase/pocketbase/tools/types"
-	"github.com/pocketbase/pocketbase/tokens"
 )
 
 func main() {
@@ -203,7 +203,7 @@ func main() {
 			}
 
 			token := authHeader[7:]
-			
+
 			// Verify and parse the existing token
 			record, err := getAuthRecordFromToken(app, token)
 			if err != nil {
@@ -228,15 +228,60 @@ func main() {
 		})
 
 		e.Router.GET("/api/me", func(c echo.Context) error {
-			authHeader := c.Request().Header.Get("Authorization")
-			if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-				return apis.NewUnauthorizedError("Missing token", nil)
+			info, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
+			if info == nil {
+				return apis.NewUnauthorizedError("Authentication required", nil)
 			}
 
-			token := authHeader[7:]
-			record, err := getAuthRecordFromToken(app, token)
-			if err != nil {
-				return apis.NewUnauthorizedError("Invalid token", err)
+			return c.JSON(http.StatusOK, map[string]any{
+				"id":       info.Id,
+				"username": info.Username(),
+				"email":    info.Email(),
+				"avatar":   info.GetString("avatar"),
+				"token":    info.GetString("token"),
+			})
+		}, apis.RequireRecordAuth())
+
+		e.Router.PUT("/api/profile", func(c echo.Context) error {
+			record, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
+			if record == nil {
+				return apis.NewUnauthorizedError("Authentication required", nil)
+			}
+
+			data := struct {
+				Username    string `json:"username"`
+				Email       string `json:"email"`
+				Password    string `json:"password"`
+				OldPassword string `json:"oldPassword"`
+			}{}
+
+			if err := c.Bind(&data); err != nil {
+				return apis.NewBadRequestError("Invalid request data", err)
+			}
+
+			// Update username if provided
+			if data.Username != "" && data.Username != record.Username() {
+				record.SetUsername(data.Username)
+			}
+
+			// Update email if provided
+			if data.Email != "" && data.Email != record.Email() {
+				record.SetEmail(data.Email)
+			}
+
+			// Update password if provided
+			if data.Password != "" {
+				if data.OldPassword == "" {
+					return apis.NewBadRequestError("Old password required to set new password", nil)
+				}
+				if !record.ValidatePassword(data.OldPassword) {
+					return apis.NewBadRequestError("Invalid old password", nil)
+				}
+				record.SetPassword(data.Password)
+			}
+
+			if err := app.Dao().SaveRecord(record); err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to update profile", err)
 			}
 
 			return c.JSON(http.StatusOK, map[string]any{
@@ -244,8 +289,37 @@ func main() {
 				"username": record.Username(),
 				"email":    record.Email(),
 				"avatar":   record.GetString("avatar"),
+				"token":    record.GetString("token"),
 			})
-		})
+		}, apis.RequireRecordAuth())
+
+		e.Router.POST("/api/profile/avatar", func(c echo.Context) error {
+			// Avatar upload functionality temporarily disabled - requires complex file handling
+			return apis.NewApiError(http.StatusNotImplemented, "Avatar upload not yet implemented", nil)
+		}, apis.RequireRecordAuth())
+
+		e.Router.PUT("/api/profile/regenerate-token", func(c echo.Context) error {
+			record, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
+			if record == nil {
+				return apis.NewUnauthorizedError("Authentication required", nil)
+			}
+
+			// Generate new custom token
+			newToken := security.RandomString(12)
+			record.Set("token", newToken)
+
+			if err := app.Dao().SaveRecord(record); err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to regenerate token", err)
+			}
+
+			return c.JSON(http.StatusOK, map[string]any{
+				"id":       record.Id,
+				"username": record.Username(),
+				"email":    record.Email(),
+				"avatar":   record.GetString("avatar"),
+				"token":    newToken,
+			})
+		}, apis.RequireRecordAuth())
 
 		e.Router.GET("/api/track", func(c echo.Context) error {
 			user, err := authenticateTrackRequest(c, app)
@@ -346,6 +420,10 @@ func main() {
 			return c.File("public/index.html")
 		})
 
+		e.Router.GET("/profile", func(c echo.Context) error {
+			return c.File("public/profile.html")
+		})
+
 		ensureUsersCollection(app.Dao())
 		ensureLocationsCollection(app.Dao())
 		e.Router.Static("/", "public")
@@ -364,14 +442,14 @@ func authenticateTrackRequest(c echo.Context, app *pocketbase.PocketBase) (*mode
 		// Use PocketBase's built-in middleware approach
 		// Set the request header and use the APIs auth middleware
 		token := authHeader[7:]
-		
+
 		// Try to get the auth record from the context (after middleware processing)
 		if info := c.Get(apis.ContextAuthRecordKey); info != nil {
 			if record, ok := info.(*models.Record); ok {
 				return record, nil
 			}
 		}
-		
+
 		// If not available via context, try basic token verification
 		if record, err := getAuthRecordFromToken(app, token); err == nil {
 			return record, nil
@@ -388,11 +466,32 @@ func authenticateTrackRequest(c echo.Context, app *pocketbase.PocketBase) (*mode
 }
 
 func getAuthRecordFromToken(app *pocketbase.PocketBase, token string) (*models.Record, error) {
-	// For now, let's disable JWT authentication for /api/track
-	// and rely on custom tokens only until we can properly implement JWT parsing
-	return nil, errors.New("JWT authentication not yet implemented for track endpoints")
-}
+	// Parse and verify the JWT token using PocketBase's method
+	claims, err := security.ParseJWT(token, app.Settings().RecordAuthToken.Secret)
+	if err != nil {
+		return nil, err
+	}
 
+	// Get the record ID from claims
+	recordId, ok := claims["id"].(string)
+	if !ok {
+		return nil, errors.New("invalid token: missing record id")
+	}
+
+	// Get the collection ID from claims
+	collectionId, ok := claims["collectionId"].(string)
+	if !ok {
+		return nil, errors.New("invalid token: missing collection id")
+	}
+
+	// Find and return the record
+	record, err := app.Dao().FindRecordById(collectionId, recordId)
+	if err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
 
 func findUserByToken(dao *daos.Dao, token string) (*models.Record, error) {
 	if token == "" {

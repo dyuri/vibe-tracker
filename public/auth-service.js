@@ -167,6 +167,79 @@ export default class AuthService {
     document.dispatchEvent(event);
   }
 
+  // Profile management methods
+  async updateProfile(data) {
+    try {
+      const response = await this.fetch('/api/profile', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update profile');
+      }
+
+      const updatedUser = await response.json();
+      this.user = updatedUser;
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      this.dispatchAuthChange();
+      return updatedUser;
+    } catch (error) {
+      console.error('Update profile error:', error);
+      throw error;
+    }
+  }
+
+  async uploadAvatar(file) {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const response = await fetch(`${this.baseUrl}/api/profile/avatar`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to upload avatar');
+      }
+
+      const updatedUser = await response.json();
+      this.user = updatedUser;
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      this.dispatchAuthChange();
+      return updatedUser;
+    } catch (error) {
+      console.error('Upload avatar error:', error);
+      throw error;
+    }
+  }
+
+  async regenerateToken() {
+    try {
+      const response = await this.fetch('/api/profile/regenerate-token', {
+        method: 'PUT',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to regenerate token');
+      }
+
+      const updatedUser = await response.json();
+      this.user = updatedUser;
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      this.dispatchAuthChange();
+      return updatedUser;
+    } catch (error) {
+      console.error('Regenerate token error:', error);
+      throw error;
+    }
+  }
+
   // Helper method for making authenticated API calls
   async fetch(url, options = {}) {
     const headers = {

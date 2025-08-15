@@ -106,6 +106,13 @@ export default class LoginWidget extends HTMLElement {
           font-weight: bold;
           font-size: 16px;
           margin-bottom: 5px;
+          color: #333;
+          text-decoration: none;
+          display: block;
+        }
+        .username:hover {
+          color: #007bff;
+          text-decoration: underline;
         }
         .email {
           color: #666;
@@ -137,7 +144,7 @@ export default class LoginWidget extends HTMLElement {
         </div>
         <div id="user-menu" style="display: none;">
           <div class="user-info">
-            <div class="username" id="user-name"></div>
+            <a href="/profile" class="username" id="user-name"></a>
             <div class="email" id="user-email"></div>
           </div>
           <button id="logout-button" class="logout-button">Logout</button>
@@ -174,6 +181,15 @@ export default class LoginWidget extends HTMLElement {
   connectedCallback() {
     // Initialize with current auth state
     this.initializeAuthState();
+    
+    // Check if we should show panel by default
+    if (this.hasAttribute('open-by-default')) {
+      setTimeout(() => {
+        if (!this.isAuthenticated) {
+          this.showPanel();
+        }
+      }, 100);
+    }
   }
 
   initializeAuthState() {
