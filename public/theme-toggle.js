@@ -54,12 +54,12 @@ export default class ThemeToggle extends HTMLElement {
           transform: rotate(180deg) scale(0.8);
         }
         
-        [data-theme="dark"] .sun-icon {
+        :host(.dark) .sun-icon {
           opacity: 0;
           transform: rotate(-180deg) scale(0.8);
         }
         
-        [data-theme="dark"] .moon-icon {
+        :host(.dark) .moon-icon {
           opacity: 1;
           transform: rotate(0deg) scale(1);
         }
@@ -158,6 +158,13 @@ export default class ThemeToggle extends HTMLElement {
 
   applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
+    
+    // Update component class for shadow DOM styling
+    if (theme === 'dark') {
+      this.classList.add('dark');
+    } else {
+      this.classList.remove('dark');
+    }
     
     // Update tooltip
     this.updateTooltip();
