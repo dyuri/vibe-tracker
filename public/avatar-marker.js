@@ -27,7 +27,7 @@ export function createAvatarMarker(latlng, username, userId, avatar, size = 40) 
           height: ${avatarSize}px; 
           border-radius: 50%; 
           object-fit: cover;
-          border: 2px solid white;
+          border: 2px solid ${userColor};
         "
         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
       />
@@ -68,58 +68,38 @@ export function createAvatarMarker(latlng, username, userId, avatar, size = 40) 
     `;
   }
 
+  // Calculate dimensions for proper droplet shape
+  const circleRadius = size * 0.3; // Circle radius (60% of marker width)
+  const triangleHeight = size * 0.35; // Triangle height (increased from 0.25)
+  const triangleWidth = circleRadius * 0.8; // Triangle width (increased from 0.6)
+  const totalHeight = circleRadius * 2 + triangleHeight;
+  const centerX = size / 2;
+  const centerY = circleRadius; // Circle center
+  
   // Create the droplet-shaped marker SVG
   const markerHtml = `
     <div style="
       position: relative;
       width: ${size}px;
-      height: ${size}px;
+      height: ${totalHeight}px;
       display: flex;
       align-items: center;
       justify-content: center;
     ">
-      <!-- Droplet shadow -->
-      <svg width="${size}" height="${size}" style="position: absolute; top: 2px; left: 2px; z-index: 1;">
-        <path d="M${size/2},${size-2} 
-                 C${size/2-size*0.4},${size-2} 
-                 ${size*0.1},${size*0.6} 
-                 ${size*0.1},${size*0.4} 
-                 C${size*0.1},${size*0.15} 
-                 ${size*0.25},${2} 
-                 ${size/2},${2} 
-                 C${size*0.75},${2} 
-                 ${size*0.9},${size*0.15} 
-                 ${size*0.9},${size*0.4} 
-                 C${size*0.9},${size*0.6} 
-                 ${size/2+size*0.4},${size-2} 
-                 ${size/2},${size-2} Z" 
-              fill="rgba(0,0,0,0.2)" />
-      </svg>
-      
       <!-- Main droplet shape -->
-      <svg width="${size}" height="${size}" style="position: absolute; z-index: 2;">
-        <path d="M${size/2},${size-4} 
-                 C${size/2-size*0.4},${size-4} 
-                 ${size*0.1},${size*0.6} 
-                 ${size*0.1},${size*0.4} 
-                 C${size*0.1},${size*0.15} 
-                 ${size*0.25},${0} 
-                 ${size/2},${0} 
-                 C${size*0.75},${0} 
-                 ${size*0.9},${size*0.15} 
-                 ${size*0.9},${size*0.4} 
-                 C${size*0.9},${size*0.6} 
-                 ${size/2+size*0.4},${size-4} 
-                 ${size/2},${size-4} Z" 
-              fill="${userColor}" 
-              stroke="white" 
-              stroke-width="2" />
+      <svg width="${size}" height="${totalHeight}" style="position: absolute; z-index: 2;">
+        <!-- Triangle pointing down -->
+        <polygon points="${centerX-triangleWidth},${centerY+circleRadius*0.6} ${centerX+triangleWidth},${centerY+circleRadius*0.6} ${centerX},${totalHeight-4}" 
+                 fill="${userColor}" 
+                 stroke="white" 
+                 stroke-width="1" 
+                 stroke-linejoin="round" />
       </svg>
       
-      <!-- Avatar container positioned in the circular part -->
+      <!-- Avatar container positioned in the circle -->
       <div style="
         position: absolute;
-        top: ${padding}px;
+        top: ${centerY - avatarSize/2}px;
         left: 50%;
         transform: translateX(-50%);
         z-index: 3;
@@ -136,9 +116,9 @@ export function createAvatarMarker(latlng, username, userId, avatar, size = 40) 
   const customIcon = L.divIcon({
     html: markerHtml,
     className: 'avatar-marker',
-    iconSize: [size, size],
-    iconAnchor: [size/2, size-2], // Point to the bottom tip of the droplet
-    popupAnchor: [0, -(size-10)] // Popup appears above the marker
+    iconSize: [size, totalHeight],
+    iconAnchor: [centerX, totalHeight-2], // Point to the bottom tip of the triangle
+    popupAnchor: [0, -(totalHeight-10)] // Popup appears above the marker
   });
 
   // Create and return the marker

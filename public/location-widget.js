@@ -72,6 +72,14 @@ export default class LocationWidget extends HTMLElement {
             Show my position
           </label>
           <label>
+            <input type="checkbox" id="dark-theme-checkbox">
+            Dark theme
+          </label>
+          <label>
+            <input type="checkbox" id="dark-map-checkbox">
+            Dark map
+          </label>
+          <label>
             <input type="checkbox" id="wake-lock-checkbox">
             Wake Lock
           </label>
@@ -130,6 +138,24 @@ export default class LocationWidget extends HTMLElement {
       }
     });
 
+    // Dark theme toggle
+    const darkThemeCheckbox = this.shadowRoot.getElementById("dark-theme-checkbox");
+    darkThemeCheckbox.addEventListener("change", (e) => {
+      const newTheme = e.target.checked ? 'dark' : 'light';
+      localStorage.setItem('theme', newTheme);
+      
+      // Apply theme to document
+      document.documentElement.setAttribute('data-theme', newTheme);
+      
+      // Dispatch theme change event for other components
+      const event = new CustomEvent('theme-change', {
+        detail: { theme: newTheme },
+        bubbles: true,
+        composed: true
+      });
+      document.dispatchEvent(event);
+    });
+
     // Restore settings
     const savedRefresh = localStorage.getItem("refresh-enabled");
     if (savedRefresh !== null) {
@@ -141,6 +167,65 @@ export default class LocationWidget extends HTMLElement {
     if (savedShowPosition !== null) {
       showPositionCheckbox.checked = savedShowPosition === "true";
       showPositionCheckbox.dispatchEvent(new Event('change'));
+    }
+
+    // Initialize dark theme checkbox based on current theme
+    const initializeThemeCheckbox = () => {
+      // Check multiple sources for theme state
+      const documentTheme = document.documentElement.getAttribute('data-theme');
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      let currentTheme;
+      if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
+        currentTheme = savedTheme;
+      } else if (documentTheme) {
+        currentTheme = documentTheme;
+      } else {
+        currentTheme = prefersDark ? 'dark' : 'light';
+      }
+      
+      darkThemeCheckbox.checked = currentTheme === 'dark';
+    };
+    
+    // Initialize immediately and also after a short delay to ensure theme is loaded
+    initializeThemeCheckbox();
+    setTimeout(initializeThemeCheckbox, 100);
+    
+    // Listen for theme changes from other sources (like theme-toggle button)
+    document.addEventListener('theme-change', (e) => {
+      darkThemeCheckbox.checked = e.detail.theme === 'dark';
+    });
+
+    // Dark map toggle
+    const darkMapCheckbox = this.shadowRoot.getElementById("dark-map-checkbox");
+    darkMapCheckbox.addEventListener("change", (e) => {
+      localStorage.setItem('dark-map-enabled', e.target.checked);
+      
+      // Find the map widget and set/remove the attribute
+      const mapWidget = document.querySelector('map-widget');
+      if (mapWidget) {
+        if (e.target.checked) {
+          mapWidget.setAttribute('data-map-theme', 'dark');
+        } else {
+          mapWidget.removeAttribute('data-map-theme');
+        }
+      }
+    });
+
+    // Initialize dark map checkbox from localStorage
+    const savedDarkMap = localStorage.getItem("dark-map-enabled");
+    if (savedDarkMap !== null) {
+      darkMapCheckbox.checked = savedDarkMap === "true";
+      // Apply the setting to map widget
+      const mapWidget = document.querySelector('map-widget');
+      if (mapWidget) {
+        if (darkMapCheckbox.checked) {
+          mapWidget.setAttribute('data-map-theme', 'dark');
+        } else {
+          mapWidget.removeAttribute('data-map-theme');
+        }
+      }
     }
 
     this.wakeLockSentinel = null;

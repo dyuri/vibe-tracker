@@ -14,6 +14,48 @@ export default class MapWidget extends HTMLElement {
         #map {
           height: 100%;
         }
+        
+        /* Theme variables for shadow DOM */
+        :host {
+          --font-family-base: sans-serif;
+          --font-size-base: 14px;
+        }
+    
+        /* Leaflet map */
+        :host([data-map-theme="dark"]) {
+          .leaflet-layer,
+          .leaflet-control-zoom-in,
+          .leaflet-control-zoom-out,
+          .leaflet-control-attribution {
+            filter: invert(100%) hue-rotate(180deg) brightness(0.9) contrast(0.9);
+          }
+        }
+
+        /* Leaflet popup theming */
+        .leaflet-popup-content-wrapper,
+        .leaflet-popup-tip {
+          background-color: var(--bg-panel) !important;
+          color: var(--text-primary) !important;
+          box-shadow: var(--shadow-medium) !important;
+        }
+
+        .leaflet-popup-content {
+          color: var(--text-primary) !important;
+          font-family: var(--font-family-base) !important;
+          font-size: var(--font-size-base) !important;
+        }
+
+        .leaflet-popup-content b {
+          color: var(--text-primary) !important;
+        }
+
+        .leaflet-popup-close-button {
+          color: var(--text-secondary) !important;
+        }
+
+        .leaflet-popup-close-button:hover {
+          color: var(--text-primary) !important;
+        }
       </style>
       <div id="map"></div>
     `;
@@ -219,12 +261,7 @@ export default class MapWidget extends HTMLElement {
   showCurrentPosition(coords) {
     this.currentPositionLayerGroup.clearLayers();
     const { latitude, longitude, accuracy } = coords;
-    const marker = L.circleMarker([latitude, longitude], {
-      radius: 4,
-      color: "#ff901e",
-      fillColor: "#ff901e",
-      fillOpacity: 1,
-    });
+    const marker = L.marker([latitude, longitude]);
     const circle = L.circle([latitude, longitude], {
       radius: accuracy,
       color: "#ff901e",
