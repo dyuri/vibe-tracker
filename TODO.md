@@ -1,1 +1,2 @@
-- avatar upload not working
+- incremental route updates
+- better (location tracking) session management

@@ -1,3 +1,5 @@
+import { createMarker } from './avatar-marker.js';
+
 export default class MapWidget extends HTMLElement {
   constructor() {
     super();
@@ -141,7 +143,7 @@ export default class MapWidget extends HTMLElement {
 
     // Add only the latest point as a marker
     const [longitude, latitude, altitude] = latestPoint.geometry.coordinates;
-    const marker = L.marker([latitude, longitude]);
+    const marker = createMarker([latitude, longitude], latestPoint.properties);
     const { speed, heart_rate, timestamp, session } = latestPoint.properties;
     const popupContent = `
             <b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>
@@ -170,7 +172,7 @@ export default class MapWidget extends HTMLElement {
     if (!this.setViewFromUrlHash()) {
       this.map.setView([latitude, longitude], 15);
     }
-    const marker = L.marker([latitude, longitude])
+    const marker = createMarker([latitude, longitude], data.properties)
       .bindPopup(
         `
             <b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>

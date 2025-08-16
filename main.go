@@ -75,6 +75,9 @@ func main() {
 					"speed":      latestRecord.GetFloat("speed"),
 					"heart_rate": latestRecord.GetFloat("heart_rate"),
 					"session":    latestRecord.GetString("session"),
+					"username":   user.Username(),
+					"user_id":    user.Id,
+					"avatar":     user.GetString("avatar"),
 				},
 				"when": map[string]any{
 					"start": timestamp.Format(time.RFC3339),
@@ -139,6 +142,14 @@ func main() {
 					"heart_rate": record.GetFloat("heart_rate"),
 					"session":    record.GetString("session"),
 				}
+				
+				// Add username and avatar only for the latest point (last in array)
+				if i == len(records)-1 {
+					pointProperties["username"] = user.Username()
+					pointProperties["user_id"] = user.Id
+					pointProperties["avatar"] = user.GetString("avatar")
+				}
+				
 				pointFeature := map[string]interface{}{
 					"type": "Feature",
 					"geometry": map[string]interface{}{
