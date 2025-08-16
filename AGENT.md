@@ -25,3 +25,8 @@ Leaflet.js for the frontend.
 - Try to use max. 100 characters per line.
 - I'm an old school guy, so use semi-colons in JavaScript.
 
+## Testing
+
+- feel free to use playwright for testing the frontend
+- test credentials for the webapp: claude@claude.ai / claude123
+- there's usually some test data under `/u/dyuri`

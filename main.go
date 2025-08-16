@@ -14,6 +14,7 @@ import (
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/daos"
+	"github.com/pocketbase/pocketbase/forms"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/models/schema"
 	"github.com/pocketbase/pocketbase/tokens"
@@ -294,8 +295,32 @@ func main() {
 		}, apis.RequireRecordAuth())
 
 		e.Router.POST("/api/profile/avatar", func(c echo.Context) error {
-			// Avatar upload functionality temporarily disabled - requires complex file handling
-			return apis.NewApiError(http.StatusNotImplemented, "Avatar upload not yet implemented", nil)
+			record, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
+			if record == nil {
+				return apis.NewUnauthorizedError("Authentication required", nil)
+			}
+
+			// Use PocketBase forms to handle file upload properly
+			form := forms.NewRecordUpsert(app, record)
+			
+			// Load the multipart form data
+			if err := form.LoadRequest(c.Request(), ""); err != nil {
+				return apis.NewBadRequestError("Failed to parse form data", err)
+			}
+
+			// Submit the form (this will handle file upload automatically)
+			if err := form.Submit(); err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to save avatar", err)
+			}
+
+			// Return updated user data
+			return c.JSON(http.StatusOK, map[string]any{
+				"id":       record.Id,
+				"username": record.Username(),
+				"email":    record.Email(),
+				"avatar":   record.GetString("avatar"),
+				"token":    record.GetString("token"),
+			})
 		}, apis.RequireRecordAuth())
 
 		e.Router.PUT("/api/profile/regenerate-token", func(c echo.Context) error {
@@ -516,6 +541,8 @@ func findUserByUsername(dao *daos.Dao, username string) (*models.Record, error) 
 func ensureUsersCollection(dao *daos.Dao) {
 	collection, err := dao.FindCollectionByNameOrId("users")
 	if err == nil && collection != nil {
+		modified := false
+
 		if collection.Schema.GetFieldByName("token") == nil {
 			// token field is missing, add it
 			tokenField := &schema.SchemaField{
@@ -529,8 +556,34 @@ func ensureUsersCollection(dao *daos.Dao) {
 				},
 			}
 			collection.Schema.AddField(tokenField)
+			modified = true
+		}
+
+		if collection.Schema.GetFieldByName("avatar") == nil {
+			// avatar field is missing, add it
+			avatarField := &schema.SchemaField{
+				Name:     "avatar",
+				Type:     schema.FieldTypeFile,
+				Required: false,
+				Options: &schema.FileOptions{
+					MaxSelect: 1,
+					MaxSize:   5242880, // 5MB in bytes
+					MimeTypes: []string{
+						"image/jpeg",
+						"image/png",
+						"image/svg+xml",
+						"image/gif",
+						"image/webp",
+					},
+				},
+			}
+			collection.Schema.AddField(avatarField)
+			modified = true
+		}
+
+		if modified {
 			if err := dao.SaveCollection(collection); err != nil {
-				log.Fatalf("Failed to add token field to users collection: %v", err)
+				log.Fatalf("Failed to update users collection: %v", err)
 			}
 		}
 		return // collection already exists
@@ -553,6 +606,22 @@ func ensureUsersCollection(dao *daos.Dao) {
 					Min:     types.Pointer(8),
 					Max:     types.Pointer(16),
 					Pattern: "^[a-zA-Z0-9]+$",
+				},
+			},
+			&schema.SchemaField{
+				Name:     "avatar",
+				Type:     schema.FieldTypeFile,
+				Required: false,
+				Options: &schema.FileOptions{
+					MaxSelect: 1,
+					MaxSize:   5242880, // 5MB in bytes
+					MimeTypes: []string{
+						"image/jpeg",
+						"image/png",
+						"image/svg+xml",
+						"image/gif",
+						"image/webp",
+					},
 				},
 			},
 		),
