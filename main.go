@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -71,6 +72,18 @@ func main() {
 
 			// Construct GeoJSON response
 			timestamp := latestRecord.GetDateTime("timestamp").Time()
+			
+			// Get session metadata if available
+			sessionName := latestRecord.GetString("session")
+			sessionTitle := sessionName // fallback to session name
+			if sessionName != "" {
+				if sessionRecord, err := findSessionByNameAndUser(app.Dao(), sessionName, user.Id); err == nil && sessionRecord != nil {
+					if title := sessionRecord.GetString("title"); title != "" {
+						sessionTitle = title
+					}
+				}
+			}
+			
 			response := map[string]any{
 				"type": "Feature",
 				"geometry": map[string]any{
@@ -82,13 +95,14 @@ func main() {
 					},
 				},
 				"properties": map[string]any{
-					"timestamp":  timestamp.Unix(),
-					"speed":      latestRecord.GetFloat("speed"),
-					"heart_rate": latestRecord.GetFloat("heart_rate"),
-					"session":    latestRecord.GetString("session"),
-					"username":   user.Username(),
-					"user_id":    user.Id,
-					"avatar":     user.GetString("avatar"),
+					"timestamp":     timestamp.Unix(),
+					"speed":         latestRecord.GetFloat("speed"),
+					"heart_rate":    latestRecord.GetFloat("heart_rate"),
+					"session":       sessionName,
+					"session_title": sessionTitle,
+					"username":      user.Username(),
+					"user_id":       user.Id,
+					"avatar":        user.GetString("avatar"),
 				},
 				"when": map[string]any{
 					"start": timestamp.Format(time.RFC3339),
@@ -121,6 +135,16 @@ func main() {
 					return apis.NewNotFoundError("No location data found for this user", err)
 				}
 				session = latestRecords[0].GetString("session")
+			}
+
+			// Get session metadata if available
+			sessionTitle := session // fallback to session name
+			if session != "" {
+				if sessionRecord, err := findSessionByNameAndUser(app.Dao(), session, user.Id); err == nil && sessionRecord != nil {
+					if title := sessionRecord.GetString("title"); title != "" {
+						sessionTitle = title
+					}
+				}
 			}
 
 			// Build filter and params
@@ -163,10 +187,11 @@ func main() {
 					record.GetFloat("altitude"),
 				}
 				pointProperties := map[string]interface{}{
-					"timestamp":  record.GetDateTime("timestamp").Time().Unix(),
-					"speed":      record.GetFloat("speed"),
-					"heart_rate": record.GetFloat("heart_rate"),
-					"session":    record.GetString("session"),
+					"timestamp":     record.GetDateTime("timestamp").Time().Unix(),
+					"speed":         record.GetFloat("speed"),
+					"heart_rate":    record.GetFloat("heart_rate"),
+					"session":       record.GetString("session"),
+					"session_title": sessionTitle,
 				}
 
 				// Add username and avatar only for the latest point (last in array)
@@ -194,6 +219,231 @@ func main() {
 
 			return c.JSON(http.StatusOK, featureCollection)
 		})
+
+		// Session management endpoints
+		e.Router.GET("/api/sessions/:username", func(c echo.Context) error {
+			username := c.PathParam("username")
+			user, err := findUserByUsername(app.Dao(), username)
+			if err != nil {
+				return apis.NewNotFoundError("User not found", err)
+			}
+
+			// Parse pagination parameters
+			page := 1
+			perPage := 20
+			if pageStr := c.QueryParam("page"); pageStr != "" {
+				if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+					page = p
+				}
+			}
+			if perPageStr := c.QueryParam("perPage"); perPageStr != "" {
+				if pp, err := strconv.Atoi(perPageStr); err == nil && pp > 0 && pp <= 100 {
+					perPage = pp
+				}
+			}
+
+			// Get sessions with pagination
+			sessions, err := app.Dao().FindRecordsByFilter(
+				"sessions",
+				"user = {:user}",
+				"-created", // Order by newest first
+				perPage,
+				(page-1)*perPage,
+				dbx.Params{"user": user.Id},
+			)
+
+			if err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to fetch sessions", err)
+			}
+
+			// Count total sessions for pagination
+			var totalSessions int64
+			err = app.Dao().DB().Select("count(*)").From("sessions").Where(dbx.HashExp{"user": user.Id}).Row(&totalSessions)
+			if err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to count sessions", err)
+			}
+
+			// Format response
+			sessionList := make([]map[string]any, len(sessions))
+			for i, session := range sessions {
+				sessionList[i] = map[string]any{
+					"id":          session.Id,
+					"name":        session.GetString("name"),
+					"title":       session.GetString("title"),
+					"description": session.GetString("description"),
+					"public":      session.GetBool("public"),
+					"created":     session.GetDateTime("created").Time().Format(time.RFC3339),
+					"updated":     session.GetDateTime("updated").Time().Format(time.RFC3339),
+				}
+			}
+
+			totalPages := (int(totalSessions) + perPage - 1) / perPage
+
+			return c.JSON(http.StatusOK, map[string]any{
+				"sessions":    sessionList,
+				"page":        page,
+				"perPage":     perPage,
+				"totalItems":  totalSessions,
+				"totalPages":  totalPages,
+			})
+		})
+
+		e.Router.GET("/api/sessions/:username/:name", func(c echo.Context) error {
+			username := c.PathParam("username")
+			sessionName := c.PathParam("name")
+
+			user, err := findUserByUsername(app.Dao(), username)
+			if err != nil {
+				return apis.NewNotFoundError("User not found", err)
+			}
+
+			session, err := findSessionByNameAndUser(app.Dao(), sessionName, user.Id)
+			if err != nil {
+				return apis.NewNotFoundError("Session not found", err)
+			}
+
+			return c.JSON(http.StatusOK, map[string]any{
+				"id":          session.Id,
+				"name":        session.GetString("name"),
+				"title":       session.GetString("title"),
+				"description": session.GetString("description"),
+				"public":      session.GetBool("public"),
+				"created":     session.GetDateTime("created").Time().Format(time.RFC3339),
+				"updated":     session.GetDateTime("updated").Time().Format(time.RFC3339),
+			})
+		})
+
+		e.Router.POST("/api/sessions", func(c echo.Context) error {
+			record, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
+			if record == nil {
+				return apis.NewUnauthorizedError("Authentication required", nil)
+			}
+
+			data := struct {
+				Name        string `json:"name"`
+				Title       string `json:"title"`
+				Description string `json:"description"`
+				Public      bool   `json:"public"`
+			}{}
+
+			if err := c.Bind(&data); err != nil {
+				return apis.NewBadRequestError("Invalid request data", err)
+			}
+
+			if data.Name == "" {
+				return apis.NewBadRequestError("Session name is required", nil)
+			}
+
+			// Check if session with this name already exists for the user
+			existingSession, _ := findSessionByNameAndUser(app.Dao(), data.Name, record.Id)
+			if existingSession != nil {
+				return apis.NewBadRequestError("Session with this name already exists", nil)
+			}
+
+			// Create new session
+			sessionsCollection, err := app.Dao().FindCollectionByNameOrId("sessions")
+			if err != nil {
+				return apis.NewNotFoundError("sessions collection not found", err)
+			}
+
+			session := models.NewRecord(sessionsCollection)
+			session.Set("name", data.Name)
+			session.Set("user", record.Id)
+			session.Set("title", data.Title)
+			session.Set("description", data.Description)
+			session.Set("public", data.Public)
+
+			if err := app.Dao().SaveRecord(session); err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to create session", err)
+			}
+
+			return c.JSON(http.StatusCreated, map[string]any{
+				"id":          session.Id,
+				"name":        session.GetString("name"),
+				"title":       session.GetString("title"),
+				"description": session.GetString("description"),
+				"public":      session.GetBool("public"),
+				"created":     session.GetDateTime("created").Time().Format(time.RFC3339),
+				"updated":     session.GetDateTime("updated").Time().Format(time.RFC3339),
+			})
+		}, apis.RequireRecordAuth())
+
+		e.Router.PUT("/api/sessions/:username/:name", func(c echo.Context) error {
+			record, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
+			if record == nil {
+				return apis.NewUnauthorizedError("Authentication required", nil)
+			}
+
+			username := c.PathParam("username")
+			sessionName := c.PathParam("name")
+
+			// Verify user matches authenticated user
+			if record.Username() != username {
+				return apis.NewForbiddenError("Cannot update another user's sessions", nil)
+			}
+
+			session, err := findSessionByNameAndUser(app.Dao(), sessionName, record.Id)
+			if err != nil {
+				return apis.NewNotFoundError("Session not found", err)
+			}
+
+			data := struct {
+				Title       string `json:"title"`
+				Description string `json:"description"`
+				Public      bool   `json:"public"`
+			}{}
+
+			if err := c.Bind(&data); err != nil {
+				return apis.NewBadRequestError("Invalid request data", err)
+			}
+
+			// Update session
+			session.Set("title", data.Title)
+			session.Set("description", data.Description)
+			session.Set("public", data.Public)
+
+			if err := app.Dao().SaveRecord(session); err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to update session", err)
+			}
+
+			return c.JSON(http.StatusOK, map[string]any{
+				"id":          session.Id,
+				"name":        session.GetString("name"),
+				"title":       session.GetString("title"),
+				"description": session.GetString("description"),
+				"public":      session.GetBool("public"),
+				"created":     session.GetDateTime("created").Time().Format(time.RFC3339),
+				"updated":     session.GetDateTime("updated").Time().Format(time.RFC3339),
+			})
+		}, apis.RequireRecordAuth())
+
+		e.Router.DELETE("/api/sessions/:username/:name", func(c echo.Context) error {
+			record, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
+			if record == nil {
+				return apis.NewUnauthorizedError("Authentication required", nil)
+			}
+
+			username := c.PathParam("username")
+			sessionName := c.PathParam("name")
+
+			// Verify user matches authenticated user
+			if record.Username() != username {
+				return apis.NewForbiddenError("Cannot delete another user's sessions", nil)
+			}
+
+			session, err := findSessionByNameAndUser(app.Dao(), sessionName, record.Id)
+			if err != nil {
+				return apis.NewNotFoundError("Session not found", err)
+			}
+
+			if err := app.Dao().DeleteRecord(session); err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to delete session", err)
+			}
+
+			return c.JSON(http.StatusOK, map[string]any{
+				"message": "Session deleted successfully",
+			})
+		}, apis.RequireRecordAuth())
 
 		// Add JWT authentication endpoints
 		e.Router.POST("/api/login", func(c echo.Context) error {
@@ -408,7 +658,18 @@ func main() {
 			record.Set("altitude", c.QueryParam("altitude"))
 			record.Set("speed", c.QueryParam("speed"))
 			record.Set("heart_rate", c.QueryParam("heart_rate"))
-			record.Set("session", c.QueryParam("session"))
+			// Handle session - create if doesn't exist
+			sessionName := c.QueryParam("session")
+			record.Set("session", sessionName) // Keep backward compatibility
+			
+			if sessionName != "" {
+				session, err := findOrCreateSession(app.Dao(), sessionName, user)
+				if err != nil {
+					log.Printf("Warning: Failed to create/find session %s for user %s: %v", sessionName, user.Id, err)
+				} else if session != nil {
+					record.Set("session_id", session.Id)
+				}
+			}
 
 			if err := app.Dao().SaveRecord(record); err != nil {
 				return apis.NewApiError(http.StatusInternalServerError, "Failed to save tracking data", err)
@@ -461,7 +722,18 @@ func main() {
 			}
 			record.Set("speed", data.Properties.Speed)
 			record.Set("heart_rate", data.Properties.HeartRate)
-			record.Set("session", data.Properties.Session)
+			// Handle session - create if doesn't exist
+			sessionName := data.Properties.Session
+			record.Set("session", sessionName) // Keep backward compatibility
+			
+			if sessionName != "" {
+				session, err := findOrCreateSession(app.Dao(), sessionName, user)
+				if err != nil {
+					log.Printf("Warning: Failed to create/find session %s for user %s: %v", sessionName, user.Id, err)
+				} else if session != nil {
+					record.Set("session_id", session.Id)
+				}
+			}
 
 			if err := app.Dao().SaveRecord(record); err != nil {
 				return apis.NewApiError(http.StatusInternalServerError, "Failed to save tracking data", err)
@@ -484,6 +756,10 @@ func main() {
 
 		e.Router.GET("/profile", func(c echo.Context) error {
 			return c.File("public/profile.html")
+		})
+
+		e.Router.GET("/profile/sessions", func(c echo.Context) error {
+			return c.File("public/sessions.html")
 		})
 
 		e.Router.Static("/", "public")
@@ -571,4 +847,70 @@ func findUserByUsername(dao *daos.Dao, username string) (*models.Record, error) 
 		return nil, errors.New("username is missing")
 	}
 	return dao.FindFirstRecordByFilter("users", "username = {:username}", dbx.Params{"username": username})
+}
+
+func findSessionByNameAndUser(dao *daos.Dao, sessionName string, userId string) (*models.Record, error) {
+	if sessionName == "" || userId == "" {
+		return nil, errors.New("session name or user ID is missing")
+	}
+	return dao.FindFirstRecordByFilter("sessions", "name = {:name} && user = {:user}", 
+		dbx.Params{"name": sessionName, "user": userId})
+}
+
+func findOrCreateSession(dao *daos.Dao, sessionName string, user *models.Record) (*models.Record, error) {
+	if sessionName == "" {
+		return nil, nil // No session requested
+	}
+
+	// Try to find existing session
+	session, err := findSessionByNameAndUser(dao, sessionName, user.Id)
+	if err == nil {
+		return session, nil // Found existing session
+	}
+
+	// Create new session
+	sessionsCollection, err := dao.FindCollectionByNameOrId("sessions")
+	if err != nil {
+		return nil, fmt.Errorf("sessions collection not found: %v", err)
+	}
+
+	session = models.NewRecord(sessionsCollection)
+	session.Set("name", sessionName)
+	session.Set("user", user.Id)
+	session.Set("public", false)
+	
+	// Generate a nice title from the session name
+	title := generateSessionTitle(sessionName)
+	session.Set("title", title)
+	session.Set("description", "")
+
+	if err := dao.SaveRecord(session); err != nil {
+		return nil, fmt.Errorf("failed to create session: %v", err)
+	}
+
+	return session, nil
+}
+
+func generateSessionTitle(sessionName string) string {
+	if sessionName == "" {
+		return "Untitled Session"
+	}
+
+	// Convert snake_case and kebab-case to Title Case
+	words := strings.FieldsFunc(sessionName, func(c rune) bool {
+		return c == '_' || c == '-'
+	})
+
+	for i, word := range words {
+		if len(word) > 0 {
+			words[i] = strings.ToUpper(word[:1]) + strings.ToLower(word[1:])
+		}
+	}
+
+	title := strings.Join(words, " ")
+	if title == "" {
+		return "Untitled Session"
+	}
+
+	return title
 }

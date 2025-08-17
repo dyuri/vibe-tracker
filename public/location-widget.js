@@ -299,10 +299,11 @@ export default class LocationWidget extends HTMLElement {
   update(feature) {
     this.clear();
     if (feature && feature.properties) {
-      const { speed, heart_rate, timestamp, session } = feature.properties;
+      const { speed, heart_rate, timestamp, session, session_title } = feature.properties;
       const altitude = feature.geometry.coordinates[2];
+      const sessionDisplay = session_title && session_title !== session ? `${session_title} (${session})` : (session || "N/A");
       this.showProperty("Time", new Date(timestamp * 1000).toLocaleString());
-      this.showProperty("Session", session || "N/A");
+      this.showProperty("Session", sessionDisplay);
       this.showProperty("Altitude", `${altitude.toFixed(2)} m`);
       this.showProperty("Speed", `${speed.toFixed(2)} km/h`);
       this.showProperty("Heart Rate", `${heart_rate} bpm`);

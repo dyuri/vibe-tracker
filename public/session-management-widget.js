@@ -1,0 +1,611 @@
+export default class SessionManagementWidget extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this.user = null;
+    this.isAuthenticated = false;
+    this.sessions = [];
+    this.currentPage = 1;
+    this.perPage = 20;
+    this.totalPages = 1;
+    this.editingSession = null;
+    
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          font-family: var(--font-family-base, sans-serif);
+          display: block;
+          max-width: 800px;
+          margin: var(--spacing-lg) auto;
+        }
+        .not-authenticated {
+          text-align: center;
+          padding: var(--spacing-xxl);
+          background-color: var(--bg-secondary);
+          border-radius: var(--border-radius-md);
+          color: var(--text-muted);
+        }
+        .session-content {
+          display: none;
+        }
+        .session-content.show {
+          display: block;
+        }
+        .profile-section {
+          background-color: var(--bg-panel);
+          border: 1px solid var(--border-light);
+          border-radius: var(--border-radius-md);
+          padding: var(--spacing-lg);
+          margin-bottom: var(--spacing-lg);
+          box-shadow: var(--shadow-light);
+        }
+        .section-title {
+          font-size: var(--font-size-xlarge);
+          font-weight: var(--font-weight-bold);
+          margin-bottom: var(--spacing-md);
+          color: var(--text-primary);
+          border-bottom: 2px solid var(--color-primary);
+          padding-bottom: var(--spacing-xs);
+        }
+        .form-group {
+          margin-bottom: var(--spacing-md);
+        }
+        label {
+          display: block;
+          margin-bottom: var(--spacing-xs);
+          font-weight: var(--font-weight-bold);
+          color: var(--text-secondary);
+        }
+        input[type="text"], 
+        textarea {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius-sm);
+          box-sizing: border-box;
+          font-size: var(--font-size-base);
+          background-color: var(--bg-primary);
+          color: var(--text-primary);
+          font-family: var(--font-family-base);
+        }
+        textarea {
+          min-height: 80px;
+          resize: vertical;
+        }
+        .checkbox-group {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-xs);
+        }
+        input[type="checkbox"] {
+          width: auto;
+        }
+        button {
+          background-color: var(--color-primary);
+          color: var(--text-inverse);
+          border: none;
+          padding: var(--spacing-sm) var(--spacing-lg);
+          border-radius: var(--border-radius-sm);
+          cursor: pointer;
+          font-size: var(--font-size-base);
+          margin-right: var(--spacing-sm);
+          margin-bottom: var(--spacing-sm);
+        }
+        button:hover {
+          background-color: var(--color-primary-hover);
+        }
+        button:disabled {
+          background-color: var(--color-logged-out);
+          cursor: not-allowed;
+        }
+        .btn-danger {
+          background-color: var(--color-danger);
+        }
+        .btn-danger:hover {
+          background-color: var(--color-danger-hover);
+        }
+        .btn-secondary {
+          background-color: var(--color-logged-out);
+        }
+        .btn-secondary:hover {
+          background-color: var(--text-muted);
+        }
+        .error {
+          color: var(--color-danger);
+          font-size: var(--font-size-base);
+          margin-top: var(--spacing-xs);
+        }
+        .success {
+          color: var(--color-success);
+          font-size: var(--font-size-base);
+          margin-top: var(--spacing-xs);
+        }
+        .session-list {
+          margin-top: var(--spacing-lg);
+        }
+        .session-item {
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--border-light);
+          border-radius: var(--border-radius-sm);
+          padding: var(--spacing-md);
+          margin-bottom: var(--spacing-sm);
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+        }
+        .session-info {
+          flex: 1;
+        }
+        .session-name {
+          font-weight: var(--font-weight-bold);
+          color: var(--text-primary);
+          font-size: var(--font-size-large);
+          margin-bottom: var(--spacing-xs);
+        }
+        .session-title {
+          color: var(--text-secondary);
+          margin-bottom: var(--spacing-xs);
+        }
+        .session-meta {
+          font-size: var(--font-size-base);
+          color: var(--text-muted);
+          display: flex;
+          gap: var(--spacing-md);
+          flex-wrap: wrap;
+        }
+        .session-actions {
+          display: flex;
+          gap: var(--spacing-xs);
+          margin-left: var(--spacing-md);
+        }
+        .session-actions button {
+          padding: var(--spacing-xs) var(--spacing-sm);
+          font-size: var(--font-size-base);
+          margin: 0;
+        }
+        .pagination {
+          text-align: center;
+          margin-top: var(--spacing-lg);
+          padding: var(--spacing-md);
+        }
+        .pagination button {
+          margin: 0 var(--spacing-xs);
+        }
+        .pagination-info {
+          margin-bottom: var(--spacing-sm);
+          color: var(--text-muted);
+        }
+        .loading {
+          text-align: center;
+          padding: var(--spacing-lg);
+          color: var(--text-muted);
+        }
+        .empty-state {
+          text-align: center;
+          padding: var(--spacing-xxl);
+          color: var(--text-muted);
+          background-color: var(--bg-secondary);
+          border-radius: var(--border-radius-md);
+        }
+        .public-indicator {
+          background-color: var(--color-success);
+          color: var(--text-inverse);
+          padding: 2px 6px;
+          border-radius: var(--border-radius-sm);
+          font-size: 12px;
+          font-weight: var(--font-weight-bold);
+        }
+        .private-indicator {
+          background-color: var(--color-logged-out);
+          color: var(--text-inverse);
+          padding: 2px 6px;
+          border-radius: var(--border-radius-sm);
+          font-size: 12px;
+          font-weight: var(--font-weight-bold);
+        }
+      </style>
+      
+      <div class="not-authenticated" id="not-authenticated">
+        <h2>Please log in to manage your sessions</h2>
+        <p>You need to be logged in to create and manage your tracking sessions.</p>
+      </div>
+      
+      <div class="session-content" id="session-content">
+        <!-- Session Form Section -->
+        <div class="profile-section">
+          <div class="section-title" id="form-title">Create New Session</div>
+          
+          <form id="session-form">
+            <div class="form-group">
+              <label for="session-name">Session Name *</label>
+              <input type="text" id="session-name" placeholder="e.g., morning-run-2024" pattern="^[a-zA-Z0-9_-]+$" required>
+              <small style="color: var(--text-muted);">Only letters, numbers, hyphens, and underscores allowed</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="session-title">Session Title</label>
+              <input type="text" id="session-title" placeholder="e.g., Morning Run 2024">
+            </div>
+            
+            <div class="form-group">
+              <label for="session-description">Description</label>
+              <textarea id="session-description" placeholder="Optional description of this session..."></textarea>
+            </div>
+            
+            <div class="form-group">
+              <div class="checkbox-group">
+                <input type="checkbox" id="session-public">
+                <label for="session-public">Make this session public</label>
+              </div>
+              <small style="color: var(--text-muted);">Public sessions can be viewed by anyone</small>
+            </div>
+            
+            <button type="submit" id="submit-btn">Create Session</button>
+            <button type="button" id="cancel-btn" class="btn-secondary" style="display: none;">Cancel</button>
+            <div id="form-message"></div>
+          </form>
+        </div>
+        
+        <!-- Sessions List Section -->
+        <div class="profile-section">
+          <div class="section-title">Your Sessions</div>
+          
+          <div id="loading" class="loading" style="display: none;">
+            Loading sessions...
+          </div>
+          
+          <div id="empty-state" class="empty-state" style="display: none;">
+            <h3>No sessions yet</h3>
+            <p>Create your first session above to start organizing your tracking data.</p>
+          </div>
+          
+          <div class="session-list" id="session-list"></div>
+          
+          <div class="pagination" id="pagination" style="display: none;">
+            <div class="pagination-info" id="pagination-info"></div>
+            <button id="prev-btn" class="btn-secondary">← Previous</button>
+            <button id="next-btn" class="btn-secondary">Next →</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.setupElements();
+    this.setupEventListeners();
+    this.updateUI();
+
+    // Listen for auth changes
+    document.addEventListener('auth-change', (e) => {
+      this.isAuthenticated = e.detail.isAuthenticated;
+      this.user = e.detail.user;
+      this.updateUI();
+      if (this.isAuthenticated) {
+        this.loadSessions();
+      }
+    });
+  }
+
+  setupElements() {
+    // Auth state elements
+    this.notAuthenticated = this.shadowRoot.getElementById("not-authenticated");
+    this.sessionContent = this.shadowRoot.getElementById("session-content");
+    
+    // Form elements
+    this.formTitle = this.shadowRoot.getElementById("form-title");
+    this.sessionForm = this.shadowRoot.getElementById("session-form");
+    this.sessionNameInput = this.shadowRoot.getElementById("session-name");
+    this.sessionTitleInput = this.shadowRoot.getElementById("session-title");
+    this.sessionDescriptionInput = this.shadowRoot.getElementById("session-description");
+    this.sessionPublicInput = this.shadowRoot.getElementById("session-public");
+    this.submitBtn = this.shadowRoot.getElementById("submit-btn");
+    this.cancelBtn = this.shadowRoot.getElementById("cancel-btn");
+    this.formMessage = this.shadowRoot.getElementById("form-message");
+    
+    // List elements
+    this.loading = this.shadowRoot.getElementById("loading");
+    this.emptyState = this.shadowRoot.getElementById("empty-state");
+    this.sessionList = this.shadowRoot.getElementById("session-list");
+    this.pagination = this.shadowRoot.getElementById("pagination");
+    this.paginationInfo = this.shadowRoot.getElementById("pagination-info");
+    this.prevBtn = this.shadowRoot.getElementById("prev-btn");
+    this.nextBtn = this.shadowRoot.getElementById("next-btn");
+  }
+
+  setupEventListeners() {
+    this.sessionForm.addEventListener("submit", (e) => this.handleSubmit(e));
+    this.cancelBtn.addEventListener("click", () => this.cancelEdit());
+    this.prevBtn.addEventListener("click", () => this.previousPage());
+    this.nextBtn.addEventListener("click", () => this.nextPage());
+    
+    // Auto-generate title from name
+    this.sessionNameInput.addEventListener("input", () => {
+      if (!this.editingSession && this.sessionNameInput.value && !this.sessionTitleInput.value) {
+        this.sessionTitleInput.value = this.generateTitle(this.sessionNameInput.value);
+      }
+    });
+  }
+
+  connectedCallback() {
+    this.initializeAuthState();
+  }
+
+  initializeAuthState() {
+    if (window.authService) {
+      this.isAuthenticated = window.authService.isAuthenticated();
+      this.user = window.authService.user;
+      this.updateUI();
+      if (this.isAuthenticated) {
+        this.loadSessions();
+      }
+    } else {
+      setTimeout(() => this.initializeAuthState(), 10);
+    }
+  }
+
+  updateUI() {
+    if (this.isAuthenticated && this.user) {
+      this.notAuthenticated.style.display = "none";
+      this.sessionContent.classList.add("show");
+    } else {
+      this.notAuthenticated.style.display = "block";
+      this.sessionContent.classList.remove("show");
+    }
+  }
+
+  generateTitle(sessionName) {
+    if (!sessionName) return "";
+    
+    // Convert snake_case and kebab-case to Title Case
+    const words = sessionName.split(/[_-]+/);
+    return words.map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join(" ");
+  }
+
+  async loadSessions() {
+    if (!this.isAuthenticated || !this.user) return;
+    
+    this.loading.style.display = "block";
+    this.emptyState.style.display = "none";
+    this.sessionList.innerHTML = "";
+    this.pagination.style.display = "none";
+    
+    try {
+      const response = await fetch(`/api/sessions/${this.user.username}?page=${this.currentPage}&perPage=${this.perPage}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load sessions: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      this.sessions = data.sessions;
+      this.totalPages = data.totalPages;
+      
+      this.renderSessions();
+      this.updatePagination(data);
+      
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+      this.showMessage(this.formMessage, error.message || "Failed to load sessions", "error");
+    } finally {
+      this.loading.style.display = "none";
+    }
+  }
+
+  renderSessions() {
+    if (this.sessions.length === 0) {
+      this.emptyState.style.display = "block";
+      return;
+    }
+    
+    this.sessionList.innerHTML = this.sessions.map(session => `
+      <div class="session-item">
+        <div class="session-info">
+          <div class="session-name">${this.escapeHtml(session.name)}</div>
+          ${session.title ? `<div class="session-title">${this.escapeHtml(session.title)}</div>` : ''}
+          <div class="session-meta">
+            <span class="${session.public ? 'public-indicator' : 'private-indicator'}">
+              ${session.public ? 'Public' : 'Private'}
+            </span>
+            <span>Created: ${new Date(session.created).toLocaleDateString()}</span>
+            ${session.updated !== session.created ? `<span>Updated: ${new Date(session.updated).toLocaleDateString()}</span>` : ''}
+          </div>
+        </div>
+        <div class="session-actions">
+          <button onclick="this.getRootNode().host.editSession('${session.name}')">Edit</button>
+          <button class="btn-danger" onclick="this.getRootNode().host.deleteSession('${session.name}')">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  updatePagination(data) {
+    if (data.totalPages <= 1) {
+      this.pagination.style.display = "none";
+      return;
+    }
+    
+    this.pagination.style.display = "block";
+    this.paginationInfo.textContent = `Page ${data.page} of ${data.totalPages} (${data.totalItems} sessions)`;
+    this.prevBtn.disabled = data.page <= 1;
+    this.nextBtn.disabled = data.page >= data.totalPages;
+  }
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.loadSessions();
+    }
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.loadSessions();
+    }
+  }
+
+  async handleSubmit(e) {
+    e.preventDefault();
+    
+    const name = this.sessionNameInput.value.trim();
+    const title = this.sessionTitleInput.value.trim();
+    const description = this.sessionDescriptionInput.value.trim();
+    const isPublic = this.sessionPublicInput.checked;
+    
+    if (!name) {
+      this.showMessage(this.formMessage, "Session name is required", "error");
+      return;
+    }
+    
+    // Validate session name format
+    if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+      this.showMessage(this.formMessage, "Session name can only contain letters, numbers, hyphens, and underscores", "error");
+      return;
+    }
+    
+    this.submitBtn.disabled = true;
+    this.submitBtn.textContent = this.editingSession ? "Updating..." : "Creating...";
+    
+    try {
+      if (this.editingSession) {
+        await this.updateSession(name, { title, description, public: isPublic });
+      } else {
+        await this.createSession({ name, title, description, public: isPublic });
+      }
+      
+      this.resetForm();
+      this.loadSessions();
+      this.showMessage(this.formMessage, 
+        this.editingSession ? "Session updated successfully!" : "Session created successfully!", 
+        "success");
+        
+    } catch (error) {
+      this.showMessage(this.formMessage, error.message || "Failed to save session", "error");
+    } finally {
+      this.submitBtn.disabled = false;
+      this.submitBtn.textContent = this.editingSession ? "Update Session" : "Create Session";
+    }
+  }
+
+  async createSession(sessionData) {
+    const response = await fetch('/api/sessions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      },
+      body: JSON.stringify(sessionData)
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to create session');
+    }
+    
+    return response.json();
+  }
+
+  async updateSession(sessionName, sessionData) {
+    const response = await fetch(`/api/sessions/${this.user.username}/${sessionName}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      },
+      body: JSON.stringify(sessionData)
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to update session');
+    }
+    
+    return response.json();
+  }
+
+  async deleteSession(sessionName) {
+    if (!confirm(`Are you sure you want to delete the session "${sessionName}"? This action cannot be undone.`)) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/sessions/${this.user.username}/${sessionName}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to delete session');
+      }
+      
+      this.loadSessions();
+      this.showMessage(this.formMessage, "Session deleted successfully!", "success");
+      
+    } catch (error) {
+      this.showMessage(this.formMessage, error.message || "Failed to delete session", "error");
+    }
+  }
+
+  editSession(sessionName) {
+    const session = this.sessions.find(s => s.name === sessionName);
+    if (!session) return;
+    
+    this.editingSession = session;
+    this.formTitle.textContent = "Edit Session";
+    this.submitBtn.textContent = "Update Session";
+    this.cancelBtn.style.display = "inline-block";
+    
+    // Populate form with session data
+    this.sessionNameInput.value = session.name;
+    this.sessionNameInput.disabled = true; // Don't allow changing the name
+    this.sessionTitleInput.value = session.title || "";
+    this.sessionDescriptionInput.value = session.description || "";
+    this.sessionPublicInput.checked = session.public || false;
+    
+    // Scroll to form
+    this.sessionForm.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  cancelEdit() {
+    this.resetForm();
+  }
+
+  resetForm() {
+    this.editingSession = null;
+    this.formTitle.textContent = "Create New Session";
+    this.submitBtn.textContent = "Create Session";
+    this.cancelBtn.style.display = "none";
+    
+    this.sessionNameInput.disabled = false;
+    this.sessionForm.reset();
+    this.formMessage.textContent = "";
+    this.formMessage.className = "";
+  }
+
+  showMessage(element, message, type) {
+    element.textContent = message;
+    element.className = type;
+    
+    // Clear message after 5 seconds
+    setTimeout(() => {
+      element.textContent = "";
+      element.className = "";
+    }, 5000);
+  }
+
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+}
+
+customElements.define("session-management-widget", SessionManagementWidget);

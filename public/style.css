@@ -191,7 +191,8 @@ login-widget {
 }
 
 /* Profile page theme toggle positioning - bottom right */
-#profile-theme-toggle {
+#profile-theme-toggle,
+#sessions-theme-toggle {
   position: fixed;
   bottom: var(--spacing-sm);
   right: var(--spacing-sm);

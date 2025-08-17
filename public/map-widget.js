@@ -200,11 +200,12 @@ export default class MapWidget extends HTMLElement {
       });
 
       if (closestPoint) {
-        const { speed, heart_rate, timestamp, session } = closestPoint.properties;
+        const { speed, heart_rate, timestamp, session, session_title } = closestPoint.properties;
         const altitude = closestPoint.geometry.coordinates[2];
+        const sessionDisplay = session_title && session_title !== session ? `${session_title} (${session})` : (session || "N/A");
         const popupContent = `
               <b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>
-              <b>Session:</b> ${session || "N/A"}<br>
+              <b>Session:</b> ${sessionDisplay}<br>
               <b>Altitude:</b> ${altitude} m<br>
               <b>Speed:</b> ${speed} km/h<br>
               <b>Heart Rate:</b> ${heart_rate} bpm
@@ -220,10 +221,11 @@ export default class MapWidget extends HTMLElement {
     // Add only the latest point as a marker
     const [longitude, latitude, altitude] = latestPoint.geometry.coordinates;
     const marker = createMarker([latitude, longitude], latestPoint.properties);
-    const { speed, heart_rate, timestamp, session } = latestPoint.properties;
+    const { speed, heart_rate, timestamp, session, session_title } = latestPoint.properties;
+    const sessionDisplay = session_title && session_title !== session ? `${session_title} (${session})` : (session || "N/A");
     const popupContent = `
             <b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>
-            <b>Session:</b> ${session || "N/A"}<br>
+            <b>Session:</b> ${sessionDisplay}<br>
             <b>Altitude:</b> ${altitude} m<br>
             <b>Speed:</b> ${speed} km/h<br>
             <b>Heart Rate:</b> ${heart_rate} bpm
@@ -243,16 +245,17 @@ export default class MapWidget extends HTMLElement {
   displayPoint(data) {
     this.dataLayerGroup.clearLayers();
     const [longitude, latitude, altitude] = data.geometry.coordinates;
-    const { speed, heart_rate, timestamp, session } = data.properties;
+    const { speed, heart_rate, timestamp, session, session_title } = data.properties;
 
     if (!this.setViewFromUrlHash()) {
       this.map.setView([latitude, longitude], 15);
     }
+    const sessionDisplay = session_title && session_title !== session ? `${session_title} (${session})` : (session || "N/A");
     const marker = createMarker([latitude, longitude], data.properties)
       .bindPopup(
         `
             <b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>
-            <b>Session:</b> ${session || "N/A"}<br>
+            <b>Session:</b> ${sessionDisplay}<br>
             <b>Altitude:</b> ${altitude} m<br>
             <b>Speed:</b> ${speed} km/h<br>
             <b>Heart Rate:</b> ${heart_rate} bpm
