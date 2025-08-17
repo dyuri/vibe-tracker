@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -16,14 +17,24 @@ import (
 	"github.com/pocketbase/pocketbase/daos"
 	"github.com/pocketbase/pocketbase/forms"
 	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/models/schema"
+	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 	"github.com/pocketbase/pocketbase/tokens"
 	"github.com/pocketbase/pocketbase/tools/security"
 	"github.com/pocketbase/pocketbase/tools/types"
+
+	_ "vibe-tracker/migrations"
 )
 
 func main() {
 	app := pocketbase.New()
+
+	// Enable automigrate for development and production
+	automigrate := os.Getenv("PB_AUTOMIGRATE") != "false"
+
+	// Register migration command
+	migratecmd.MustRegister(app, app.RootCmd, migratecmd.Config{
+		Automigrate: automigrate,
+	})
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		e.Router.GET("/api/location/:username", func(c echo.Context) error {
@@ -157,14 +168,14 @@ func main() {
 					"heart_rate": record.GetFloat("heart_rate"),
 					"session":    record.GetString("session"),
 				}
-				
+
 				// Add username and avatar only for the latest point (last in array)
 				if i == len(records)-1 {
 					pointProperties["username"] = user.Username()
 					pointProperties["user_id"] = user.Id
 					pointProperties["avatar"] = user.GetString("avatar")
 				}
-				
+
 				pointFeature := map[string]interface{}{
 					"type": "Feature",
 					"geometry": map[string]interface{}{
@@ -328,7 +339,7 @@ func main() {
 
 			// Use PocketBase forms to handle file upload properly
 			form := forms.NewRecordUpsert(app, record)
-			
+
 			// Load the multipart form data
 			if err := form.LoadRequest(c.Request(), ""); err != nil {
 				return apis.NewBadRequestError("Failed to parse form data", err)
@@ -475,8 +486,6 @@ func main() {
 			return c.File("public/profile.html")
 		})
 
-		ensureUsersCollection(app.Dao())
-		ensureLocationsCollection(app.Dao())
 		e.Router.Static("/", "public")
 		return nil
 	})
@@ -562,171 +571,4 @@ func findUserByUsername(dao *daos.Dao, username string) (*models.Record, error) 
 		return nil, errors.New("username is missing")
 	}
 	return dao.FindFirstRecordByFilter("users", "username = {:username}", dbx.Params{"username": username})
-}
-
-func ensureUsersCollection(dao *daos.Dao) {
-	collection, err := dao.FindCollectionByNameOrId("users")
-	if err == nil && collection != nil {
-		modified := false
-
-		if collection.Schema.GetFieldByName("token") == nil {
-			// token field is missing, add it
-			tokenField := &schema.SchemaField{
-				Name:     "token",
-				Type:     schema.FieldTypeText,
-				Required: true,
-				Options: &schema.TextOptions{
-					Min:     types.Pointer(8),
-					Max:     types.Pointer(16),
-					Pattern: "^[a-zA-Z0-9]+$",
-				},
-			}
-			collection.Schema.AddField(tokenField)
-			modified = true
-		}
-
-		if collection.Schema.GetFieldByName("avatar") == nil {
-			// avatar field is missing, add it
-			avatarField := &schema.SchemaField{
-				Name:     "avatar",
-				Type:     schema.FieldTypeFile,
-				Required: false,
-				Options: &schema.FileOptions{
-					MaxSelect: 1,
-					MaxSize:   5242880, // 5MB in bytes
-					MimeTypes: []string{
-						"image/jpeg",
-						"image/png",
-						"image/svg+xml",
-						"image/gif",
-						"image/webp",
-					},
-				},
-			}
-			collection.Schema.AddField(avatarField)
-			modified = true
-		}
-
-		if modified {
-			if err := dao.SaveCollection(collection); err != nil {
-				log.Fatalf("Failed to update users collection: %v", err)
-			}
-		}
-		return // collection already exists
-	}
-
-	usersCollection := &models.Collection{
-		Name:       "users",
-		Type:       models.CollectionTypeAuth,
-		ListRule:   nil,
-		ViewRule:   nil,
-		CreateRule: nil,
-		UpdateRule: nil,
-		DeleteRule: nil,
-		Schema: schema.NewSchema(
-			&schema.SchemaField{
-				Name:     "token",
-				Type:     schema.FieldTypeText,
-				Required: true,
-				Options: &schema.TextOptions{
-					Min:     types.Pointer(8),
-					Max:     types.Pointer(16),
-					Pattern: "^[a-zA-Z0-9]+$",
-				},
-			},
-			&schema.SchemaField{
-				Name:     "avatar",
-				Type:     schema.FieldTypeFile,
-				Required: false,
-				Options: &schema.FileOptions{
-					MaxSelect: 1,
-					MaxSize:   5242880, // 5MB in bytes
-					MimeTypes: []string{
-						"image/jpeg",
-						"image/png",
-						"image/svg+xml",
-						"image/gif",
-						"image/webp",
-					},
-				},
-			},
-		),
-	}
-
-	if err := dao.SaveCollection(usersCollection); err != nil {
-		log.Fatalf("Failed to create users collection: %v", err)
-	}
-
-	// create a default user
-	user, err := dao.FindAuthRecordByEmail("users", "default")
-	if err != nil || user == nil {
-		user := &models.Record{}
-		user.RefreshId()
-		user.SetUsername("default")
-		user.Set("token", security.RandomString(12))
-		if err := dao.SaveRecord(user); err != nil {
-			log.Fatalf("Failed to create default user: %v", err)
-		}
-	}
-}
-
-func ensureLocationsCollection(dao *daos.Dao) {
-	collection, err := dao.FindCollectionByNameOrId("locations")
-	if err == nil && collection != nil {
-		// TODO: check for user field
-		return // collection already exists
-	}
-
-	newCollection := &models.Collection{
-		Name:       "locations",
-		Type:       models.CollectionTypeBase,
-		ListRule:   nil,
-		ViewRule:   nil,
-		CreateRule: nil,
-		UpdateRule: nil,
-		DeleteRule: nil,
-		Schema: schema.NewSchema(
-			&schema.SchemaField{
-				Name:     "user",
-				Type:     schema.FieldTypeText,
-				Required: true,
-			},
-			&schema.SchemaField{
-				Name:     "timestamp",
-				Type:     schema.FieldTypeDate,
-				Required: false,
-			},
-			&schema.SchemaField{
-				Name:     "latitude",
-				Type:     schema.FieldTypeNumber,
-				Required: true,
-			},
-			&schema.SchemaField{
-				Name:     "longitude",
-				Type:     schema.FieldTypeNumber,
-				Required: true,
-			},
-			&schema.SchemaField{
-				Name: "altitude",
-				Type: schema.FieldTypeNumber,
-			},
-			&schema.SchemaField{
-				Name: "speed",
-				Type: schema.FieldTypeNumber,
-			},
-			&schema.SchemaField{
-				Name: "heart_rate",
-				Type: schema.FieldTypeNumber,
-			},
-			&schema.SchemaField{
-				Name:     "session",
-				Type:     schema.FieldTypeText,
-				Required: false,
-			},
-		),
-	}
-
-	if err := dao.SaveCollection(newCollection); err != nil {
-		log.Fatalf("Failed to create locations collection: %v", err)
-	}
 }
