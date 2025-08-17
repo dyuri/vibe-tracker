@@ -160,7 +160,17 @@ export default class LocationWidget extends HTMLElement {
     const savedRefresh = localStorage.getItem("refresh-enabled");
     if (savedRefresh !== null) {
       refreshCheckbox.checked = savedRefresh === "true";
-      refreshCheckbox.dispatchEvent(new Event('change'));
+      // Dispatch the custom event that app.js listens for, with a small delay to ensure listeners are ready
+      if (refreshCheckbox.checked) {
+        setTimeout(() => {
+          const event = new CustomEvent("refresh-change", {
+            detail: { checked: true },
+            bubbles: true,
+            composed: true,
+          });
+          this.dispatchEvent(event);
+        }, 100);
+      }
     }
 
     const savedShowPosition = localStorage.getItem("show-position-enabled");

@@ -139,8 +139,11 @@ if (username) {
     locationWidget.update(e.detail);
   });
 
-
-  fetchData(true);
+  // Only do initial fetch if refresh is not already enabled (to avoid duplicate fetches)
+  const savedRefresh = localStorage.getItem("refresh-enabled");
+  if (savedRefresh !== "true") {
+    fetchData(true);
+  }
 } else {
   mapWidget.style.display = "none";
   errorMessage.style.display = "block";
