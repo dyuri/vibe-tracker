@@ -40,6 +40,7 @@ if (match) {
 }
 
 let refreshIntervalId = null;
+let latestTimestamp = null; // Track the latest timestamp for delta fetching
 
 // Initialize authentication
 document.addEventListener('auth-change', (e) => {
@@ -54,12 +55,17 @@ document.addEventListener('auth-change', (e) => {
   }
 });
 
-function fetchData(isInitialLoad = false) {
+function fetchData(isInitialLoad = false, useDelta = false) {
   let apiUrl;
   if (session) {
     apiUrl = `/api/session/${username}/${session}`;
   } else {
     apiUrl = `/api/session/${username}/_latest`;
+  }
+
+  // Add since parameter for delta fetching
+  if (useDelta && latestTimestamp) {
+    apiUrl += `?since=${latestTimestamp}`;
   }
 
   fetch(apiUrl)
@@ -70,7 +76,29 @@ function fetchData(isInitialLoad = false) {
       return response.json();
     })
     .then((data) => {
-      mapWidget.displayData(data);
+      if (useDelta && data.features && data.features.length === 0) {
+        // No new data, just return
+        return;
+      }
+
+      if (useDelta && data.features && data.features.length > 0) {
+        // Append new data to existing track
+        mapWidget.appendData(data);
+        // Update latest timestamp
+        const timestamps = data.features.map(f => f.properties.timestamp);
+        latestTimestamp = Math.max(...timestamps);
+      } else {
+        // Initial load or full refresh - display all data
+        mapWidget.displayData(data);
+        // Extract and store the latest timestamp
+        if (data.features && data.features.length > 0) {
+          const timestamps = data.features.map(f => f.properties.timestamp);
+          latestTimestamp = Math.max(...timestamps);
+        } else if (data.properties && data.properties.timestamp) {
+          // Single point data
+          latestTimestamp = data.properties.timestamp;
+        }
+      }
     })
     .catch((error) => {
       console.error(error);
@@ -82,11 +110,15 @@ function fetchData(isInitialLoad = false) {
     });
 }
 
+function fetchDeltaData() {
+  fetchData(false, true);
+}
+
 if (username) {
   locationWidget.addEventListener("refresh-change", (e) => {
     if (e.detail.checked) {
-      fetchData();
-      refreshIntervalId = setInterval(fetchData, 30000);
+      fetchData(); // Initial fetch
+      refreshIntervalId = setInterval(fetchDeltaData, 30000); // Use delta fetching for subsequent refreshes
     } else {
       if (refreshIntervalId) {
         clearInterval(refreshIntervalId);

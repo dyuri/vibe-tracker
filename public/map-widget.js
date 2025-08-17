@@ -62,6 +62,7 @@ export default class MapWidget extends HTMLElement {
     this.map = null;
     this.dataLayerGroup = null;
     this.currentPositionLayerGroup = null;
+    this.currentFeatureCollection = null; // Store current data for appending
     this.colorScale = [
       [0, 0, 255],    // Blue
       [0, 255, 0],    // Green
@@ -111,10 +112,43 @@ export default class MapWidget extends HTMLElement {
 
   displayData(data) {
     if (data.type === 'FeatureCollection') {
+      this.currentFeatureCollection = data; // Store current data
       this.displayFeatureCollection(data);
     } else {
+      this.currentFeatureCollection = null; // Single point mode
       this.displayPoint(data);
     }
+  }
+
+  appendData(newData) {
+    if (!this.currentFeatureCollection || !newData.features || newData.features.length === 0) {
+      return;
+    }
+
+    // Get the latest timestamp from existing data
+    const existingFeatures = this.currentFeatureCollection.features;
+    let latestExistingTimestamp = 0;
+    if (existingFeatures.length > 0) {
+      latestExistingTimestamp = Math.max(
+        ...existingFeatures.map(f => f.properties.timestamp)
+      );
+    }
+
+    // Filter new features to only include truly new ones (timestamp > latest existing)
+    const trulyNewFeatures = newData.features.filter(
+      feature => feature.properties.timestamp > latestExistingTimestamp
+    );
+
+    // Only proceed if we have truly new features
+    if (trulyNewFeatures.length === 0) {
+      return;
+    }
+
+    // Merge truly new features with existing ones
+    this.currentFeatureCollection.features.push(...trulyNewFeatures);
+    
+    // Re-render with the combined data
+    this.displayFeatureCollection(this.currentFeatureCollection);
   }
 
   displayFeatureCollection(data) {

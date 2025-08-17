@@ -112,13 +112,28 @@ func main() {
 				session = latestRecords[0].GetString("session")
 			}
 
+			// Build filter and params
+			filter := "user = {:user} && session = {:session}"
+			params := dbx.Params{"user": user.Id, "session": session}
+
+			// Add since parameter if provided for delta tracking
+			since := c.QueryParam("since")
+			if since != "" {
+				if sinceTimestamp, err := strconv.ParseInt(since, 10, 64); err == nil {
+					sinceTime := time.Unix(sinceTimestamp, 0)
+					sinceDateTime, _ := types.ParseDateTime(sinceTime)
+					filter += " && timestamp > {:since}"
+					params["since"] = sinceDateTime
+				}
+			}
+
 			records, err := app.Dao().FindRecordsByFilter(
 				"locations",
-				"user = {:user} && session = {:session}",
+				filter,
 				"timestamp", // Order by timestamp to ensure correct LineString order
 				0,           // No limit
 				0,           // No offset
-				dbx.Params{"user": user.Id, "session": session},
+				params,
 			)
 
 			if err != nil {
