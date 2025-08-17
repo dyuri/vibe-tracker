@@ -123,18 +123,19 @@ func main() {
 			}
 
 			if session == "_latest" {
-				latestRecords, err := app.Dao().FindRecordsByFilter(
-					"locations",
+				// Find the most recently created session for this user
+				latestSessions, err := app.Dao().FindRecordsByFilter(
+					"sessions",
 					"user = {:user}",
 					"-created",
 					1,
 					0,
 					dbx.Params{"user": user.Id},
 				)
-				if err != nil || len(latestRecords) == 0 {
-					return apis.NewNotFoundError("No location data found for this user", err)
+				if err != nil || len(latestSessions) == 0 {
+					return apis.NewNotFoundError("No sessions found for this user", err)
 				}
-				session = latestRecords[0].GetString("session")
+				session = latestSessions[0].GetString("name")
 			}
 
 			// Get session metadata if available
