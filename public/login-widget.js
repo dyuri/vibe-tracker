@@ -128,6 +128,34 @@ export default class LoginWidget extends HTMLElement {
         .logout-button:hover {
           background-color: var(--color-danger-hover);
         }
+        .nav-menu {
+          list-style: none;
+          padding: 0;
+          margin: 0 0 var(--spacing-md) 0;
+          display: flex;
+          flex-direction: column;
+          gap: var(--spacing-xs);
+        }
+        .nav-menu li {
+          margin: 0;
+        }
+        .nav-menu a {
+          display: block;
+          padding: var(--spacing-xs) var(--spacing-sm);
+          background-color: var(--bg-secondary);
+          color: var(--text-primary);
+          text-decoration: none;
+          border-radius: var(--border-radius-sm);
+          border: 1px solid var(--border-light);
+          transition: var(--transition-base);
+          font-size: var(--font-size-base);
+          text-align: center;
+        }
+        .nav-menu a:hover {
+          background-color: var(--color-primary);
+          color: var(--text-inverse);
+          border-color: var(--color-primary);
+        }
       </style>
       <div id="toggle-button" class="logged-out">
         <span class="initial-text">?</span>
@@ -151,6 +179,12 @@ export default class LoginWidget extends HTMLElement {
             <a href="/profile" class="username" id="user-name"></a>
             <div class="email" id="user-email"></div>
           </div>
+          <ul class="nav-menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/u/" id="nav-my-map">My Map</a></li>
+            <li><a href="/profile">Profile</a></li>
+            <li><a href="/profile/sessions">Sessions</a></li>
+          </ul>
           <button id="logout-button" class="logout-button">Logout</button>
         </div>
       </div>
@@ -283,6 +317,12 @@ export default class LoginWidget extends HTMLElement {
       
       this.userName.textContent = this.user.username || "User";
       this.userEmail.textContent = this.user.email || "";
+      
+      // Update navigation links
+      const navMyMap = this.shadowRoot.getElementById('nav-my-map');
+      if (navMyMap && this.user.username) {
+        navMyMap.href = `/u/${this.user.username}`;
+      }
     } else {
       // Logged out state
       this.toggleButton.classList.add("logged-out");

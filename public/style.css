@@ -177,12 +177,12 @@ login-widget {
   color: var(--text-inverse);
 }
 
-/* Profile login widget positioning */
+/* Profile login widget positioning - bottom right */
 .profile-container login-widget {
-  position: static;
-  display: block;
-  margin: 0 auto var(--spacing-lg) auto;
-  max-width: 400px;
+  position: fixed;
+  bottom: var(--spacing-sm);
+  right: var(--spacing-sm);
+  z-index: 1000;
 }
 
 /* Profile widget container */
@@ -190,12 +190,12 @@ login-widget {
   display: block;
 }
 
-/* Profile page theme toggle positioning - bottom right */
+/* Profile page theme toggle positioning - bottom left */
 #profile-theme-toggle,
 #sessions-theme-toggle {
   position: fixed;
   bottom: var(--spacing-sm);
-  right: var(--spacing-sm);
+  left: var(--spacing-sm);
   z-index: 1000;
 }
 
