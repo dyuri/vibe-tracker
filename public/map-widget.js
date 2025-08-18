@@ -56,6 +56,11 @@ export default class MapWidget extends HTMLElement {
         .leaflet-popup-close-button:hover {
           color: var(--text-primary) !important;
         }
+
+        /* Leaflet zoom controls positioning */
+        .leaflet-control-zoom {
+          margin-top: 80px !important;
+        }
       </style>
       <div id="map"></div>
     `;
@@ -159,85 +164,87 @@ export default class MapWidget extends HTMLElement {
       return;
     }
 
-    // Find min and max heart rate for color scaling
-    const heartRates = points.map((p) => p.properties.heart_rate).filter(hr => hr !== null && hr !== undefined);
-    const minHeartRate = Math.min(...heartRates);
-    const maxHeartRate = Math.max(...heartRates);
+    // Check if this is multi-user data (different usernames) or single-user track data
+    const usernames = [...new Set(points.map(p => p.properties.username).filter(u => u))];
+    const isMultiUser = usernames.length > 1;
 
-    // Create black outlines first
-    for (let i = 0; i < points.length - 1; i++) {
-      const startPoint = points[i];
-      const endPoint = points[i+1];
-      const outline = L.polyline([[startPoint.geometry.coordinates[1], startPoint.geometry.coordinates[0]], [endPoint.geometry.coordinates[1], endPoint.geometry.coordinates[0]]], { color: 'black', weight: 7 });
-      this.dataLayerGroup.addLayer(outline);
-    }
+    if (isMultiUser) {
+      // Multi-user mode: display individual markers for each user's location
+      points.forEach(point => {
+        const [longitude, latitude, altitude] = point.geometry.coordinates;
+        const { speed, heart_rate, timestamp, session, session_title, username } = point.properties;
+        
+        const marker = createMarker([latitude, longitude], point.properties);
+        const popupContent = this.createPopupContent(point.properties, point.geometry.coordinates);
+        marker.bindPopup(popupContent);
+        this.dataLayerGroup.addLayer(marker);
+      });
+    } else {
+      // Single-user track mode: display connected lines with heart rate coloring
+      // Find min and max heart rate for color scaling
+      const heartRates = points.map((p) => p.properties.heart_rate).filter(hr => hr !== null && hr !== undefined);
+      const minHeartRate = Math.min(...heartRates);
+      const maxHeartRate = Math.max(...heartRates);
 
-    // Create colored lines on top
-    for (let i = 0; i < points.length - 1; i++) {
-      const startPoint = points[i];
-      const endPoint = points[i+1];
-      const heartRate = startPoint.properties.heart_rate;
-      const color = this.getHeartRateColor(heartRate, minHeartRate, maxHeartRate);
-      const line = L.polyline([[startPoint.geometry.coordinates[1], startPoint.geometry.coordinates[0]], [endPoint.geometry.coordinates[1], endPoint.geometry.coordinates[0]]], { color: color, weight: 5 });
-      this.dataLayerGroup.addLayer(line);
-    }
+      // Create black outlines first
+      for (let i = 0; i < points.length - 1; i++) {
+        const startPoint = points[i];
+        const endPoint = points[i+1];
+        const outline = L.polyline([[startPoint.geometry.coordinates[1], startPoint.geometry.coordinates[0]], [endPoint.geometry.coordinates[1], endPoint.geometry.coordinates[0]]], { color: 'black', weight: 7 });
+        this.dataLayerGroup.addLayer(outline);
+      }
 
-    const latestPoint = points[points.length - 1];
+      // Create colored lines on top
+      for (let i = 0; i < points.length - 1; i++) {
+        const startPoint = points[i];
+        const endPoint = points[i+1];
+        const heartRate = startPoint.properties.heart_rate;
+        const color = this.getHeartRateColor(heartRate, minHeartRate, maxHeartRate);
+        const line = L.polyline([[startPoint.geometry.coordinates[1], startPoint.geometry.coordinates[0]], [endPoint.geometry.coordinates[1], endPoint.geometry.coordinates[0]]], { color: color, weight: 5 });
+        this.dataLayerGroup.addLayer(line);
+      }
 
-    // Create a transparent, clickable line
-    const clickableLine = L.polyline(points.map(p => [p.geometry.coordinates[1], p.geometry.coordinates[0]]), { opacity: 0, weight: 10 });
-    clickableLine.on('click', (e) => {
-      let closestPoint = null;
-      let minDistance = Infinity;
+      // Create a transparent, clickable line
+      const clickableLine = L.polyline(points.map(p => [p.geometry.coordinates[1], p.geometry.coordinates[0]]), { opacity: 0, weight: 10 });
+      clickableLine.on('click', (e) => {
+        let closestPoint = null;
+        let minDistance = Infinity;
 
-      points.forEach(p => {
-        const latlng = L.latLng(p.geometry.coordinates[1], p.geometry.coordinates[0]);
-        const distance = e.latlng.distanceTo(latlng);
-        if (distance < minDistance) {
-          minDistance = distance;
-          closestPoint = p;
+        points.forEach(p => {
+          const latlng = L.latLng(p.geometry.coordinates[1], p.geometry.coordinates[0]);
+          const distance = e.latlng.distanceTo(latlng);
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestPoint = p;
+          }
+        });
+
+        if (closestPoint) {
+          const popupContent = this.createPopupContent(closestPoint.properties, closestPoint.geometry.coordinates);
+          L.popup()
+            .setLatLng(e.latlng)
+            .setContent(popupContent)
+            .openOn(this.map);
         }
       });
+      this.dataLayerGroup.addLayer(clickableLine);
 
-      if (closestPoint) {
-        const { speed, heart_rate, timestamp, session, session_title } = closestPoint.properties;
-        const altitude = closestPoint.geometry.coordinates[2];
-        const sessionDisplay = session_title && session_title !== session ? `${session_title} (${session})` : (session || "N/A");
-        const popupContent = `
-              <b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>
-              <b>Session:</b> ${sessionDisplay}<br>
-              <b>Altitude:</b> ${altitude} m<br>
-              <b>Speed:</b> ${speed} km/h<br>
-              <b>Heart Rate:</b> ${heart_rate} bpm
-            `;
-        L.popup()
-          .setLatLng(e.latlng)
-          .setContent(popupContent)
-          .openOn(this.map);
-      }
-    });
-    this.dataLayerGroup.addLayer(clickableLine);
-
-    // Add only the latest point as a marker
-    const [longitude, latitude, altitude] = latestPoint.geometry.coordinates;
-    const marker = createMarker([latitude, longitude], latestPoint.properties);
-    const { speed, heart_rate, timestamp, session, session_title } = latestPoint.properties;
-    const sessionDisplay = session_title && session_title !== session ? `${session_title} (${session})` : (session || "N/A");
-    const popupContent = `
-            <b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>
-            <b>Session:</b> ${sessionDisplay}<br>
-            <b>Altitude:</b> ${altitude} m<br>
-            <b>Speed:</b> ${speed} km/h<br>
-            <b>Heart Rate:</b> ${heart_rate} bpm
-          `;
-    marker.bindPopup(popupContent);
-    this.dataLayerGroup.addLayer(marker);
+      // Add only the latest point as a marker
+      const latestPoint = points[points.length - 1];
+      const [longitude, latitude, altitude] = latestPoint.geometry.coordinates;
+      const marker = createMarker([latitude, longitude], latestPoint.properties);
+      const popupContent = this.createPopupContent(latestPoint.properties, latestPoint.geometry.coordinates);
+      marker.bindPopup(popupContent);
+      this.dataLayerGroup.addLayer(marker);
+    }
 
     if (!this.setViewFromUrlHash()) {
       this.map.fitBounds(L.geoJSON(data).getBounds());
     }
 
-    if (latestPoint) {
+    // For single-user mode, dispatch location update for the latest point
+    if (!isMultiUser && points.length > 0) {
+      const latestPoint = points[points.length - 1];
       this.dispatchEvent(new CustomEvent('location-update', { detail: latestPoint, bubbles: true, composed: true }));
     }
   }
@@ -245,22 +252,14 @@ export default class MapWidget extends HTMLElement {
   displayPoint(data) {
     this.dataLayerGroup.clearLayers();
     const [longitude, latitude, altitude] = data.geometry.coordinates;
-    const { speed, heart_rate, timestamp, session, session_title } = data.properties;
+    const { speed, heart_rate, timestamp, session, session_title, username } = data.properties;
 
     if (!this.setViewFromUrlHash()) {
       this.map.setView([latitude, longitude], 15);
     }
-    const sessionDisplay = session_title && session_title !== session ? `${session_title} (${session})` : (session || "N/A");
+    const popupContent = this.createPopupContent(data.properties, data.geometry.coordinates);
     const marker = createMarker([latitude, longitude], data.properties)
-      .bindPopup(
-        `
-            <b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>
-            <b>Session:</b> ${sessionDisplay}<br>
-            <b>Altitude:</b> ${altitude} m<br>
-            <b>Speed:</b> ${speed} km/h<br>
-            <b>Heart Rate:</b> ${heart_rate} bpm
-        `,
-      )
+      .bindPopup(popupContent)
       .openPopup();
     this.dataLayerGroup.addLayer(marker);
 
@@ -293,6 +292,24 @@ export default class MapWidget extends HTMLElement {
     const b = Math.round(color1[2] + (color2[2] - color1[2]) * localRatio);
 
     return [r, g, b];
+  }
+
+  createPopupContent(properties, coordinates) {
+    const { speed, heart_rate, timestamp, session, session_title, username } = properties;
+    const altitude = coordinates[2];
+    
+    const sessionDisplay = session_title && session_title !== session ? `${session_title} (${session})` : (session || "N/A");
+    const sessionLink = session && username ? `<a href="/u/${username}/s/${session}" style="color: var(--color-primary); text-decoration: none;">${sessionDisplay}</a>` : sessionDisplay;
+    
+    const userLine = username ? `<b>User:</b> <a href="/u/${username}" style="color: var(--color-primary); text-decoration: none;">${username}</a><br>` : '';
+    
+    return `
+      ${userLine}<b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>
+      <b>Session:</b> ${sessionLink}<br>
+      <b>Altitude:</b> ${altitude} m<br>
+      <b>Speed:</b> ${speed} km/h<br>
+      <b>Heart Rate:</b> ${heart_rate} bpm
+    `;
   }
 
   showCurrentPosition(coords) {

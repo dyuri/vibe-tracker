@@ -72,7 +72,7 @@ func main() {
 
 			// Construct GeoJSON response
 			timestamp := latestRecord.GetDateTime("timestamp").Time()
-			
+
 			// Get session metadata if available
 			sessionName := latestRecord.GetString("session")
 			sessionTitle := sessionName // fallback to session name
@@ -83,7 +83,7 @@ func main() {
 					}
 				}
 			}
-			
+
 			response := map[string]any{
 				"type": "Feature",
 				"geometry": map[string]any{
@@ -108,6 +108,86 @@ func main() {
 					"start": timestamp.Format(time.RFC3339),
 					"type":  "Instant",
 				},
+			}
+
+			return c.JSON(http.StatusOK, response)
+		})
+
+		e.Router.GET("/api/public-locations", func(c echo.Context) error {
+			// Get all users
+			users, err := app.Dao().FindRecordsByFilter("users", "id != ''", "", 0, 0, nil)
+			if err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to fetch users", err)
+			}
+
+			var features []interface{}
+
+			// For each user, find their latest public session and location
+			for _, user := range users {
+				// Get latest public session for this user
+				publicSessions, err := app.Dao().FindRecordsByFilter(
+					"sessions",
+					"user = {:user} && public = true",
+					"-created", // Order by newest first
+					1,          // Limit to 1
+					0,
+					dbx.Params{"user": user.Id},
+				)
+
+				if err != nil || len(publicSessions) == 0 {
+					continue // Skip users with no public sessions
+				}
+
+				latestPublicSession := publicSessions[0]
+				sessionName := latestPublicSession.GetString("name")
+
+				// Get latest location for this session
+				locations, err := app.Dao().FindRecordsByFilter(
+					"locations",
+					"user = {:user} && session = {:session}",
+					"-timestamp", // Order by newest first
+					1,            // Limit to 1
+					0,
+					dbx.Params{"user": user.Id, "session": sessionName},
+				)
+
+				if err != nil || len(locations) == 0 {
+					continue // Skip sessions with no locations
+				}
+
+				latestLocation := locations[0]
+				timestamp := latestLocation.GetDateTime("timestamp").Time()
+
+				// Create GeoJSON feature for this user's latest location
+				feature := map[string]interface{}{
+					"type": "Feature",
+					"geometry": map[string]interface{}{
+						"type": "Point",
+						"coordinates": []float64{
+							latestLocation.GetFloat("longitude"),
+							latestLocation.GetFloat("latitude"),
+							latestLocation.GetFloat("altitude"),
+						},
+					},
+					"properties": map[string]interface{}{
+						"timestamp":     timestamp.Unix(),
+						"speed":         latestLocation.GetFloat("speed"),
+						"heart_rate":    latestLocation.GetFloat("heart_rate"),
+						"session":       sessionName,
+						"session_title": latestPublicSession.GetString("title"),
+						"username":      user.Username(),
+						"user_id":       user.Id,
+						"avatar":        user.GetString("avatar"),
+					},
+				}
+
+				features = append(features, feature)
+			}
+
+			// Return GeoJSON FeatureCollection
+			response := map[string]interface{}{
+				"type":     "FeatureCollection",
+				"features": features,
 			}
 
 			return c.JSON(http.StatusOK, response)
@@ -281,11 +361,11 @@ func main() {
 			totalPages := (int(totalSessions) + perPage - 1) / perPage
 
 			return c.JSON(http.StatusOK, map[string]any{
-				"sessions":    sessionList,
-				"page":        page,
-				"perPage":     perPage,
-				"totalItems":  totalSessions,
-				"totalPages":  totalPages,
+				"sessions":   sessionList,
+				"page":       page,
+				"perPage":    perPage,
+				"totalItems": totalSessions,
+				"totalPages": totalPages,
 			})
 		})
 
@@ -662,7 +742,7 @@ func main() {
 			// Handle session - create if doesn't exist
 			sessionName := c.QueryParam("session")
 			record.Set("session", sessionName) // Keep backward compatibility
-			
+
 			if sessionName != "" {
 				session, err := findOrCreateSession(app.Dao(), sessionName, user)
 				if err != nil {
@@ -726,7 +806,7 @@ func main() {
 			// Handle session - create if doesn't exist
 			sessionName := data.Properties.Session
 			record.Set("session", sessionName) // Keep backward compatibility
-			
+
 			if sessionName != "" {
 				session, err := findOrCreateSession(app.Dao(), sessionName, user)
 				if err != nil {
@@ -854,7 +934,7 @@ func findSessionByNameAndUser(dao *daos.Dao, sessionName string, userId string) 
 	if sessionName == "" || userId == "" {
 		return nil, errors.New("session name or user ID is missing")
 	}
-	return dao.FindFirstRecordByFilter("sessions", "name = {:name} && user = {:user}", 
+	return dao.FindFirstRecordByFilter("sessions", "name = {:name} && user = {:user}",
 		dbx.Params{"name": sessionName, "user": userId})
 }
 
@@ -879,7 +959,7 @@ func findOrCreateSession(dao *daos.Dao, sessionName string, user *models.Record)
 	session.Set("name", sessionName)
 	session.Set("user", user.Id)
 	session.Set("public", false)
-	
+
 	// Generate a nice title from the session name
 	title := generateSessionTitle(sessionName)
 	session.Set("title", title)

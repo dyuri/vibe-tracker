@@ -22,6 +22,10 @@ const mapWidget = document.querySelector('map-widget');
 const errorMessage = document.getElementById("error-message");
 const locationWidget = document.querySelector("location-widget");
 const loginWidget = document.querySelector("login-widget");
+const pageHeader = document.getElementById("page-header");
+const pageTitle = document.getElementById("page-title");
+const pageSubtitle = document.getElementById("page-subtitle");
+const content = document.getElementById("content");
 
 let username, session;
 
@@ -42,6 +46,28 @@ if (match) {
 let refreshIntervalId = null;
 let latestTimestamp = null; // Track the latest timestamp for delta fetching
 
+function updatePageHeader() {
+  if (!username) {
+    // Public locations view
+    document.title = "Vibe Tracker - Public Locations";
+    pageTitle.textContent = "Public Locations";
+    pageSubtitle.textContent = "Latest locations from users with public sessions";
+    pageHeader.style.display = "block";
+  } else if (session && session !== "_latest") {
+    // Specific session view
+    document.title = `Vibe Tracker - ${username}/${session}`;
+    pageTitle.textContent = `${username} - ${session}`;
+    pageSubtitle.textContent = "Session tracking data";
+    pageHeader.style.display = "block";
+  } else {
+    // User's latest session view
+    document.title = `Vibe Tracker - ${username}`;
+    pageTitle.textContent = username;
+    pageSubtitle.textContent = "Latest session tracking";
+    pageHeader.style.display = "block";
+  }
+}
+
 // Initialize authentication
 document.addEventListener('auth-change', (e) => {
   console.log('Auth state changed:', e.detail);
@@ -57,31 +83,39 @@ document.addEventListener('auth-change', (e) => {
 
 function fetchData(isInitialLoad = false, useDelta = false) {
   let apiUrl;
-  if (session) {
+  
+  if (!username) {
+    // No username provided - fetch public locations
+    apiUrl = `/api/public-locations`;
+  } else if (session) {
     apiUrl = `/api/session/${username}/${session}`;
   } else {
     apiUrl = `/api/session/${username}/_latest`;
   }
 
-  // Add since parameter for delta fetching
-  if (useDelta && latestTimestamp) {
+  // Add since parameter for delta fetching (only for user-specific views)
+  if (username && useDelta && latestTimestamp) {
     apiUrl += `?since=${latestTimestamp}`;
   }
 
   fetch(apiUrl)
     .then((response) => {
       if (!response.ok) {
-        throw new Error("User not found or no location data available.");
+        if (!username) {
+          throw new Error("No public location data available.");
+        } else {
+          throw new Error("User not found or no location data available.");
+        }
       }
       return response.json();
     })
     .then((data) => {
-      if (useDelta && data.features && data.features.length === 0) {
+      if (username && useDelta && data.features && data.features.length === 0) {
         // No new data, just return
         return;
       }
 
-      if (useDelta && data.features && data.features.length > 0) {
+      if (username && useDelta && data.features && data.features.length > 0) {
         // Append new data to existing track
         mapWidget.appendData(data);
         // Update latest timestamp
@@ -90,11 +124,11 @@ function fetchData(isInitialLoad = false, useDelta = false) {
       } else {
         // Initial load or full refresh - display all data
         mapWidget.displayData(data);
-        // Extract and store the latest timestamp
-        if (data.features && data.features.length > 0) {
+        // Extract and store the latest timestamp (only for user-specific views)
+        if (username && data.features && data.features.length > 0) {
           const timestamps = data.features.map(f => f.properties.timestamp);
           latestTimestamp = Math.max(...timestamps);
-        } else if (data.properties && data.properties.timestamp) {
+        } else if (username && data.properties && data.properties.timestamp) {
           // Single point data
           latestTimestamp = data.properties.timestamp;
         }
@@ -114,7 +148,11 @@ function fetchDeltaData() {
   fetchData(false, true);
 }
 
+// Update the page header based on the current view
+updatePageHeader();
+
 if (username) {
+  // User-specific view - enable all features
   locationWidget.addEventListener("refresh-change", (e) => {
     if (e.detail.checked) {
       fetchData(); // Initial fetch
@@ -145,8 +183,13 @@ if (username) {
     fetchData(true);
   }
 } else {
-  mapWidget.style.display = "none";
-  errorMessage.style.display = "block";
-  errorMessage.textContent =
-    "Username not provided. Use the format /u/your_username or ?username=your_username in the URL.";
+  // Public locations view - limited features
+  // Hide location widget controls since we're not tracking a specific user
+  locationWidget.style.display = "none";
+  
+  // Do initial fetch of public locations
+  fetchData(true);
+  
+  // Set up periodic refresh for public view (every 5 minutes)
+  refreshIntervalId = setInterval(() => fetchData(false, false), 5 * 60 * 1000);
 }
