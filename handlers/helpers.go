@@ -12,6 +12,8 @@ import (
 	"github.com/pocketbase/pocketbase/daos"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tools/security"
+	
+	"vibe-tracker/utils"
 )
 
 func authenticateTrackRequest(c echo.Context, app *pocketbase.PocketBase) (*models.Record, error) {
@@ -134,26 +136,7 @@ func findOrCreateSession(dao *daos.Dao, sessionName string, user *models.Record)
 	return session, nil
 }
 
+// GenerateSessionTitle is deprecated, use utils.GenerateSessionTitle instead
 func GenerateSessionTitle(sessionName string) string {
-	if sessionName == "" {
-		return "Untitled Session"
-	}
-
-	// Convert snake_case and kebab-case to Title Case
-	words := strings.FieldsFunc(sessionName, func(c rune) bool {
-		return c == '_' || c == '-'
-	})
-
-	for i, word := range words {
-		if len(word) > 0 {
-			words[i] = strings.ToUpper(word[:1]) + strings.ToLower(word[1:])
-		}
-	}
-
-	title := strings.Join(words, " ")
-	if title == "" {
-		return "Untitled Session"
-	}
-
-	return title
+	return utils.GenerateSessionTitle(sessionName)
 }

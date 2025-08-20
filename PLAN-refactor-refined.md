@@ -47,13 +47,17 @@
 - ✅ Updated auth handlers to use new models (Login, UpdateProfile)
 - ✅ Verified all tests still pass with new models
 
-## 6. Services Layer
-- Move business logic to `services/`:
-  - `auth_service.go` (auth, token management)
-  - `session_service.go` (session logic)
-  - `location_service.go` (tracking, GeoJSON)
-  - `user_service.go` (user operations)
-- Services should use repositories for DB access.
+## ✅ 6. Services Layer - COMPLETED
+- ✅ Move business logic to `services/`:
+  - ✅ `auth_service.go` (authentication, token management, profile updates)
+  - ✅ `session_service.go` (session CRUD, pagination, validation)
+  - ✅ `location_service.go` (tracking, GeoJSON conversion, public locations)
+  - ✅ `user_service.go` (user operations, ownership validation)
+- ✅ Created `utils/session_utils.go` for shared utilities (GenerateSessionTitle)
+- ✅ Updated auth handlers to use services (Login, UpdateProfile)
+- ✅ Resolved import cycle between handlers and services
+- ✅ Comprehensive error handling with custom error types
+- ✅ All tests passing with services integration
 
 ## 7. Repository Layer
 - Abstract DB operations in `repositories/`:

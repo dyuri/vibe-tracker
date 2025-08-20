@@ -13,14 +13,19 @@ import (
 	"github.com/pocketbase/pocketbase/tools/security"
 	
 	appmodels "vibe-tracker/models"
+	"vibe-tracker/services"
 )
 
 type AuthHandler struct {
-	app *pocketbase.PocketBase
+	app         *pocketbase.PocketBase
+	authService *services.AuthService
 }
 
 func NewAuthHandler(app *pocketbase.PocketBase) *AuthHandler {
-	return &AuthHandler{app: app}
+	return &AuthHandler{
+		app:         app,
+		authService: services.NewAuthService(app),
+	}
 }
 
 func (h *AuthHandler) Login(c echo.Context) error {
@@ -29,33 +34,14 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		return apis.NewBadRequestError("Invalid request data", err)
 	}
 
-	// Find user by email
-	record, err := h.app.Dao().FindAuthRecordByEmail("users", req.Email)
+	response, err := h.authService.Login(req)
 	if err != nil {
-		return apis.NewUnauthorizedError("Invalid credentials", err)
+		if authErr, ok := err.(*services.AuthError); ok {
+			return apis.NewUnauthorizedError(authErr.Message, err)
+		}
+		return apis.NewApiError(http.StatusInternalServerError, "Failed to authenticate", err)
 	}
 
-	// Validate password
-	if !record.ValidatePassword(req.Password) {
-		return apis.NewUnauthorizedError("Invalid credentials", nil)
-	}
-
-	// Generate auth token
-	token, err := tokens.NewRecordAuthToken(h.app, record)
-	if err != nil {
-		return apis.NewApiError(http.StatusInternalServerError, "Failed to generate token", err)
-	}
-
-	response := appmodels.LoginResponse{
-		Token: token,
-		User: appmodels.User{
-			ID:       record.Id,
-			Username: record.Username(),
-			Email:    record.Email(),
-			Avatar:   record.GetString("avatar"),
-		},
-	}
-	
 	return c.JSON(http.StatusOK, response)
 }
 
@@ -117,28 +103,11 @@ func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 		return apis.NewBadRequestError("Invalid request data", err)
 	}
 
-	// Update username if provided
-	if req.Username != "" && req.Username != record.Username() {
-		record.SetUsername(req.Username)
-	}
-
-	// Update email if provided
-	if req.Email != "" && req.Email != record.Email() {
-		record.SetEmail(req.Email)
-	}
-
-	// Update password if provided
-	if req.Password != "" {
-		if req.OldPassword == "" {
-			return apis.NewBadRequestError("Old password required to set new password", nil)
+	err := h.authService.UpdateProfile(record, req)
+	if err != nil {
+		if authErr, ok := err.(*services.AuthError); ok {
+			return apis.NewBadRequestError(authErr.Message, err)
 		}
-		if !record.ValidatePassword(req.OldPassword) {
-			return apis.NewBadRequestError("Invalid old password", nil)
-		}
-		record.SetPassword(req.Password)
-	}
-
-	if err := h.app.Dao().SaveRecord(record); err != nil {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to update profile", err)
 	}
 
