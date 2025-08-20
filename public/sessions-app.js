@@ -38,16 +38,7 @@ document.addEventListener('auth-change', (e) => {
   }
 });
 
-// Initialize the app
-document.addEventListener('DOMContentLoaded', function() {
-  // Set up theme
-  const themeToggle = document.getElementById('sessions-theme-toggle');
-  if (themeToggle) {
-    // Apply saved theme
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-  }
-});
+
 
 // Dispatch initial auth state to ensure all widgets are properly initialized
 // This fixes the issue where widgets don't get the initial auth state on page reload

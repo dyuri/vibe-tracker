@@ -185,7 +185,7 @@ func migrateExistingSessionData(dao *daos.Dao) error {
 		sessionRecord.Set("description", "")
 
 		if err := dao.SaveRecord(sessionRecord); err != nil {
-			log.Printf("Warning: Failed to create session record for user %s, session %s: %v", 
+			log.Printf("Warning: Failed to create session record for user %s, session %s: %v",
 				sessionData.User, sessionData.Session, err)
 			// Continue with other sessions instead of failing completely
 		}
@@ -235,8 +235,8 @@ func addSessionRelationToLocations(dao *daos.Dao) error {
 
 func updateLocationSessionReferences(dao *daos.Dao) error {
 	// Get all locations that have a session but no session_id
-	locations, err := dao.FindRecordsByFilter("locations", 
-		"session != '' && session != null && session_id = null", 
+	locations, err := dao.FindRecordsByFilter("locations",
+		"session != '' && session != null && session_id = null",
 		"", 0, 0)
 
 	if err != nil {
