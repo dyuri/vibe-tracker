@@ -21,10 +21,10 @@ func NewSessionHandler(app *pocketbase.PocketBase) *SessionHandler {
 }
 
 func (h *SessionHandler) ListSessions(c echo.Context) error {
-	username := c.PathParam("username")
-	user, err := findUserByUsername(h.app.Dao(), username)
-	if err != nil {
-		return apis.NewNotFoundError("User not found", err)
+	// Get user from middleware context
+	user, exists := GetRequestUser(c)
+	if !exists {
+		return apis.NewNotFoundError("User not found", nil)
 	}
 
 	// Parse pagination parameters

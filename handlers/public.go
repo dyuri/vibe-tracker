@@ -21,10 +21,10 @@ func NewPublicHandler(app *pocketbase.PocketBase) *PublicHandler {
 }
 
 func (h *PublicHandler) GetLocation(c echo.Context) error {
-	username := c.PathParam("username")
-	user, err := findUserByUsername(h.app.Dao(), username)
-	if err != nil {
-		return apis.NewNotFoundError("User not found", err)
+	// Get user from middleware context
+	user, exists := GetRequestUser(c)
+	if !exists {
+		return apis.NewNotFoundError("User not found", nil)
 	}
 
 	filter := "user = {:user}"
@@ -175,13 +175,13 @@ func (h *PublicHandler) GetPublicLocations(c echo.Context) error {
 }
 
 func (h *PublicHandler) GetSessionData(c echo.Context) error {
-	username := c.PathParam("username")
-	session := c.PathParam("session")
-
-	user, err := findUserByUsername(h.app.Dao(), username)
-	if err != nil {
-		return apis.NewNotFoundError("User not found", err)
+	// Get user from middleware context
+	user, exists := GetRequestUser(c)
+	if !exists {
+		return apis.NewNotFoundError("User not found", nil)
 	}
+
+	session := c.PathParam("session")
 
 	if session == "_latest" {
 		// Find the most recently created session for this user

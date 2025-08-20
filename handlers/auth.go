@@ -91,8 +91,9 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 }
 
 func (h *AuthHandler) GetMe(c echo.Context) error {
-	info, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
-	if info == nil {
+	// Get authenticated user from middleware context
+	info, exists := GetAuthUser(c)
+	if !exists {
 		return apis.NewUnauthorizedError("Authentication required", nil)
 	}
 

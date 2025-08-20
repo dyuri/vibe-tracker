@@ -22,9 +22,10 @@ func NewTrackingHandler(app *pocketbase.PocketBase) *TrackingHandler {
 }
 
 func (h *TrackingHandler) TrackLocationGET(c echo.Context) error {
-	user, err := authenticateTrackRequest(c, h.app)
-	if err != nil {
-		return apis.NewUnauthorizedError("Invalid authentication", err)
+	// Get authenticated user from middleware context
+	user, exists := GetAuthUser(c)
+	if !exists {
+		return apis.NewUnauthorizedError("Authentication required", nil)
 	}
 
 	collection, err := h.app.Dao().FindCollectionByNameOrId("locations")
@@ -67,9 +68,10 @@ func (h *TrackingHandler) TrackLocationGET(c echo.Context) error {
 }
 
 func (h *TrackingHandler) TrackLocationPOST(c echo.Context) error {
-	user, err := authenticateTrackRequest(c, h.app)
-	if err != nil {
-		return apis.NewUnauthorizedError("Invalid authentication", err)
+	// Get authenticated user from middleware context
+	user, exists := GetAuthUser(c)
+	if !exists {
+		return apis.NewUnauthorizedError("Authentication required", nil)
 	}
 
 	var data struct {
