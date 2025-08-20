@@ -11,6 +11,8 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tokens"
 	"github.com/pocketbase/pocketbase/tools/security"
+	
+	appmodels "vibe-tracker/models"
 )
 
 type AuthHandler struct {
@@ -22,23 +24,19 @@ func NewAuthHandler(app *pocketbase.PocketBase) *AuthHandler {
 }
 
 func (h *AuthHandler) Login(c echo.Context) error {
-	data := struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}{}
-
-	if err := c.Bind(&data); err != nil {
+	var req appmodels.LoginRequest
+	if err := c.Bind(&req); err != nil {
 		return apis.NewBadRequestError("Invalid request data", err)
 	}
 
 	// Find user by email
-	record, err := h.app.Dao().FindAuthRecordByEmail("users", data.Email)
+	record, err := h.app.Dao().FindAuthRecordByEmail("users", req.Email)
 	if err != nil {
 		return apis.NewUnauthorizedError("Invalid credentials", err)
 	}
 
 	// Validate password
-	if !record.ValidatePassword(data.Password) {
+	if !record.ValidatePassword(req.Password) {
 		return apis.NewUnauthorizedError("Invalid credentials", nil)
 	}
 
@@ -48,15 +46,17 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to generate token", err)
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
-		"token": token,
-		"user": map[string]any{
-			"id":       record.Id,
-			"username": record.Username(),
-			"email":    record.Email(),
-			"avatar":   record.GetString("avatar"),
+	response := appmodels.LoginResponse{
+		Token: token,
+		User: appmodels.User{
+			ID:       record.Id,
+			Username: record.Username(),
+			Email:    record.Email(),
+			Avatar:   record.GetString("avatar"),
 		},
-	})
+	}
+	
+	return c.JSON(http.StatusOK, response)
 }
 
 func (h *AuthHandler) RefreshToken(c echo.Context) error {
@@ -112,36 +112,30 @@ func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 		return apis.NewUnauthorizedError("Authentication required", nil)
 	}
 
-	data := struct {
-		Username    string `json:"username"`
-		Email       string `json:"email"`
-		Password    string `json:"password"`
-		OldPassword string `json:"oldPassword"`
-	}{}
-
-	if err := c.Bind(&data); err != nil {
+	var req appmodels.UpdateProfileRequest
+	if err := c.Bind(&req); err != nil {
 		return apis.NewBadRequestError("Invalid request data", err)
 	}
 
 	// Update username if provided
-	if data.Username != "" && data.Username != record.Username() {
-		record.SetUsername(data.Username)
+	if req.Username != "" && req.Username != record.Username() {
+		record.SetUsername(req.Username)
 	}
 
 	// Update email if provided
-	if data.Email != "" && data.Email != record.Email() {
-		record.SetEmail(data.Email)
+	if req.Email != "" && req.Email != record.Email() {
+		record.SetEmail(req.Email)
 	}
 
 	// Update password if provided
-	if data.Password != "" {
-		if data.OldPassword == "" {
+	if req.Password != "" {
+		if req.OldPassword == "" {
 			return apis.NewBadRequestError("Old password required to set new password", nil)
 		}
-		if !record.ValidatePassword(data.OldPassword) {
+		if !record.ValidatePassword(req.OldPassword) {
 			return apis.NewBadRequestError("Invalid old password", nil)
 		}
-		record.SetPassword(data.Password)
+		record.SetPassword(req.Password)
 	}
 
 	if err := h.app.Dao().SaveRecord(record); err != nil {
