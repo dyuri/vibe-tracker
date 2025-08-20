@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v5"
+	"vibe-tracker/handlers"
 )
 
 // Test utility functions from main.go
@@ -30,7 +31,7 @@ func TestGenerateSessionTitle(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("Input: %s", test.input), func(t *testing.T) {
-			result := generateSessionTitle(test.input)
+			result := handlers.GenerateSessionTitle(test.input)
 			if result != test.expected {
 				t.Errorf("Expected '%s', got '%s'", test.expected, result)
 			}
@@ -535,6 +536,6 @@ func BenchmarkMakeTestRequest(b *testing.B) {
 
 func BenchmarkGenerateSessionTitle(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_ = generateSessionTitle("test_session_name")
+		_ = handlers.GenerateSessionTitle("test_session_name")
 	}
 }
