@@ -4,36 +4,37 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tools/types"
-	"github.com/pocketbase/dbx"
 	
 	appmodels "vibe-tracker/models"
+	"vibe-tracker/repositories"
 )
 
 // LocationService handles location tracking and GeoJSON business logic
 type LocationService struct {
-	app            *pocketbase.PocketBase
+	locationRepo   repositories.LocationRepository
+	userRepo       repositories.UserRepository
+	sessionRepo    repositories.SessionRepository
 	sessionService *SessionService
 }
 
 // NewLocationService creates a new LocationService instance
-func NewLocationService(app *pocketbase.PocketBase, sessionService *SessionService) *LocationService {
+func NewLocationService(locationRepo repositories.LocationRepository, userRepo repositories.UserRepository, sessionRepo repositories.SessionRepository, sessionService *SessionService) *LocationService {
 	return &LocationService{
-		app:            app,
+		locationRepo:   locationRepo,
+		userRepo:       userRepo,
+		sessionRepo:    sessionRepo,
 		sessionService: sessionService,
 	}
 }
 
 // TrackLocationFromGeoJSON processes a GeoJSON location request
 func (s *LocationService) TrackLocationFromGeoJSON(req appmodels.LocationRequest, user *models.Record) error {
-	collection, err := s.app.Dao().FindCollectionByNameOrId("locations")
+	record, err := s.locationRepo.CreateNewRecord()
 	if err != nil {
 		return err
 	}
-
-	record := models.NewRecord(collection)
 	record.Set("user", user.Id)
 
 	// Set timestamp
@@ -72,17 +73,15 @@ func (s *LocationService) TrackLocationFromGeoJSON(req appmodels.LocationRequest
 		}
 	}
 
-	return s.app.Dao().SaveRecord(record)
+	return s.locationRepo.Create(record)
 }
 
 // TrackLocationFromParams processes location data from query parameters
 func (s *LocationService) TrackLocationFromParams(params appmodels.TrackingQueryParams, user *models.Record) error {
-	collection, err := s.app.Dao().FindCollectionByNameOrId("locations")
+	record, err := s.locationRepo.CreateNewRecord()
 	if err != nil {
 		return err
 	}
-
-	record := models.NewRecord(collection)
 	record.Set("user", user.Id)
 	record.Set("timestamp", types.NowDateTime())
 	record.Set("longitude", params.Longitude)
@@ -110,24 +109,19 @@ func (s *LocationService) TrackLocationFromParams(params appmodels.TrackingQuery
 		}
 	}
 
-	return s.app.Dao().SaveRecord(record)
+	return s.locationRepo.Create(record)
 }
 
 // GetLatestLocationByUser returns the latest location for a user as GeoJSON
 func (s *LocationService) GetLatestLocationByUser(username string) (*appmodels.LocationResponse, error) {
 	// Find user by username
-	user, err := s.app.Dao().FindFirstRecordByFilter("users", "username = {:username}",
-		dbx.Params{"username": username})
+	user, err := s.userRepo.FindByUsername(username)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get latest location  
-	locations, err := s.app.Dao().FindRecordsByFilter("locations",
-		"user = {:user}",
-		"-timestamp",
-		1, 0,
-		dbx.Params{"user": user.Id})
+	locations, err := s.locationRepo.FindByUser(user.Id, nil, "-timestamp", 1, 0)
 	if err != nil || len(locations) == 0 {
 		return nil, err
 	}
@@ -139,12 +133,7 @@ func (s *LocationService) GetLatestLocationByUser(username string) (*appmodels.L
 // GetPublicLocations returns all public latest locations as GeoJSON FeatureCollection
 func (s *LocationService) GetPublicLocations() (*appmodels.LocationsResponse, error) {
 	// Get users with public sessions that have recent locations
-	records, err := s.app.Dao().FindRecordsByFilter("locations",
-		"user.username != '' AND session != ''",
-		"-timestamp",
-		50, // limit to 50 most recent
-		0,
-	)
+	records, err := s.locationRepo.FindPublicLocations(50, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +148,7 @@ func (s *LocationService) GetPublicLocations() (*appmodels.LocationsResponse, er
 		
 		if sessionID != "" {
 			// Check if session is public
-			session, err := s.app.Dao().FindRecordById("sessions", sessionID)
+			session, err := s.sessionRepo.FindByID(sessionID)
 			if err != nil || !session.GetBool("public") {
 				continue
 			}
@@ -174,7 +163,7 @@ func (s *LocationService) GetPublicLocations() (*appmodels.LocationsResponse, er
 
 	// Convert to GeoJSON features
 	for _, record := range userLatestMap {
-		user, err := s.app.Dao().FindRecordById("users", record.GetString("user"))
+		user, err := s.userRepo.FindByID(record.GetString("user"))
 		if err != nil {
 			continue
 		}
@@ -196,8 +185,7 @@ func (s *LocationService) GetPublicLocations() (*appmodels.LocationsResponse, er
 // GetSessionData returns all locations for a specific session as GeoJSON
 func (s *LocationService) GetSessionData(username, sessionName string) (*appmodels.SessionDataResponse, error) {
 	// Find user by username
-	user, err := s.app.Dao().FindFirstRecordByFilter("users", "username = {:username}",
-		dbx.Params{"username": username})
+	user, err := s.userRepo.FindByUsername(username)
 	if err != nil {
 		return nil, err
 	}
@@ -209,11 +197,7 @@ func (s *LocationService) GetSessionData(username, sessionName string) (*appmode
 	}
 
 	// Get all locations for this session
-	locations, err := s.app.Dao().FindRecordsByFilter("locations",
-		"session = {:session}",
-		"timestamp",
-		0, 0,
-		dbx.Params{"session": session.Id})
+	locations, err := s.locationRepo.FindByUserWithSession(user.Id, session.Id, "timestamp", 0, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +243,7 @@ func (s *LocationService) recordToGeoJSON(record *models.Record, user *models.Re
 
 	// Get session info if available
 	if sessionID := record.GetString("session"); sessionID != "" {
-		session, err := s.app.Dao().FindRecordById("sessions", sessionID)
+		session, err := s.sessionRepo.FindByID(sessionID)
 		if err == nil {
 			properties.Session = session.GetString("name")
 			properties.Title = session.GetString("title")

@@ -1,43 +1,40 @@
 package services
 
 import (
-	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/dbx"
 	
 	appmodels "vibe-tracker/models"
+	"vibe-tracker/repositories"
 )
 
 // UserService handles user-related business logic
 type UserService struct {
-	app *pocketbase.PocketBase
+	repo repositories.UserRepository
 }
 
 // NewUserService creates a new UserService instance
-func NewUserService(app *pocketbase.PocketBase) *UserService {
-	return &UserService{app: app}
+func NewUserService(repo repositories.UserRepository) *UserService {
+	return &UserService{repo: repo}
 }
 
 // GetUserByUsername finds a user by username
 func (s *UserService) GetUserByUsername(username string) (*models.Record, error) {
-	return s.app.Dao().FindFirstRecordByFilter("users", "username = {:username}",
-		dbx.Params{"username": username})
+	return s.repo.FindByUsername(username)
 }
 
 // GetUserByEmail finds a user by email
 func (s *UserService) GetUserByEmail(email string) (*models.Record, error) {
-	return s.app.Dao().FindAuthRecordByEmail("users", email)
+	return s.repo.FindByEmail(email)
 }
 
 // GetUserByID finds a user by ID
 func (s *UserService) GetUserByID(userID string) (*models.Record, error) {
-	return s.app.Dao().FindRecordById("users", userID)
+	return s.repo.FindByID(userID)
 }
 
 // GetUserByToken finds a user by their custom token
 func (s *UserService) GetUserByToken(token string) (*models.Record, error) {
-	return s.app.Dao().FindFirstRecordByFilter("users", "token = {:token}",
-		dbx.Params{"token": token})
+	return s.repo.FindByToken(token)
 }
 
 // ValidateUserOwnership checks if a user owns a resource by comparing user IDs
@@ -57,7 +54,7 @@ func (s *UserService) ValidateUserOwnership(authUser *models.Record, targetUsern
 // UpdateAvatar updates the user's avatar
 func (s *UserService) UpdateAvatar(user *models.Record, avatarFile string) error {
 	user.Set("avatar", avatarFile)
-	return s.app.Dao().SaveRecord(user)
+	return s.repo.Save(user)
 }
 
 // ConvertToUserModel converts a PocketBase record to a User model

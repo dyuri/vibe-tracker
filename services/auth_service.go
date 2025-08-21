@@ -7,22 +7,27 @@ import (
 	"github.com/pocketbase/pocketbase/tools/security"
 	
 	appmodels "vibe-tracker/models"
+	"vibe-tracker/repositories"
 )
 
 // AuthService handles authentication-related business logic
 type AuthService struct {
-	app *pocketbase.PocketBase
+	app      *pocketbase.PocketBase
+	userRepo repositories.UserRepository
 }
 
 // NewAuthService creates a new AuthService instance
-func NewAuthService(app *pocketbase.PocketBase) *AuthService {
-	return &AuthService{app: app}
+func NewAuthService(app *pocketbase.PocketBase, userRepo repositories.UserRepository) *AuthService {
+	return &AuthService{
+		app:      app,
+		userRepo: userRepo,
+	}
 }
 
 // Login authenticates a user and returns a token and user information
 func (s *AuthService) Login(req appmodels.LoginRequest) (*appmodels.LoginResponse, error) {
 	// Find user by email
-	record, err := s.app.Dao().FindAuthRecordByEmail("users", req.Email)
+	record, err := s.userRepo.FindByEmail(req.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +78,7 @@ func (s *AuthService) UpdateProfile(record *models.Record, req appmodels.UpdateP
 	}
 
 	// Save the updated record
-	if err := s.app.Dao().SaveRecord(record); err != nil {
+	if err := s.userRepo.Save(record); err != nil {
 		return err
 	}
 
@@ -88,7 +93,7 @@ func (s *AuthService) RegenerateToken(record *models.Record) (string, error) {
 	// Update the user's token
 	record.Set("token", newToken)
 	
-	if err := s.app.Dao().SaveRecord(record); err != nil {
+	if err := s.userRepo.Save(record); err != nil {
 		return "", err
 	}
 	
@@ -97,12 +102,12 @@ func (s *AuthService) RegenerateToken(record *models.Record) (string, error) {
 
 // GetUserByToken finds a user by their custom token
 func (s *AuthService) GetUserByToken(token string) (*models.Record, error) {
-	return s.app.Dao().FindFirstRecordByFilter("users", "token = {:token}", map[string]any{"token": token})
+	return s.userRepo.FindByToken(token)
 }
 
 // GetUserByID finds a user by their ID
 func (s *AuthService) GetUserByID(userID string) (*models.Record, error) {
-	return s.app.Dao().FindRecordById("users", userID)
+	return s.userRepo.FindByID(userID)
 }
 
 // recordToUser converts a PocketBase record to a User model

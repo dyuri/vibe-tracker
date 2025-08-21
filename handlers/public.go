@@ -10,14 +10,22 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/tools/types"
+	
+	"vibe-tracker/services"
 )
 
 type PublicHandler struct {
-	app *pocketbase.PocketBase
+	app             *pocketbase.PocketBase
+	locationService *services.LocationService
+	userService     *services.UserService
 }
 
-func NewPublicHandler(app *pocketbase.PocketBase) *PublicHandler {
-	return &PublicHandler{app: app}
+func NewPublicHandler(app *pocketbase.PocketBase, locationService *services.LocationService, userService *services.UserService) *PublicHandler {
+	return &PublicHandler{
+		app:             app,
+		locationService: locationService,
+		userService:     userService,
+	}
 }
 
 func (h *PublicHandler) GetLocation(c echo.Context) error {

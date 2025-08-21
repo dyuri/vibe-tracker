@@ -1,22 +1,21 @@
 package services
 
 import (
-	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/dbx"
 	
 	appmodels "vibe-tracker/models"
+	"vibe-tracker/repositories"
 	"vibe-tracker/utils"
 )
 
 // SessionService handles session-related business logic
 type SessionService struct {
-	app *pocketbase.PocketBase
+	repo repositories.SessionRepository
 }
 
 // NewSessionService creates a new SessionService instance
-func NewSessionService(app *pocketbase.PocketBase) *SessionService {
-	return &SessionService{app: app}
+func NewSessionService(repo repositories.SessionRepository) *SessionService {
+	return &SessionService{repo: repo}
 }
 
 // ListSessions returns paginated sessions for a user
@@ -32,27 +31,13 @@ func (s *SessionService) ListSessions(userID string, page, perPage int) (*appmod
 	offset := (page - 1) * perPage
 
 	// Get sessions with pagination
-	sessions, err := s.app.Dao().FindRecordsByFilter(
-		"sessions",
-		"user = {:user}",
-		"-created",
-		perPage,
-		offset,
-		dbx.Params{"user": userID},
-	)
+	sessions, err := s.repo.FindByUser(userID, "-created", perPage, offset)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get total count
-	totalItems, err := s.app.Dao().FindRecordsByFilter(
-		"sessions",
-		"user = {:user}",
-		"",
-		0,
-		0,
-		dbx.Params{"user": userID},
-	)
+	totalCount, err := s.repo.CountByUser(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -63,13 +48,13 @@ func (s *SessionService) ListSessions(userID string, page, perPage int) (*appmod
 		sessionModels[i] = s.recordToSession(session)
 	}
 
-	totalPages := (len(totalItems) + perPage - 1) / perPage
+	totalPages := (totalCount + perPage - 1) / perPage
 
 	return &appmodels.SessionsListResponse{
 		Sessions:   sessionModels,
 		Page:       page,
 		PerPage:    perPage,
-		TotalItems: len(totalItems),
+		TotalItems: totalCount,
 		TotalPages: totalPages,
 	}, nil
 }
@@ -98,19 +83,17 @@ func (s *SessionService) CreateSession(req appmodels.CreateSessionRequest, userI
 	}
 
 	// Create new session
-	sessionsCollection, err := s.app.Dao().FindCollectionByNameOrId("sessions")
+	session, err := s.repo.CreateNewRecord()
 	if err != nil {
 		return nil, err
 	}
-
-	session := models.NewRecord(sessionsCollection)
 	session.Set("name", req.Name)
 	session.Set("user", userID)
 	session.Set("title", s.generateTitle(req))
 	session.Set("description", req.Description)
 	session.Set("public", req.Public)
 
-	if err := s.app.Dao().SaveRecord(session); err != nil {
+	if err := s.repo.Create(session); err != nil {
 		return nil, err
 	}
 
@@ -132,7 +115,7 @@ func (s *SessionService) UpdateSession(sessionName, userID string, req appmodels
 	session.Set("description", req.Description)
 	session.Set("public", req.Public)
 
-	if err := s.app.Dao().SaveRecord(session); err != nil {
+	if err := s.repo.Update(session); err != nil {
 		return nil, err
 	}
 
@@ -147,7 +130,7 @@ func (s *SessionService) DeleteSession(sessionName, userID string) error {
 		return err
 	}
 
-	return s.app.Dao().DeleteRecord(session)
+	return s.repo.Delete(session)
 }
 
 // FindOrCreateSession finds an existing session or creates a new one
@@ -163,19 +146,17 @@ func (s *SessionService) FindOrCreateSession(sessionName string, user *models.Re
 	}
 
 	// Create new session
-	sessionsCollection, err := s.app.Dao().FindCollectionByNameOrId("sessions")
+	session, err = s.repo.CreateNewRecord()
 	if err != nil {
 		return nil, err
 	}
-
-	session = models.NewRecord(sessionsCollection)
 	session.Set("name", sessionName)
 	session.Set("user", user.Id)
 	session.Set("title", utils.GenerateSessionTitle(sessionName))
 	session.Set("description", "")
 	session.Set("public", false)
 
-	if err := s.app.Dao().SaveRecord(session); err != nil {
+	if err := s.repo.Update(session); err != nil {
 		return nil, err
 	}
 
@@ -188,8 +169,7 @@ func (s *SessionService) findSessionByNameAndUser(sessionName string, userID str
 	if sessionName == "" || userID == "" {
 		return nil, &SessionError{Message: "session name or user ID is missing"}
 	}
-	return s.app.Dao().FindFirstRecordByFilter("sessions", "name = {:name} && user = {:user}",
-		dbx.Params{"name": sessionName, "user": userID})
+	return s.repo.FindByNameAndUser(sessionName, userID)
 }
 
 func (s *SessionService) generateTitle(req appmodels.CreateSessionRequest) string {

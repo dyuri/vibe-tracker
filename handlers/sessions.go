@@ -10,14 +10,20 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/models"
+	
+	"vibe-tracker/services"
 )
 
 type SessionHandler struct {
-	app *pocketbase.PocketBase
+	app            *pocketbase.PocketBase
+	sessionService *services.SessionService
 }
 
-func NewSessionHandler(app *pocketbase.PocketBase) *SessionHandler {
-	return &SessionHandler{app: app}
+func NewSessionHandler(app *pocketbase.PocketBase, sessionService *services.SessionService) *SessionHandler {
+	return &SessionHandler{
+		app:            app,
+		sessionService: sessionService,
+	}
 }
 
 func (h *SessionHandler) ListSessions(c echo.Context) error {

@@ -11,6 +11,8 @@ import (
 
 	"vibe-tracker/handlers"
 	"vibe-tracker/middleware"
+	"vibe-tracker/repositories"
+	"vibe-tracker/services"
 	_ "vibe-tracker/migrations"
 )
 
@@ -25,11 +27,22 @@ func main() {
 		Automigrate: automigrate,
 	})
 
+	// Initialize repositories
+	userRepo := repositories.NewUserRepository(app)
+	sessionRepo := repositories.NewSessionRepository(app)
+	locationRepo := repositories.NewLocationRepository(app)
+
+	// Initialize services
+	authService := services.NewAuthService(app, userRepo)
+	userService := services.NewUserService(userRepo)
+	sessionService := services.NewSessionService(sessionRepo)
+	locationService := services.NewLocationService(locationRepo, userRepo, sessionRepo, sessionService)
+
 	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(app)
-	sessionHandler := handlers.NewSessionHandler(app)
-	trackingHandler := handlers.NewTrackingHandler(app)
-	publicHandler := handlers.NewPublicHandler(app)
+	authHandler := handlers.NewAuthHandler(app, authService)
+	sessionHandler := handlers.NewSessionHandler(app, sessionService)
+	trackingHandler := handlers.NewTrackingHandler(app, locationService)
+	publicHandler := handlers.NewPublicHandler(app, locationService, userService)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(app)

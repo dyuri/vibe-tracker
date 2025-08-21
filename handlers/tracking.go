@@ -11,14 +11,20 @@ import (
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tools/types"
+	
+	"vibe-tracker/services"
 )
 
 type TrackingHandler struct {
-	app *pocketbase.PocketBase
+	app             *pocketbase.PocketBase
+	locationService *services.LocationService
 }
 
-func NewTrackingHandler(app *pocketbase.PocketBase) *TrackingHandler {
-	return &TrackingHandler{app: app}
+func NewTrackingHandler(app *pocketbase.PocketBase, locationService *services.LocationService) *TrackingHandler {
+	return &TrackingHandler{
+		app:             app,
+		locationService: locationService,
+	}
 }
 
 func (h *TrackingHandler) TrackLocationGET(c echo.Context) error {

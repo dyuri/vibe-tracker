@@ -21,10 +21,10 @@ type AuthHandler struct {
 	authService *services.AuthService
 }
 
-func NewAuthHandler(app *pocketbase.PocketBase) *AuthHandler {
+func NewAuthHandler(app *pocketbase.PocketBase, authService *services.AuthService) *AuthHandler {
 	return &AuthHandler{
 		app:         app,
-		authService: services.NewAuthService(app),
+		authService: authService,
 	}
 }
 
