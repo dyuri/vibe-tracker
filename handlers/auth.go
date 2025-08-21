@@ -40,10 +40,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 
 	response, err := h.authService.Login(*req)
 	if err != nil {
-		if authErr, ok := err.(*services.AuthError); ok {
-			return utils.SendError(c, http.StatusUnauthorized, authErr.Message, "")
-		}
-		return utils.SendError(c, http.StatusInternalServerError, "Failed to authenticate", "")
+		return err // Let middleware handle the structured error
 	}
 
 	return utils.SendSuccess(c, http.StatusOK, response, "Login successful")
@@ -115,10 +112,7 @@ func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 
 	err := h.authService.UpdateProfile(record, *req)
 	if err != nil {
-		if authErr, ok := err.(*services.AuthError); ok {
-			return utils.SendError(c, http.StatusBadRequest, authErr.Message, "")
-		}
-		return utils.SendError(c, http.StatusInternalServerError, "Failed to update profile", "")
+		return err // Let middleware handle the structured error
 	}
 
 	userData := map[string]any{

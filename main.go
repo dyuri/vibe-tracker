@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -15,6 +13,7 @@ import (
 	"vibe-tracker/models"
 	"vibe-tracker/repositories"
 	"vibe-tracker/services"
+	"vibe-tracker/utils"
 	_ "vibe-tracker/migrations"
 )
 
@@ -23,6 +22,9 @@ func main() {
 
 	// Load configuration
 	cfg := config.NewAppConfig()
+	
+	// Initialize structured logger
+	utils.InitLogger(cfg)
 
 	// Register migration command
 	migratecmd.MustRegister(app, app.RootCmd, migratecmd.Config{
@@ -111,6 +113,7 @@ func main() {
 	})
 
 	if err := app.Start(); err != nil {
-		log.Fatal(err)
+		utils.LogError(err, "failed to start application").Msg("Application startup failed")
+		panic(err)
 	}
 }

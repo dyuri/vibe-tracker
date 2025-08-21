@@ -8,6 +8,7 @@ import (
 	
 	appmodels "vibe-tracker/models"
 	"vibe-tracker/repositories"
+	"vibe-tracker/utils"
 )
 
 // AuthService handles authentication-related business logic
@@ -29,18 +30,18 @@ func (s *AuthService) Login(req appmodels.LoginRequest) (*appmodels.LoginRespons
 	// Find user by email
 	record, err := s.userRepo.FindByEmail(req.Email)
 	if err != nil {
-		return nil, err
+		return nil, utils.LogAndWrapError(err, utils.ErrorTypeAuthentication, "Failed to find user by email")
 	}
 
 	// Validate password
 	if !record.ValidatePassword(req.Password) {
-		return nil, &AuthError{Message: "Invalid credentials"}
+		return nil, utils.NewAuthenticationError("Invalid credentials", nil)
 	}
 
 	// Generate auth token
 	token, err := tokens.NewRecordAuthToken(s.app, record)
 	if err != nil {
-		return nil, err
+		return nil, utils.LogAndWrapError(err, utils.ErrorTypeInternal, "Failed to generate auth token")
 	}
 
 	// Convert record to user model
@@ -69,17 +70,17 @@ func (s *AuthService) UpdateProfile(record *models.Record, req appmodels.UpdateP
 	// Update password if provided
 	if req.Password != "" {
 		if req.OldPassword == "" {
-			return &AuthError{Message: "Old password required to set new password"}
+			return utils.NewValidationError("Old password required to set new password", "old_password field is required")
 		}
 		if !record.ValidatePassword(req.OldPassword) {
-			return &AuthError{Message: "Invalid old password"}
+			return utils.NewAuthenticationError("Invalid old password", nil)
 		}
 		record.SetPassword(req.Password)
 	}
 
 	// Save the updated record
 	if err := s.userRepo.Save(record); err != nil {
-		return err
+		return utils.LogAndWrapError(err, utils.ErrorTypeInternal, "Failed to save user profile")
 	}
 
 	return nil
@@ -94,7 +95,7 @@ func (s *AuthService) RegenerateToken(record *models.Record) (string, error) {
 	record.Set("token", newToken)
 	
 	if err := s.userRepo.Save(record); err != nil {
-		return "", err
+		return "", utils.LogAndWrapError(err, utils.ErrorTypeInternal, "Failed to save new token")
 	}
 	
 	return newToken, nil
@@ -102,12 +103,20 @@ func (s *AuthService) RegenerateToken(record *models.Record) (string, error) {
 
 // GetUserByToken finds a user by their custom token
 func (s *AuthService) GetUserByToken(token string) (*models.Record, error) {
-	return s.userRepo.FindByToken(token)
+	record, err := s.userRepo.FindByToken(token)
+	if err != nil {
+		return nil, utils.LogAndWrapError(err, utils.ErrorTypeAuthentication, "Invalid or expired token")
+	}
+	return record, nil
 }
 
 // GetUserByID finds a user by their ID
 func (s *AuthService) GetUserByID(userID string) (*models.Record, error) {
-	return s.userRepo.FindByID(userID)
+	record, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, utils.LogAndWrapError(err, utils.ErrorTypeNotFound, "User not found")
+	}
+	return record, nil
 }
 
 // recordToUser converts a PocketBase record to a User model
@@ -122,11 +131,3 @@ func (s *AuthService) recordToUser(record *models.Record) appmodels.User {
 	}
 }
 
-// AuthError represents an authentication-related error
-type AuthError struct {
-	Message string
-}
-
-func (e *AuthError) Error() string {
-	return e.Message
-}

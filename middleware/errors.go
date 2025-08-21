@@ -2,11 +2,11 @@ package middleware
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase/apis"
+	"vibe-tracker/utils"
 )
 
 // ErrorHandler provides error handling middleware and utilities
@@ -32,7 +32,10 @@ func (h *ErrorHandler) RecoveryMiddleware() echo.MiddlewareFunc {
 						err = fmt.Errorf("panic: %v", x)
 					}
 					
-					log.Printf("Recovered from panic in %s %s: %v", c.Request().Method, c.Request().URL.Path, err)
+					utils.LogError(err, "panic recovered").
+						Str("method", c.Request().Method).
+						Str("path", c.Request().URL.Path).
+						Msg("Request panic recovered")
 					
 					if !c.Response().Committed {
 						c.JSON(http.StatusInternalServerError, map[string]string{
@@ -53,16 +56,23 @@ func (h *ErrorHandler) LoggingMiddleware() echo.MiddlewareFunc {
 			req := c.Request()
 			res := c.Response()
 			
-			log.Printf("Started %s %s", req.Method, req.URL.Path)
+			utils.RequestLogger(req.Method, req.URL.Path, "").
+				Msg("Request started")
 			
 			err := next(c)
 			
 			if err != nil {
-				log.Printf("Request %s %s failed: %v (Status: %d)", 
-					req.Method, req.URL.Path, err, res.Status)
+				utils.LogError(err, "request failed").
+					Str("method", req.Method).
+					Str("path", req.URL.Path).
+					Int("status", res.Status).
+					Msg("Request completed with error")
 			} else {
-				log.Printf("Completed %s %s (Status: %d)", 
-					req.Method, req.URL.Path, res.Status)
+				utils.LogInfo().
+					Str("method", req.Method).
+					Str("path", req.URL.Path).
+					Int("status", res.Status).
+					Msg("Request completed successfully")
 			}
 			
 			return err
@@ -159,6 +169,19 @@ func StandardizeErrors() echo.MiddlewareFunc {
 			err := next(c)
 			
 			if err != nil {
+				// Handle our custom AppError types
+				if appErr, ok := err.(*utils.AppError); ok {
+					// Log the structured error
+					utils.LogError(appErr, "application error").
+						Str("error_type", string(appErr.Type)).
+						Int("status_code", appErr.Code).
+						Str("user_id", appErr.UserID).
+						Str("request_id", appErr.RequestID).
+						Msg("Structured error occurred")
+					
+					return appErr.ToAPIError()
+				}
+				
 				// Let PocketBase handle its own error types
 				if apiErr, ok := err.(*apis.ApiError); ok {
 					return apiErr
@@ -169,8 +192,13 @@ func StandardizeErrors() echo.MiddlewareFunc {
 					return apis.NewApiError(httpErr.Code, fmt.Sprintf("%v", httpErr.Message), err)
 				}
 				
-				// Handle other errors as internal server errors
-				return apis.NewApiError(http.StatusInternalServerError, "Internal server error", err)
+				// Wrap unknown errors as internal errors
+				appErr := utils.NewInternalError("Unexpected error occurred", err)
+				utils.LogError(err, "unhandled error").
+					Str("error_type", string(appErr.Type)).
+					Msg("Unhandled error wrapped as internal error")
+				
+				return appErr.ToAPIError()
 			}
 			
 			return nil

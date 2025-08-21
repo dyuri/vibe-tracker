@@ -122,10 +122,27 @@
 - ✅ Fixed map functionality to work with standardized responses
 - ✅ All API tests passing and frontend functionality verified
 
-## 11. Logging & Error Handling
-- Replace log.Printf with a structured logger (e.g., zap, zerolog).
-- Define custom error types for common API errors.
-- Use error wrapping for traceability.
+## ✅ 11. Logging & Error Handling - COMPLETED
+- ✅ Replaced log.Printf with structured logger (zerolog):
+  - ✅ Created `utils/logger.go` with zerolog integration
+  - ✅ Console-friendly output for development mode
+  - ✅ Structured JSON logging for production
+  - ✅ Context-aware logging with request details (method, path, status, user_id)
+- ✅ Defined custom error types for common API errors:
+  - ✅ Created `utils/errors.go` with comprehensive AppError system
+  - ✅ Error types: validation, authentication, authorization, not_found, conflict, internal, external, rate_limit
+  - ✅ Automatic conversion to PocketBase ApiError format
+- ✅ Implemented error wrapping for traceability:
+  - ✅ Error context and chaining with LogAndWrapError function
+  - ✅ Structured error logging with user_id, request_id, and error_type fields
+- ✅ Updated all components to use new logging/error system:
+  - ✅ `main.go`: Removed log import, initialized structured logger, replaced log.Fatal
+  - ✅ `middleware/errors.go`: Replaced all log.Printf with structured logging, enhanced error handling
+  - ✅ `services/auth_service.go`: Replaced custom AuthError with structured error types
+  - ✅ `handlers/auth.go`: Simplified error handling to let middleware process structured errors
+- ✅ Enhanced middleware with panic recovery, request/response logging, and automatic error type detection
+- ✅ All compilation errors resolved and API tests passing (8/8 test suites)
+- ✅ Application startup verified with structured logging functionality
 
 ## 12. Dependency Injection
 - Use constructor functions or a lightweight DI pattern for services and repositories.
