@@ -8,6 +8,7 @@ import (
 	"github.com/pocketbase/pocketbase/tools/types"
 	
 	appmodels "vibe-tracker/models"
+	"vibe-tracker/constants"
 	"vibe-tracker/repositories"
 )
 
@@ -38,7 +39,7 @@ func (s *LocationService) TrackLocationFromGeoJSON(req appmodels.LocationRequest
 	record.Set("user", user.Id)
 
 	// Set timestamp
-	if req.Properties.Timestamp == 0 {
+	if req.Properties.Timestamp == constants.DefaultTimestamp {
 		record.Set("timestamp", types.NowDateTime())
 	} else {
 		timeStamp, _ := types.ParseDateTime(time.Unix(req.Properties.Timestamp, 0))
@@ -88,7 +89,7 @@ func (s *LocationService) TrackLocationFromParams(params appmodels.TrackingQuery
 	record.Set("latitude", params.Latitude)
 
 	// Set optional parameters
-	if params.Altitude != 0 {
+	if params.Altitude != constants.DefaultAltitude {
 		record.Set("altitude", params.Altitude)
 	}
 	if params.Speed > 0 {
@@ -133,7 +134,7 @@ func (s *LocationService) GetLatestLocationByUser(username string) (*appmodels.L
 // GetPublicLocations returns all public latest locations as GeoJSON FeatureCollection
 func (s *LocationService) GetPublicLocations() (*appmodels.LocationsResponse, error) {
 	// Get users with public sessions that have recent locations
-	records, err := s.locationRepo.FindPublicLocations(50, 0)
+	records, err := s.locationRepo.FindPublicLocations(constants.PublicLocationsLimit, 0)
 	if err != nil {
 		return nil, err
 	}

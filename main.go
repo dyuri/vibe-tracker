@@ -2,13 +2,14 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 
+	"vibe-tracker/config"
+	"vibe-tracker/constants"
 	"vibe-tracker/handlers"
 	"vibe-tracker/middleware"
 	"vibe-tracker/repositories"
@@ -19,12 +20,12 @@ import (
 func main() {
 	app := pocketbase.New()
 
-	// Enable automigrate for development and production
-	automigrate := os.Getenv("PB_AUTOMIGRATE") != "false"
+	// Load configuration
+	cfg := config.NewAppConfig()
 
 	// Register migration command
 	migratecmd.MustRegister(app, app.RootCmd, migratecmd.Config{
-		Automigrate: automigrate,
+		Automigrate: cfg.Automigrate,
 	})
 
 	// Initialize repositories
@@ -56,11 +57,11 @@ func main() {
 		e.Router.Use(errorHandler.CORSMiddleware())
 
 		// API routes group
-		api := e.Router.Group("/api")
+		api := e.Router.Group(constants.APIPrefix)
 
 		// Location endpoints - public but can have optional auth for additional features
-		api.GET("/location/:username", publicHandler.GetLocation, userMiddleware.LoadUserFromPath())
-		api.GET("/public-locations", publicHandler.GetPublicLocations)
+		api.GET(constants.EndpointLocation, publicHandler.GetLocation, userMiddleware.LoadUserFromPath())
+		api.GET(constants.EndpointPublicLocation, publicHandler.GetPublicLocations)
 		api.GET("/session/:username/:session", publicHandler.GetSessionData, userMiddleware.LoadUserFromPath())
 
 		// Session management endpoints
@@ -71,7 +72,7 @@ func main() {
 		api.DELETE("/sessions/:username/:name", sessionHandler.DeleteSession, authMiddleware.RequireJWTAuth(), userMiddleware.RequireUserOwnership())
 
 		// Authentication endpoints
-		api.POST("/login", authHandler.Login)
+		api.POST(constants.EndpointLogin, authHandler.Login)
 		api.POST("/auth/refresh", authHandler.RefreshToken)
 		api.GET("/me", authHandler.GetMe, authMiddleware.RequireJWTAuth())
 		api.PUT("/profile", authHandler.UpdateProfile, authMiddleware.RequireJWTAuth())
@@ -79,8 +80,8 @@ func main() {
 		api.PUT("/profile/regenerate-token", authHandler.RegenerateToken, authMiddleware.RequireJWTAuth())
 
 		// Tracking endpoints - support both JWT and custom token auth
-		api.GET("/track", trackingHandler.TrackLocationGET, authMiddleware.RequireFlexibleAuth())
-		api.POST("/track", trackingHandler.TrackLocationPOST, authMiddleware.RequireFlexibleAuth())
+		api.GET(constants.EndpointTrack, trackingHandler.TrackLocationGET, authMiddleware.RequireFlexibleAuth())
+		api.POST(constants.EndpointTrack, trackingHandler.TrackLocationPOST, authMiddleware.RequireFlexibleAuth())
 
 		return nil
 	})

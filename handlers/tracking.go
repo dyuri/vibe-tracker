@@ -12,6 +12,7 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tools/types"
 	
+	"vibe-tracker/constants"
 	"vibe-tracker/services"
 )
 
@@ -105,7 +106,7 @@ func (h *TrackingHandler) TrackLocationPOST(c echo.Context) error {
 
 	record := models.NewRecord(collection)
 	record.Set("user", user.Id)
-	if data.Properties.Timestamp == 0 {
+	if data.Properties.Timestamp == constants.DefaultTimestamp {
 		record.Set("timestamp", types.NowDateTime())
 	} else {
 		timeStamp, _ := types.ParseDateTime(time.Unix(data.Properties.Timestamp, 0))

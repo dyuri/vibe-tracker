@@ -4,6 +4,8 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/dbx"
+	
+	"vibe-tracker/constants"
 )
 
 // sessionRepository implements SessionRepository interface
@@ -19,7 +21,7 @@ func NewSessionRepository(app *pocketbase.PocketBase) SessionRepository {
 // FindByUser finds sessions for a user with pagination and sorting
 func (r *sessionRepository) FindByUser(userID string, sort string, limit, offset int) ([]*models.Record, error) {
 	return r.app.Dao().FindRecordsByFilter(
-		"sessions",
+		constants.CollectionSessions,
 		"user = {:user}",
 		sort,
 		limit,
@@ -31,7 +33,7 @@ func (r *sessionRepository) FindByUser(userID string, sort string, limit, offset
 // CountByUser counts total sessions for a user
 func (r *sessionRepository) CountByUser(userID string) (int, error) {
 	records, err := r.app.Dao().FindRecordsByFilter(
-		"sessions",
+		constants.CollectionSessions,
 		"user = {:user}",
 		"",
 		0,
@@ -61,18 +63,18 @@ func (r *sessionRepository) Delete(session *models.Record) error {
 
 // FindByNameAndUser finds a session by name and user
 func (r *sessionRepository) FindByNameAndUser(name, userID string) (*models.Record, error) {
-	return r.app.Dao().FindFirstRecordByFilter("sessions", "name = {:name} && user = {:user}",
+	return r.app.Dao().FindFirstRecordByFilter(constants.CollectionSessions, "name = {:name} && user = {:user}",
 		dbx.Params{"name": name, "user": userID})
 }
 
 // FindByID finds a session by ID
 func (r *sessionRepository) FindByID(sessionID string) (*models.Record, error) {
-	return r.app.Dao().FindRecordById("sessions", sessionID)
+	return r.app.Dao().FindRecordById(constants.CollectionSessions, sessionID)
 }
 
 // GetCollection gets the sessions collection
 func (r *sessionRepository) GetCollection() (*models.Collection, error) {
-	return r.app.Dao().FindCollectionByNameOrId("sessions")
+	return r.app.Dao().FindCollectionByNameOrId(constants.CollectionSessions)
 }
 
 // CreateNewRecord creates a new record for the sessions collection

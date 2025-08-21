@@ -11,6 +11,7 @@ import (
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/models"
 	
+	"vibe-tracker/constants"
 	"vibe-tracker/services"
 )
 
@@ -34,15 +35,15 @@ func (h *SessionHandler) ListSessions(c echo.Context) error {
 	}
 
 	// Parse pagination parameters
-	page := 1
-	perPage := 20
+	page := constants.DefaultPage
+	perPage := constants.DefaultPerPage
 	if pageStr := c.QueryParam("page"); pageStr != "" {
 		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
 			page = p
 		}
 	}
 	if perPageStr := c.QueryParam("perPage"); perPageStr != "" {
-		if pp, err := strconv.Atoi(perPageStr); err == nil && pp > 0 && pp <= 100 {
+		if pp, err := strconv.Atoi(perPageStr); err == nil && pp > 0 && pp <= constants.MaxPerPageLimit {
 			perPage = pp
 		}
 	}

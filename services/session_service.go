@@ -4,6 +4,7 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 	
 	appmodels "vibe-tracker/models"
+	"vibe-tracker/constants"
 	"vibe-tracker/repositories"
 	"vibe-tracker/utils"
 )
@@ -20,11 +21,11 @@ func NewSessionService(repo repositories.SessionRepository) *SessionService {
 
 // ListSessions returns paginated sessions for a user
 func (s *SessionService) ListSessions(userID string, page, perPage int) (*appmodels.SessionsListResponse, error) {
-	if page < 1 {
-		page = 1
+	if page < constants.DefaultPage {
+		page = constants.DefaultPage
 	}
-	if perPage < 1 || perPage > 100 {
-		perPage = 20
+	if perPage < constants.MinPerPageLimit || perPage > constants.MaxPerPageLimit {
+		perPage = constants.DefaultPerPage
 	}
 
 	// Calculate offset

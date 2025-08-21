@@ -7,6 +7,8 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/dbx"
+	
+	"vibe-tracker/constants"
 )
 
 // locationRepository implements LocationRepository interface
@@ -48,7 +50,7 @@ func (r *locationRepository) FindByUser(userID string, filters map[string]interf
 	}
 
 	return r.app.Dao().FindRecordsByFilter(
-		"locations",
+		constants.CollectionLocations,
 		filter,
 		sort,
 		limit,
@@ -60,7 +62,7 @@ func (r *locationRepository) FindByUser(userID string, filters map[string]interf
 // FindByUserWithSession finds locations for a user within a specific session
 func (r *locationRepository) FindByUserWithSession(userID, sessionID string, sort string, limit, offset int) ([]*models.Record, error) {
 	return r.app.Dao().FindRecordsByFilter(
-		"locations",
+		constants.CollectionLocations,
 		"user = {:user} && session = {:session}",
 		sort,
 		limit,
@@ -71,7 +73,7 @@ func (r *locationRepository) FindByUserWithSession(userID, sessionID string, sor
 
 // GetCollection gets the locations collection
 func (r *locationRepository) GetCollection() (*models.Collection, error) {
-	return r.app.Dao().FindCollectionByNameOrId("locations")
+	return r.app.Dao().FindCollectionByNameOrId(constants.CollectionLocations)
 }
 
 // CreateNewRecord creates a new record for the locations collection
@@ -86,7 +88,7 @@ func (r *locationRepository) CreateNewRecord() (*models.Record, error) {
 // FindPublicLocations finds locations with public sessions
 func (r *locationRepository) FindPublicLocations(limit, offset int) ([]*models.Record, error) {
 	return r.app.Dao().FindRecordsByFilter(
-		"locations",
+		constants.CollectionLocations,
 		"user.username != '' AND session != ''",
 		"-timestamp",
 		limit,
@@ -133,7 +135,7 @@ func (r *locationRepository) FindAllLocations(userID, sessionFilter string, from
 	}
 
 	return r.app.Dao().FindRecordsByFilter(
-		"locations",
+		constants.CollectionLocations,
 		filter,
 		sort,
 		limit,
