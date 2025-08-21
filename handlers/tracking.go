@@ -10,11 +10,12 @@ import (
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tools/types"
-	
+
 	"vibe-tracker/constants"
 	"vibe-tracker/middleware"
 	appmodels "vibe-tracker/models"
 	"vibe-tracker/services"
+	"vibe-tracker/utils"
 )
 
 type TrackingHandler struct {
@@ -83,7 +84,7 @@ func (h *TrackingHandler) TrackLocationGET(c echo.Context) error {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to save tracking data", err)
 	}
 
-	return c.JSON(http.StatusOK, record)
+	return utils.SendSuccess(c, http.StatusOK, record, "Location tracked successfully")
 }
 
 func (h *TrackingHandler) TrackLocationPOST(c echo.Context) error {
@@ -141,5 +142,5 @@ func (h *TrackingHandler) TrackLocationPOST(c echo.Context) error {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to save tracking data", err)
 	}
 
-	return c.JSON(http.StatusOK, record)
+	return utils.SendSuccess(c, http.StatusOK, record, "Location tracked successfully")
 }

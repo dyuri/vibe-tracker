@@ -10,8 +10,9 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/tools/types"
-	
+
 	"vibe-tracker/services"
+	"vibe-tracker/utils"
 )
 
 type PublicHandler struct {
@@ -99,7 +100,7 @@ func (h *PublicHandler) GetLocation(c echo.Context) error {
 		},
 	}
 
-	return c.JSON(http.StatusOK, response)
+	return utils.SendGeoJSON(c, http.StatusOK, response, "")
 }
 
 func (h *PublicHandler) GetPublicLocations(c echo.Context) error {
@@ -179,7 +180,7 @@ func (h *PublicHandler) GetPublicLocations(c echo.Context) error {
 		"features": features,
 	}
 
-	return c.JSON(http.StatusOK, response)
+	return utils.SendGeoJSON(c, http.StatusOK, response, "")
 }
 
 func (h *PublicHandler) GetSessionData(c echo.Context) error {
@@ -287,5 +288,5 @@ func (h *PublicHandler) GetSessionData(c echo.Context) error {
 		"features": features,
 	}
 
-	return c.JSON(http.StatusOK, featureCollection)
+	return utils.SendGeoJSON(c, http.StatusOK, featureCollection, "")
 }

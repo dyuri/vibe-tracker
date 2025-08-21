@@ -109,7 +109,10 @@ function fetchData(isInitialLoad = false, useDelta = false) {
       }
       return response.json();
     })
-    .then((data) => {
+    .then((response) => {
+      // Handle standardized response format - extract actual data
+      const data = response.data || response;
+      
       if (username && useDelta && data.features && data.features.length === 0) {
         // No new data, just return
         return;

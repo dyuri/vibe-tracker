@@ -16,10 +16,10 @@ type SuccessResponse struct {
 
 // PaginationMeta represents pagination metadata
 type PaginationMeta struct {
-	Page       int `json:"page"`
-	PerPage    int `json:"perPage"`
-	TotalItems int `json:"totalItems"`
-	TotalPages int `json:"totalPages"`
+	Page       int   `json:"page"`
+	PerPage    int   `json:"perPage"`
+	TotalItems int64 `json:"totalItems"`
+	TotalPages int   `json:"totalPages"`
 }
 
 // PaginatedResponse represents a paginated response

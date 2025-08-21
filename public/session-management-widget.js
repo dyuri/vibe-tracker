@@ -381,12 +381,30 @@ export default class SessionManagementWidget extends HTMLElement {
         throw new Error(`Failed to load sessions: ${response.statusText}`);
       }
       
-      const data = await response.json();
-      this.sessions = data.sessions;
-      this.totalPages = data.totalPages;
+      const result = await response.json();
+      // Handle standardized response format
+      const data = result.data || result;
       
-      this.renderSessions();
-      this.updatePagination(data);
+      // Handle paginated response format
+      if (data.data && data.pagination) {
+        // New standardized paginated format
+        this.sessions = data.data;
+        this.totalPages = data.pagination.totalPages;
+        
+        this.renderSessions();
+        this.updatePagination({
+          page: data.pagination.page,
+          totalPages: data.pagination.totalPages,
+          totalItems: data.pagination.totalItems
+        });
+      } else {
+        // Old direct format (fallback)
+        this.sessions = data.sessions || data;
+        this.totalPages = data.totalPages || 1;
+        
+        this.renderSessions();
+        this.updatePagination(data);
+      }
       
     } catch (error) {
       console.error('Error loading sessions:', error);
@@ -507,7 +525,9 @@ export default class SessionManagementWidget extends HTMLElement {
       throw new Error(error || 'Failed to create session');
     }
     
-    return response.json();
+    const result = await response.json();
+    // Handle standardized response format
+    return result.data || result;
   }
 
   async updateSession(sessionName, sessionData) {
@@ -525,7 +545,9 @@ export default class SessionManagementWidget extends HTMLElement {
       throw new Error(error || 'Failed to update session');
     }
     
-    return response.json();
+    const result = await response.json();
+    // Handle standardized response format
+    return result.data || result;
   }
 
   async deleteSession(sessionName) {

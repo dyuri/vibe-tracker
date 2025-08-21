@@ -10,9 +10,12 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/models"
-	
+
 	"vibe-tracker/constants"
+	"vibe-tracker/middleware"
+	appmodels "vibe-tracker/models"
 	"vibe-tracker/services"
+	"vibe-tracker/utils"
 )
 
 type SessionHandler struct {
@@ -85,13 +88,14 @@ func (h *SessionHandler) ListSessions(c echo.Context) error {
 
 	totalPages := (int(totalSessions) + perPage - 1) / perPage
 
-	return c.JSON(http.StatusOK, map[string]any{
-		"sessions":   sessionList,
-		"page":       page,
-		"perPage":    perPage,
-		"totalItems": totalSessions,
-		"totalPages": totalPages,
-	})
+	paginationMeta := appmodels.PaginationMeta{
+		Page:       page,
+		PerPage:    perPage,
+		TotalItems: totalSessions,
+		TotalPages: totalPages,
+	}
+
+	return utils.SendPaginated(c, http.StatusOK, sessionList, paginationMeta, "")
 }
 
 func (h *SessionHandler) GetSession(c echo.Context) error {
@@ -108,7 +112,7 @@ func (h *SessionHandler) GetSession(c echo.Context) error {
 		return apis.NewNotFoundError("Session not found", err)
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
+	sessionData := map[string]any{
 		"id":          session.Id,
 		"name":        session.GetString("name"),
 		"title":       session.GetString("title"),
@@ -116,7 +120,9 @@ func (h *SessionHandler) GetSession(c echo.Context) error {
 		"public":      session.GetBool("public"),
 		"created":     session.GetDateTime("created").Time().Format(time.RFC3339),
 		"updated":     session.GetDateTime("updated").Time().Format(time.RFC3339),
-	})
+	}
+
+	return utils.SendSuccess(c, http.StatusOK, sessionData, "")
 }
 
 func (h *SessionHandler) CreateSession(c echo.Context) error {
@@ -125,15 +131,11 @@ func (h *SessionHandler) CreateSession(c echo.Context) error {
 		return apis.NewUnauthorizedError("Authentication required", nil)
 	}
 
-	data := struct {
-		Name        string `json:"name"`
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		Public      bool   `json:"public"`
-	}{}
-
-	if err := c.Bind(&data); err != nil {
-		return apis.NewBadRequestError("Invalid request data", err)
+	// Get validated data from middleware
+	validatedData := middleware.GetValidatedData(c)
+	data, ok := validatedData.(*appmodels.CreateSessionRequest)
+	if !ok {
+		return apis.NewBadRequestError("Invalid request data", nil)
 	}
 
 	if data.Name == "" {
@@ -163,7 +165,7 @@ func (h *SessionHandler) CreateSession(c echo.Context) error {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to create session", err)
 	}
 
-	return c.JSON(http.StatusCreated, map[string]any{
+	sessionData := map[string]any{
 		"id":          session.Id,
 		"name":        session.GetString("name"),
 		"title":       session.GetString("title"),
@@ -171,7 +173,9 @@ func (h *SessionHandler) CreateSession(c echo.Context) error {
 		"public":      session.GetBool("public"),
 		"created":     session.GetDateTime("created").Time().Format(time.RFC3339),
 		"updated":     session.GetDateTime("updated").Time().Format(time.RFC3339),
-	})
+	}
+
+	return utils.SendSuccess(c, http.StatusCreated, sessionData, "Session created successfully")
 }
 
 func (h *SessionHandler) UpdateSession(c echo.Context) error {
@@ -193,14 +197,11 @@ func (h *SessionHandler) UpdateSession(c echo.Context) error {
 		return apis.NewNotFoundError("Session not found", err)
 	}
 
-	data := struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		Public      bool   `json:"public"`
-	}{}
-
-	if err := c.Bind(&data); err != nil {
-		return apis.NewBadRequestError("Invalid request data", err)
+	// Get validated data from middleware
+	validatedData := middleware.GetValidatedData(c)
+	data, ok := validatedData.(*appmodels.UpdateSessionRequest)
+	if !ok {
+		return apis.NewBadRequestError("Invalid request data", nil)
 	}
 
 	// Update session
@@ -212,7 +213,7 @@ func (h *SessionHandler) UpdateSession(c echo.Context) error {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to update session", err)
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
+	sessionData := map[string]any{
 		"id":          session.Id,
 		"name":        session.GetString("name"),
 		"title":       session.GetString("title"),
@@ -220,7 +221,9 @@ func (h *SessionHandler) UpdateSession(c echo.Context) error {
 		"public":      session.GetBool("public"),
 		"created":     session.GetDateTime("created").Time().Format(time.RFC3339),
 		"updated":     session.GetDateTime("updated").Time().Format(time.RFC3339),
-	})
+	}
+
+	return utils.SendSuccess(c, http.StatusOK, sessionData, "Session updated successfully")
 }
 
 func (h *SessionHandler) DeleteSession(c echo.Context) error {
@@ -246,7 +249,5 @@ func (h *SessionHandler) DeleteSession(c echo.Context) error {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to delete session", err)
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
-		"message": "Session deleted successfully",
-	})
+	return utils.SendSuccess(c, http.StatusOK, nil, "Session deleted successfully")
 }

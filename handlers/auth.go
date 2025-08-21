@@ -11,10 +11,11 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tokens"
 	"github.com/pocketbase/pocketbase/tools/security"
-	
-	appmodels "vibe-tracker/models"
+
 	"vibe-tracker/middleware"
+	appmodels "vibe-tracker/models"
 	"vibe-tracker/services"
+	"vibe-tracker/utils"
 )
 
 type AuthHandler struct {
@@ -40,12 +41,12 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	response, err := h.authService.Login(*req)
 	if err != nil {
 		if authErr, ok := err.(*services.AuthError); ok {
-			return apis.NewUnauthorizedError(authErr.Message, err)
+			return utils.SendError(c, http.StatusUnauthorized, authErr.Message, "")
 		}
-		return apis.NewApiError(http.StatusInternalServerError, "Failed to authenticate", err)
+		return utils.SendError(c, http.StatusInternalServerError, "Failed to authenticate", "")
 	}
 
-	return c.JSON(http.StatusOK, response)
+	return utils.SendSuccess(c, http.StatusOK, response, "Login successful")
 }
 
 func (h *AuthHandler) RefreshToken(c echo.Context) error {
@@ -68,7 +69,7 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to generate new token", err)
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
+	userData := map[string]any{
 		"token": newToken,
 		"user": map[string]any{
 			"id":       record.Id,
@@ -76,7 +77,9 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 			"email":    record.Email(),
 			"avatar":   record.GetString("avatar"),
 		},
-	})
+	}
+
+	return utils.SendSuccess(c, http.StatusOK, userData, "Token refreshed successfully")
 }
 
 func (h *AuthHandler) GetMe(c echo.Context) error {
@@ -86,13 +89,15 @@ func (h *AuthHandler) GetMe(c echo.Context) error {
 		return apis.NewUnauthorizedError("Authentication required", nil)
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
+	userData := map[string]any{
 		"id":       info.Id,
 		"username": info.Username(),
 		"email":    info.Email(),
 		"avatar":   info.GetString("avatar"),
 		"token":    info.GetString("token"),
-	})
+	}
+
+	return utils.SendSuccess(c, http.StatusOK, userData, "")
 }
 
 func (h *AuthHandler) UpdateProfile(c echo.Context) error {
@@ -111,18 +116,20 @@ func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 	err := h.authService.UpdateProfile(record, *req)
 	if err != nil {
 		if authErr, ok := err.(*services.AuthError); ok {
-			return apis.NewBadRequestError(authErr.Message, err)
+			return utils.SendError(c, http.StatusBadRequest, authErr.Message, "")
 		}
-		return apis.NewApiError(http.StatusInternalServerError, "Failed to update profile", err)
+		return utils.SendError(c, http.StatusInternalServerError, "Failed to update profile", "")
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
+	userData := map[string]any{
 		"id":       record.Id,
 		"username": record.Username(),
 		"email":    record.Email(),
 		"avatar":   record.GetString("avatar"),
 		"token":    record.GetString("token"),
-	})
+	}
+
+	return utils.SendSuccess(c, http.StatusOK, userData, "Profile updated successfully")
 }
 
 func (h *AuthHandler) UploadAvatar(c echo.Context) error {
@@ -145,13 +152,15 @@ func (h *AuthHandler) UploadAvatar(c echo.Context) error {
 	}
 
 	// Return updated user data
-	return c.JSON(http.StatusOK, map[string]any{
+	userData := map[string]any{
 		"id":       record.Id,
 		"username": record.Username(),
 		"email":    record.Email(),
 		"avatar":   record.GetString("avatar"),
 		"token":    record.GetString("token"),
-	})
+	}
+
+	return utils.SendSuccess(c, http.StatusOK, userData, "Avatar updated successfully")
 }
 
 func (h *AuthHandler) RegenerateToken(c echo.Context) error {
@@ -168,11 +177,13 @@ func (h *AuthHandler) RegenerateToken(c echo.Context) error {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to regenerate token", err)
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
+	userData := map[string]any{
 		"id":       record.Id,
 		"username": record.Username(),
 		"email":    record.Email(),
 		"avatar":   record.GetString("avatar"),
 		"token":    newToken,
-	})
+	}
+
+	return utils.SendSuccess(c, http.StatusOK, userData, "Token regenerated successfully")
 }
