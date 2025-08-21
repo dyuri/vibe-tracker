@@ -12,6 +12,7 @@ import (
 	"vibe-tracker/constants"
 	"vibe-tracker/handlers"
 	"vibe-tracker/middleware"
+	"vibe-tracker/models"
 	"vibe-tracker/repositories"
 	"vibe-tracker/services"
 	_ "vibe-tracker/migrations"
@@ -49,6 +50,7 @@ func main() {
 	authMiddleware := middleware.NewAuthMiddleware(app)
 	userMiddleware := middleware.NewUserMiddleware(app)
 	errorHandler := middleware.NewErrorHandler()
+	validationMiddleware := middleware.NewValidationMiddleware()
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		// Apply global middleware
@@ -67,21 +69,21 @@ func main() {
 		// Session management endpoints
 		api.GET("/sessions/:username", sessionHandler.ListSessions, userMiddleware.LoadUserFromPath())
 		api.GET("/sessions/:username/:name", sessionHandler.GetSession, userMiddleware.LoadUserFromPath())
-		api.POST("/sessions", sessionHandler.CreateSession, authMiddleware.RequireJWTAuth())
-		api.PUT("/sessions/:username/:name", sessionHandler.UpdateSession, authMiddleware.RequireJWTAuth(), userMiddleware.RequireUserOwnership())
+		api.POST("/sessions", sessionHandler.CreateSession, authMiddleware.RequireJWTAuth(), validationMiddleware.ValidateJSON(&models.CreateSessionRequest{}))
+		api.PUT("/sessions/:username/:name", sessionHandler.UpdateSession, authMiddleware.RequireJWTAuth(), userMiddleware.RequireUserOwnership(), validationMiddleware.ValidateJSON(&models.UpdateSessionRequest{}))
 		api.DELETE("/sessions/:username/:name", sessionHandler.DeleteSession, authMiddleware.RequireJWTAuth(), userMiddleware.RequireUserOwnership())
 
 		// Authentication endpoints
-		api.POST(constants.EndpointLogin, authHandler.Login)
-		api.POST("/auth/refresh", authHandler.RefreshToken)
+		api.POST(constants.EndpointLogin, authHandler.Login, validationMiddleware.ValidateJSON(&models.LoginRequest{}))
+		api.POST("/auth/refresh", authHandler.RefreshToken, validationMiddleware.ValidateJSON(&models.RefreshTokenRequest{}))
 		api.GET("/me", authHandler.GetMe, authMiddleware.RequireJWTAuth())
-		api.PUT("/profile", authHandler.UpdateProfile, authMiddleware.RequireJWTAuth())
+		api.PUT("/profile", authHandler.UpdateProfile, authMiddleware.RequireJWTAuth(), validationMiddleware.ValidateJSON(&models.UpdateProfileRequest{}))
 		api.POST("/profile/avatar", authHandler.UploadAvatar, authMiddleware.RequireJWTAuth())
 		api.PUT("/profile/regenerate-token", authHandler.RegenerateToken, authMiddleware.RequireJWTAuth())
 
 		// Tracking endpoints - support both JWT and custom token auth
-		api.GET(constants.EndpointTrack, trackingHandler.TrackLocationGET, authMiddleware.RequireFlexibleAuth())
-		api.POST(constants.EndpointTrack, trackingHandler.TrackLocationPOST, authMiddleware.RequireFlexibleAuth())
+		api.GET(constants.EndpointTrack, trackingHandler.TrackLocationGET, authMiddleware.RequireFlexibleAuth(), validationMiddleware.ValidateQueryParams(&models.TrackingQueryParams{}))
+		api.POST(constants.EndpointTrack, trackingHandler.TrackLocationPOST, authMiddleware.RequireFlexibleAuth(), validationMiddleware.ValidateJSON(&models.LocationRequest{}))
 
 		return nil
 	})

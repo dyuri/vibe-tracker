@@ -4,7 +4,7 @@ import "time"
 
 // CreateSessionRequest represents the request body for creating a session
 type CreateSessionRequest struct {
-	Name        string `json:"name" validate:"required,min=1,max=100"`
+	Name        string `json:"name" validate:"required,session_name,min=1,max=100"`
 	Title       string `json:"title,omitempty" validate:"omitempty,max=200"`
 	Description string `json:"description,omitempty" validate:"omitempty,max=1000"`
 	Public      bool   `json:"public"`

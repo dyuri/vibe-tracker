@@ -13,6 +13,7 @@ import (
 	"github.com/pocketbase/pocketbase/tools/security"
 	
 	appmodels "vibe-tracker/models"
+	"vibe-tracker/middleware"
 	"vibe-tracker/services"
 )
 
@@ -29,12 +30,14 @@ func NewAuthHandler(app *pocketbase.PocketBase, authService *services.AuthServic
 }
 
 func (h *AuthHandler) Login(c echo.Context) error {
-	var req appmodels.LoginRequest
-	if err := c.Bind(&req); err != nil {
-		return apis.NewBadRequestError("Invalid request data", err)
+	// Get validated data from middleware
+	data := middleware.GetValidatedData(c)
+	req, ok := data.(*appmodels.LoginRequest)
+	if !ok {
+		return apis.NewBadRequestError("Invalid request data", nil)
 	}
 
-	response, err := h.authService.Login(req)
+	response, err := h.authService.Login(*req)
 	if err != nil {
 		if authErr, ok := err.(*services.AuthError); ok {
 			return apis.NewUnauthorizedError(authErr.Message, err)
@@ -98,12 +101,14 @@ func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 		return apis.NewUnauthorizedError("Authentication required", nil)
 	}
 
-	var req appmodels.UpdateProfileRequest
-	if err := c.Bind(&req); err != nil {
-		return apis.NewBadRequestError("Invalid request data", err)
+	// Get validated data from middleware
+	data := middleware.GetValidatedData(c)
+	req, ok := data.(*appmodels.UpdateProfileRequest)
+	if !ok {
+		return apis.NewBadRequestError("Invalid request data", nil)
 	}
 
-	err := h.authService.UpdateProfile(record, req)
+	err := h.authService.UpdateProfile(record, *req)
 	if err != nil {
 		if authErr, ok := err.(*services.AuthError); ok {
 			return apis.NewBadRequestError(authErr.Message, err)

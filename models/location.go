@@ -13,12 +13,12 @@ type Geometry struct {
 
 // LocationProperties represents properties of a location point
 type LocationProperties struct {
-	Timestamp int64   `json:"timestamp" validate:"required"`
-	Speed     float64 `json:"speed,omitempty" validate:"omitempty,min=0"`
-	HeartRate float64 `json:"heart_rate,omitempty" validate:"omitempty,min=0,max=300"`
-	Session   string  `json:"session,omitempty" validate:"omitempty,max=100"`
-	Username  string  `json:"username,omitempty"`
-	Title     string  `json:"session_title,omitempty"`
+	Timestamp int64    `json:"timestamp" validate:"required,gte=0"`
+	Speed     *float64 `json:"speed,omitempty" validate:"omitempty,gte=0"`
+	HeartRate *float64 `json:"heart_rate,omitempty" validate:"omitempty,gte=0,lte=300"`
+	Session   string   `json:"session,omitempty" validate:"omitempty,session_name,max=100"`
+	Username  string   `json:"username,omitempty"`
+	Title     string   `json:"session_title,omitempty"`
 }
 
 // LocationRequest represents a GeoJSON feature for tracking location
@@ -43,13 +43,14 @@ type LocationsResponse struct {
 
 // TrackingQueryParams represents query parameters for GET tracking requests
 type TrackingQueryParams struct {
-	Token     string  `query:"token" validate:"required"`
-	Latitude  float64 `query:"latitude" validate:"required,min=-90,max=90"`
-	Longitude float64 `query:"longitude" validate:"required,min=-180,max=180"`
-	Altitude  float64 `query:"altitude,omitempty"`
-	Speed     float64 `query:"speed,omitempty" validate:"omitempty,min=0"`
-	HeartRate float64 `query:"heart_rate,omitempty" validate:"omitempty,min=0,max=300"`
-	Session   string  `query:"session,omitempty" validate:"omitempty,max=100"`
+	Token     string   `query:"token" validate:"required,min=1"`
+	Latitude  float64  `query:"latitude" validate:"required,latitude"`
+	Longitude float64  `query:"longitude" validate:"required,longitude"`
+	Timestamp int64    `query:"timestamp,omitempty" validate:"omitempty,gte=0"`
+	Altitude  *float64 `query:"altitude,omitempty" validate:"omitempty,gte=0"`
+	Speed     *float64 `query:"speed,omitempty" validate:"omitempty,gte=0"`
+	HeartRate *float64 `query:"heart_rate,omitempty" validate:"omitempty,gte=0,lte=300"`
+	Session   string   `query:"session,omitempty" validate:"omitempty,session_name,max=100"`
 }
 
 // Location represents a stored location record

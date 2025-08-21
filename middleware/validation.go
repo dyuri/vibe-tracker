@@ -9,6 +9,8 @@ import (
 
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase/apis"
+	
+	"vibe-tracker/utils"
 )
 
 // ValidationMiddleware provides input validation middleware
@@ -48,8 +50,8 @@ func (v *ValidationMiddleware) ValidateJSON(target interface{}) echo.MiddlewareF
 				return apis.NewBadRequestError("Invalid JSON format", err)
 			}
 
-			// Validate the parsed data
-			if err := v.validateStruct(targetValue); err != nil {
+			// Validate the parsed data using utils validator
+			if err := utils.ValidateStruct(targetValue); err != nil {
 				return apis.NewBadRequestError("Validation failed", err)
 			}
 
@@ -85,40 +87,6 @@ func (v *ValidationMiddleware) ValidateRequired(params ...string) echo.Middlewar
 	}
 }
 
-// ValidateQueryParams middleware that validates query parameters
-func (v *ValidationMiddleware) ValidateQueryParams(rules map[string]QueryParamRule) echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			for param, rule := range rules {
-				value := c.QueryParam(param)
-
-				if rule.Required && value == "" {
-					return apis.NewBadRequestError(
-						fmt.Sprintf("Missing required query parameter: %s", param),
-						nil,
-					)
-				}
-
-				if value != "" && rule.Validator != nil {
-					if err := rule.Validator(value); err != nil {
-						return apis.NewBadRequestError(
-							fmt.Sprintf("Invalid value for parameter %s: %v", param, err),
-							err,
-						)
-					}
-				}
-			}
-
-			return next(c)
-		}
-	}
-}
-
-// QueryParamRule defines validation rules for query parameters
-type QueryParamRule struct {
-	Required  bool
-	Validator func(string) error
-}
 
 // Common validators
 func ValidatePositiveInt(value string) error {
@@ -168,60 +136,33 @@ func GetValidatedData(c echo.Context) interface{} {
 	return c.Get("validated_data")
 }
 
-// Private helper methods
-func (v *ValidationMiddleware) validateStruct(data interface{}) error {
-	value := reflect.ValueOf(data)
-	if value.Kind() == reflect.Ptr {
-		value = value.Elem()
-	}
-
-	if value.Kind() != reflect.Struct {
-		return nil
-	}
-
-	typ := value.Type()
-	for i := 0; i < value.NumField(); i++ {
-		field := value.Field(i)
-		fieldType := typ.Field(i)
-
-		// Check for required fields
-		tag := fieldType.Tag.Get("validate")
-		if strings.Contains(tag, "required") {
-			if v.isEmpty(field) {
-				return fmt.Errorf("field '%s' is required", fieldType.Name)
+// ValidateQueryParams validates and binds query parameters to a struct
+func (v *ValidationMiddleware) ValidateQueryParams(target interface{}) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			// Create a new instance of the target type
+			targetValue := reflect.New(reflect.TypeOf(target).Elem()).Interface()
+			
+			// Bind query parameters
+			if err := c.Bind(targetValue); err != nil {
+				return apis.NewBadRequestError("Failed to bind query parameters", err)
 			}
-		}
-
-		// Check for email fields
-		if strings.Contains(tag, "email") && !v.isEmpty(field) {
-			if field.Kind() == reflect.String {
-				email := field.String()
-				if err := ValidateEmail(email); err != nil {
-					return fmt.Errorf("field '%s' %v", fieldType.Name, err)
-				}
+			
+			// Validate the bound data
+			if err := utils.ValidateStruct(targetValue); err != nil {
+				return apis.NewBadRequestError("Query parameter validation failed", err)
 			}
-		}
-
-		// Check for length constraints
-		if strings.Contains(tag, "min=") || strings.Contains(tag, "max=") {
-			// Implementation for length validation would go here
+			
+			// Store the validated data in context
+			c.Set("validated_query", targetValue)
+			return next(c)
 		}
 	}
-
-	return nil
 }
 
-func (v *ValidationMiddleware) isEmpty(value reflect.Value) bool {
-	switch value.Kind() {
-	case reflect.String:
-		return value.String() == ""
-	case reflect.Ptr, reflect.Interface:
-		return value.IsNil()
-	case reflect.Slice, reflect.Map:
-		return value.Len() == 0
-	default:
-		return false
-	}
+// GetValidatedQuery returns validated query parameters from context
+func GetValidatedQuery(c echo.Context) interface{} {
+	return c.Get("validated_query")
 }
 
 func (v *ValidationMiddleware) sanitizeStruct(data interface{}) interface{} {

@@ -3,14 +3,14 @@ package models
 // LoginRequest represents the request body for login
 type LoginRequest struct {
 	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=6"`
+	Password string `json:"password" validate:"required,min=6,max=128"`
 }
 
 // UpdateProfileRequest represents the request body for updating user profile
 type UpdateProfileRequest struct {
-	Username    string `json:"username,omitempty" validate:"omitempty,min=3,max=50"`
+	Username    string `json:"username,omitempty" validate:"omitempty,username,min=3,max=50"`
 	Email       string `json:"email,omitempty" validate:"omitempty,email"`
-	Password    string `json:"password,omitempty" validate:"omitempty,min=6"`
+	Password    string `json:"password,omitempty" validate:"omitempty,min=6,max=128"`
 	OldPassword string `json:"oldPassword,omitempty"`
 }
 

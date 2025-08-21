@@ -56,11 +56,11 @@ func (s *LocationService) TrackLocationFromGeoJSON(req appmodels.LocationRequest
 	}
 
 	// Set optional properties
-	if req.Properties.Speed > 0 {
-		record.Set("speed", req.Properties.Speed)
+	if req.Properties.Speed != nil && *req.Properties.Speed > 0 {
+		record.Set("speed", *req.Properties.Speed)
 	}
-	if req.Properties.HeartRate > 0 {
-		record.Set("heart_rate", req.Properties.HeartRate)
+	if req.Properties.HeartRate != nil && *req.Properties.HeartRate > 0 {
+		record.Set("heart_rate", *req.Properties.HeartRate)
 	}
 
 	// Handle session
@@ -89,14 +89,14 @@ func (s *LocationService) TrackLocationFromParams(params appmodels.TrackingQuery
 	record.Set("latitude", params.Latitude)
 
 	// Set optional parameters
-	if params.Altitude != constants.DefaultAltitude {
-		record.Set("altitude", params.Altitude)
+	if params.Altitude != nil {
+		record.Set("altitude", *params.Altitude)
 	}
-	if params.Speed > 0 {
-		record.Set("speed", params.Speed)
+	if params.Speed != nil && *params.Speed > 0 {
+		record.Set("speed", *params.Speed)
 	}
-	if params.HeartRate > 0 {
-		record.Set("heart_rate", params.HeartRate)
+	if params.HeartRate != nil && *params.HeartRate > 0 {
+		record.Set("heart_rate", *params.HeartRate)
 	}
 
 	// Handle session
@@ -236,10 +236,10 @@ func (s *LocationService) recordToGeoJSON(record *models.Record, user *models.Re
 	}
 
 	if speed := record.GetFloat("speed"); speed > 0 {
-		properties.Speed = speed
+		properties.Speed = &speed
 	}
 	if heartRate := record.GetFloat("heart_rate"); heartRate > 0 {
-		properties.HeartRate = heartRate
+		properties.HeartRate = &heartRate
 	}
 
 	// Get session info if available

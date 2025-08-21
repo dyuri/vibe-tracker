@@ -3,7 +3,6 @@ package handlers
 import (
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v5"
@@ -13,6 +12,8 @@ import (
 	"github.com/pocketbase/pocketbase/tools/types"
 	
 	"vibe-tracker/constants"
+	"vibe-tracker/middleware"
+	appmodels "vibe-tracker/models"
 	"vibe-tracker/services"
 )
 
@@ -35,7 +36,14 @@ func (h *TrackingHandler) TrackLocationGET(c echo.Context) error {
 		return apis.NewUnauthorizedError("Authentication required", nil)
 	}
 
-	collection, err := h.app.Dao().FindCollectionByNameOrId("locations")
+	// Get validated query parameters from middleware
+	queryData := middleware.GetValidatedQuery(c)
+	params, ok := queryData.(*appmodels.TrackingQueryParams)
+	if !ok {
+		return apis.NewBadRequestError("Invalid query parameters", nil)
+	}
+
+	collection, err := h.app.Dao().FindCollectionByNameOrId(constants.CollectionLocations)
 	if err != nil {
 		return apis.NewNotFoundError("locations collection not found", err)
 	}
@@ -43,19 +51,23 @@ func (h *TrackingHandler) TrackLocationGET(c echo.Context) error {
 	record := models.NewRecord(collection)
 	record.Set("user", user.Id)
 	record.Set("timestamp", types.NowDateTime())
-	if c.QueryParam("timestamp") != "" {
-		if ts, err := strconv.ParseInt(c.QueryParam("timestamp"), 10, 64); err == nil {
-			timeStamp, _ := types.ParseDateTime(time.Unix(ts, 0))
-			record.Set("timestamp", timeStamp)
-		}
+	if params.Timestamp != 0 {
+		timeStamp, _ := types.ParseDateTime(time.Unix(params.Timestamp, 0))
+		record.Set("timestamp", timeStamp)
 	}
-	record.Set("latitude", c.QueryParam("latitude"))
-	record.Set("longitude", c.QueryParam("longitude"))
-	record.Set("altitude", c.QueryParam("altitude"))
-	record.Set("speed", c.QueryParam("speed"))
-	record.Set("heart_rate", c.QueryParam("heart_rate"))
+	record.Set("latitude", params.Latitude)
+	record.Set("longitude", params.Longitude)
+	if params.Altitude != nil {
+		record.Set("altitude", *params.Altitude)
+	}
+	if params.Speed != nil {
+		record.Set("speed", *params.Speed)
+	}
+	if params.HeartRate != nil {
+		record.Set("heart_rate", *params.HeartRate)
+	}
 	// Handle session - create if doesn't exist
-	sessionName := c.QueryParam("session")
+	sessionName := params.Session
 	record.Set("session", sessionName) // Keep backward compatibility
 
 	if sessionName != "" {
@@ -81,25 +93,14 @@ func (h *TrackingHandler) TrackLocationPOST(c echo.Context) error {
 		return apis.NewUnauthorizedError("Authentication required", nil)
 	}
 
-	var data struct {
-		Type     string `json:"type"`
-		Geometry struct {
-			Type        string    `json:"type"`
-			Coordinates []float64 `json:"coordinates"`
-		} `json:"geometry"`
-		Properties struct {
-			Timestamp int64   `json:"timestamp"`
-			Speed     float64 `json:"speed,omitempty"`
-			HeartRate float64 `json:"heart_rate,omitempty"`
-			Session   string  `json:"session,omitempty"`
-		} `json:"properties"`
+	// Get validated data from middleware
+	jsonData := middleware.GetValidatedData(c)
+	data, ok := jsonData.(*appmodels.LocationRequest)
+	if !ok {
+		return apis.NewBadRequestError("Invalid request data", nil)
 	}
 
-	if err := c.Bind(&data); err != nil {
-		return apis.NewBadRequestError("Failed to parse request data", err)
-	}
-
-	collection, err := h.app.Dao().FindCollectionByNameOrId("locations")
+	collection, err := h.app.Dao().FindCollectionByNameOrId(constants.CollectionLocations)
 	if err != nil {
 		return apis.NewNotFoundError("locations collection not found", err)
 	}
@@ -117,8 +118,12 @@ func (h *TrackingHandler) TrackLocationPOST(c echo.Context) error {
 	if len(data.Geometry.Coordinates) > 2 {
 		record.Set("altitude", data.Geometry.Coordinates[2])
 	}
-	record.Set("speed", data.Properties.Speed)
-	record.Set("heart_rate", data.Properties.HeartRate)
+	if data.Properties.Speed != nil {
+		record.Set("speed", *data.Properties.Speed)
+	}
+	if data.Properties.HeartRate != nil {
+		record.Set("heart_rate", *data.Properties.HeartRate)
+	}
 	// Handle session - create if doesn't exist
 	sessionName := data.Properties.Session
 	record.Set("session", sessionName) // Keep backward compatibility
