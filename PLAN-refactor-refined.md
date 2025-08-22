@@ -181,13 +181,72 @@
 - ✅ All API tests passing, confirming documentation doesn't break functionality
 - ✅ Comprehensive documentation covering authentication, request/response formats, and error handling
 
-## 14. Security & Rate Limiting
-- Add rate limiting middleware for sensitive endpoints.
-- Review authentication and authorization logic for consistency.
+## ✅ 14. Security & Rate Limiting - COMPLETED
+- ✅ Created comprehensive rate limiting middleware (`middleware/rate_limit.go`):
+  - ✅ Configurable limits per endpoint type (auth: 5/min, tracking: 60/min, sessions: 30/min, public: 100/min, docs: 10/min)
+  - ✅ Token bucket algorithm with automatic cleanup and goroutine management
+  - ✅ Client IP-based tracking with support for reverse proxies (X-Forwarded-For, X-Real-IP)
+- ✅ Enhanced security configuration (`config/config.go`, `constants/app.go`):
+  - ✅ Added SecurityConfig struct with comprehensive security settings
+  - ✅ Environment variable support for all security features
+  - ✅ CSP (Content Security Policy) directives configuration
+  - ✅ Configurable timeouts, size limits, and security toggles
+- ✅ Implemented authentication security enhancements (`middleware/auth_security.go`):
+  - ✅ Brute force protection with configurable lockout (default: 5 attempts, 15min lockout)
+  - ✅ JWT token blacklisting with automatic cleanup
+  - ✅ Session security features and hijacking detection
+  - ✅ Failed attempt tracking with client IP monitoring
+- ✅ Enhanced security headers middleware (`middleware/errors.go`):
+  - ✅ HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy
+  - ✅ CORS with configurable origins (development vs production modes)
+  - ✅ Special CSP handling for Swagger UI endpoints
+  - ✅ Permissions Policy headers for privacy protection
+- ✅ Created request security controls (`middleware/security.go`):
+  - ✅ Request size limits with configurable thresholds (default: 10MB)
+  - ✅ Request timeout protection (default: 30s)
+  - ✅ User-Agent filtering blocking malicious patterns (sqlmap, nikto, default curl, etc.)
+  - ✅ File upload security with extension and size validation
+  - ✅ IP whitelist support for admin endpoints
+  - ✅ Comprehensive request logging for security monitoring
+- ✅ Enhanced security audit logging (`utils/logger.go`):
+  - ✅ Structured security event logging with standardized fields
+  - ✅ Specialized logging functions for different violation types
+  - ✅ Security event categorization (rate_limit, brute_force, suspicious_request, etc.)
+  - ✅ Integration with existing zerolog structured logging system
+- ✅ Dependency injection integration (`container/container.go`, `main.go`):
+  - ✅ All security middleware integrated into DI container
+  - ✅ Applied to appropriate endpoint groups with proper middleware ordering
+  - ✅ Conditional activation based on configuration settings
+  - ✅ Security middleware applied to documentation endpoints
+- ✅ Comprehensive security testing (`tests/security_integration_test.go`):
+  - ✅ Integration tests for all middleware components
+  - ✅ Configuration validation and middleware creation tests
+  - ✅ Token blacklist functionality tests
+  - ✅ Performance benchmarks showing minimal overhead (<40ns/op)
+  - ✅ Rate limiting, brute force protection, and security header tests
+- ✅ Updated documentation:
+  - ✅ Created comprehensive configuration guide (`docs/configuration.md`)
+  - ✅ Updated README.md with proper User-Agent headers for curl examples
+  - ✅ Environment variable reference with examples for dev/prod/high-security deployments
+- ✅ All API tests passing and application builds successfully
+- ✅ Security features active and protecting all endpoints with minimal performance impact
 
-## 15. Health Checks & Metrics
-- Add `/health` endpoint for readiness/liveness checks.
-- Integrate basic metrics (e.g., Prometheus) for monitoring.
+## ✅ 15. Health Checks & Metrics - COMPLETED
+- ✅ Added comprehensive health check system with three endpoints:
+  - ✅ `/health/live` - Liveness probe (always returns 200 if process running)
+  - ✅ `/health/ready` - Readiness probe (checks database connectivity and service availability)
+  - ✅ `/health` - Detailed health endpoint (comprehensive system information with configurable access)
+- ✅ Created health check models (`models/health.go`) with status enums and response structures
+- ✅ Implemented health service (`services/health_service.go`) with database monitoring, resource checks, and caching
+- ✅ Added health configuration (`config/config.go`) with environment variables for all settings
+- ✅ Created health constants (`constants/health.go`) for endpoints and configuration defaults
+- ✅ Integrated health service into DI container with proper dependency injection
+- ✅ Added health handler (`handlers/health.go`) with IP-based access control for detailed endpoint
+- ✅ Registered health endpoints in main.go with conditional enablement
+- ✅ Created comprehensive health tests (`tests/health_test.go`) covering models, configuration, and service behavior
+- ✅ Updated documentation (`docs/configuration.md`) with health check configuration guide and Kubernetes examples
+- ✅ Health endpoints return appropriate HTTP status codes (200/503) for orchestration systems
+- ❌ Integrate basic metrics (e.g., Prometheus) for monitoring. - Will do later, see @PLAN-metrics.md
 
 ## 16. Tests
 - Write unit tests for handlers, services, repositories, and middleware.

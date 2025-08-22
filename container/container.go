@@ -27,6 +27,7 @@ type Container struct {
 	UserService     *services.UserService
 	SessionService  *services.SessionService
 	LocationService *services.LocationService
+	HealthService   *services.HealthService
 
 	// Handlers
 	AuthHandler     *handlers.AuthHandler
@@ -34,6 +35,7 @@ type Container struct {
 	TrackingHandler *handlers.TrackingHandler
 	PublicHandler   *handlers.PublicHandler
 	DocsHandler     *handlers.DocsHandler
+	HealthHandler   *handlers.HealthHandler
 
 	// Middleware
 	AuthMiddleware       *middleware.AuthMiddleware
@@ -79,6 +81,18 @@ func (c *Container) initServices() {
 		c.SessionRepository,
 		c.SessionService,
 	)
+	c.HealthService = services.NewHealthService(
+		c.App,
+		c.UserRepository,
+		c.SessionRepository,
+		c.LocationRepository,
+		c.AuthService,
+		c.UserService,
+		c.SessionService,
+		c.LocationService,
+		c.Config.Health.CacheTTL,
+		c.Config.Health.DBTimeout,
+	)
 }
 
 // initHandlers initializes all handler dependencies
@@ -88,6 +102,7 @@ func (c *Container) initHandlers() {
 	c.TrackingHandler = handlers.NewTrackingHandler(c.App, c.LocationService)
 	c.PublicHandler = handlers.NewPublicHandler(c.App, c.LocationService, c.UserService)
 	c.DocsHandler = handlers.NewDocsHandler(c.App)
+	c.HealthHandler = handlers.NewHealthHandler(c.App, c.HealthService, &c.Config.Health)
 }
 
 // initMiddleware initializes all middleware dependencies
@@ -123,13 +138,13 @@ func (c *Container) GetRepositories() (repositories.UserRepository, repositories
 }
 
 // GetServices returns all services for testing purposes
-func (c *Container) GetServices() (*services.AuthService, *services.UserService, *services.SessionService, *services.LocationService) {
-	return c.AuthService, c.UserService, c.SessionService, c.LocationService
+func (c *Container) GetServices() (*services.AuthService, *services.UserService, *services.SessionService, *services.LocationService, *services.HealthService) {
+	return c.AuthService, c.UserService, c.SessionService, c.LocationService, c.HealthService
 }
 
 // GetHandlers returns all handlers for testing purposes
-func (c *Container) GetHandlers() (*handlers.AuthHandler, *handlers.SessionHandler, *handlers.TrackingHandler, *handlers.PublicHandler, *handlers.DocsHandler) {
-	return c.AuthHandler, c.SessionHandler, c.TrackingHandler, c.PublicHandler, c.DocsHandler
+func (c *Container) GetHandlers() (*handlers.AuthHandler, *handlers.SessionHandler, *handlers.TrackingHandler, *handlers.PublicHandler, *handlers.DocsHandler, *handlers.HealthHandler) {
+	return c.AuthHandler, c.SessionHandler, c.TrackingHandler, c.PublicHandler, c.DocsHandler, c.HealthHandler
 }
 
 // GetMiddleware returns all middleware for testing purposes

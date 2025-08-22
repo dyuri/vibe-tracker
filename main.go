@@ -134,6 +134,15 @@ func main() {
 		e.Router.GET("/swagger/json", di.DocsHandler.ServeSwaggerJSON, docsMiddleware...)
 		e.Router.GET("/swagger", di.DocsHandler.ServeSwaggerUI, docsMiddleware...)
 
+		// Health check endpoints (no rate limiting - infrastructure needs)
+		if cfg.Health.Enabled {
+			e.Router.GET(constants.HealthLivenessEndpoint, di.HealthHandler.GetLiveness)
+			e.Router.GET(constants.HealthReadinessEndpoint, di.HealthHandler.GetReadiness)
+			if cfg.Health.DetailedEnabled {
+				e.Router.GET(constants.HealthEndpoint, di.HealthHandler.GetDetailedHealth)
+			}
+		}
+
 		// Static routes for frontend
 		e.Router.GET("/u/:username", func(c echo.Context) error {
 			return c.File("public/index.html")

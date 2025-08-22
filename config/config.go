@@ -25,6 +25,9 @@ type AppConfig struct {
 	
 	// Security configuration
 	Security SecurityConfig
+	
+	// Health check configuration
+	Health HealthConfig
 }
 
 // SecurityConfig holds security-related configuration
@@ -53,6 +56,21 @@ type SecurityConfig struct {
 	CSPEnabled           bool
 }
 
+// HealthConfig holds health check configuration
+type HealthConfig struct {
+	// Health check enablement
+	Enabled         bool
+	DetailedEnabled bool
+	
+	// Health check timeouts
+	DBTimeout         time.Duration
+	CacheTTL          time.Duration
+	MaxResponseTime   time.Duration
+	
+	// Access control
+	AllowedIPs []string
+}
+
 // NewAppConfig creates a new configuration instance with values from environment variables
 func NewAppConfig() *AppConfig {
 	isProd := isProductionMode()
@@ -65,6 +83,7 @@ func NewAppConfig() *AppConfig {
 		DefaultPerPage: constants.DefaultPerPage,
 		MaxPerPage:     constants.MaxPerPageLimit,
 		Security:       newSecurityConfig(isProd),
+		Health:         newHealthConfig(isProd),
 	}
 }
 
@@ -93,6 +112,25 @@ func newSecurityConfig(isProduction bool) SecurityConfig {
 		EnableSecurityHeaders: getBoolEnvOrDefault("ENABLE_SECURITY_HEADERS", true),
 		HSTSEnabled:          getBoolEnvOrDefault("HSTS_ENABLED", isProduction),
 		CSPEnabled:           getBoolEnvOrDefault("CSP_ENABLED", true),
+	}
+}
+
+// newHealthConfig creates health check configuration based on environment
+func newHealthConfig(isProduction bool) HealthConfig {
+	allowedIPs := []string{}
+	if ipsEnv := os.Getenv(constants.EnvHealthAllowedIPs); ipsEnv != "" {
+		allowedIPs = strings.Split(ipsEnv, ",")
+	}
+	
+	return HealthConfig{
+		Enabled:         getBoolEnvOrDefault(constants.EnvHealthEnabled, constants.DefaultHealthEnabled),
+		DetailedEnabled: getBoolEnvOrDefault(constants.EnvHealthDetailedEnabled, !isProduction), // false in production by default
+		
+		DBTimeout:       getDurationEnvOrDefault(constants.EnvHealthDBTimeout, constants.DefaultHealthDBTimeout),
+		CacheTTL:        getDurationEnvOrDefault(constants.EnvHealthCacheTTL, constants.DefaultHealthCacheTTL),
+		MaxResponseTime: getDurationEnvOrDefault(constants.EnvHealthMaxResponseTime, constants.DefaultHealthMaxResponseTime),
+		
+		AllowedIPs: allowedIPs,
 	}
 }
 

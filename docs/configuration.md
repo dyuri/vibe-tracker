@@ -76,6 +76,17 @@ CSP directives can be customized for different security requirements.
 |----------|------|---------|-------------|
 | `MAX_FILE_UPLOAD_SIZE` | int64 | `5242880` | Maximum file upload size in bytes (5MB) |
 
+### Health Check Configuration
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `HEALTH_ENABLED` | bool | `true` | Enable health check endpoints |
+| `HEALTH_DETAILED_ENABLED` | bool | `true` (dev), `false` (prod) | Enable detailed health endpoint |
+| `HEALTH_DB_TIMEOUT` | duration | `5s` | Database health check timeout |
+| `HEALTH_CACHE_TTL` | duration | `30s` | Health check cache TTL |
+| `HEALTH_MAX_RESPONSE_TIME` | duration | `2s` | Maximum acceptable response time |
+| `HEALTH_ALLOWED_IPS` | string | `""` | Comma-separated IPs allowed for detailed health (CIDR supported) |
+
 ## Configuration Examples
 
 ### Development Environment
@@ -87,6 +98,7 @@ SECURITY_CORS_ALLOW_ALL=true
 SECURITY_HSTS_ENABLED=false
 SECURITY_ENABLE_REQUEST_LOGS=true
 RATE_LIMIT_AUTH=10
+HEALTH_DETAILED_ENABLED=true
 ```
 
 ### Production Environment
@@ -103,6 +115,8 @@ SECURITY_FAILED_LOGIN_THRESHOLD=3
 SECURITY_ACCOUNT_LOCKOUT_DURATION=30m
 RATE_LIMIT_AUTH=5
 RATE_LIMIT_PUBLIC=50
+HEALTH_DETAILED_ENABLED=false
+HEALTH_ALLOWED_IPS=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
 ```
 
 ### High Security Environment
@@ -118,6 +132,9 @@ SECURITY_ACCOUNT_LOCKOUT_DURATION=1h
 RATE_LIMIT_AUTH=3
 RATE_LIMIT_TRACKING=30
 RATE_LIMIT_PUBLIC=20
+HEALTH_DETAILED_ENABLED=false
+HEALTH_DB_TIMEOUT=3s
+HEALTH_ALLOWED_IPS=127.0.0.1
 ```
 
 ## Security Recommendations
@@ -129,6 +146,7 @@ RATE_LIMIT_PUBLIC=20
 3. **Enable CSP**: Keep `SECURITY_CSP_ENABLED=true`
 4. **Brute Force Protection**: Use low thresholds (`SECURITY_FAILED_LOGIN_THRESHOLD=3`)
 5. **Rate Limiting**: Adjust limits based on expected traffic patterns
+6. **Health Checks**: Disable detailed health (`HEALTH_DETAILED_ENABLED=false`) and restrict IPs
 
 ### High Traffic Environments
 
@@ -148,7 +166,67 @@ CSP_STYLE_SRC='none'
 RATE_LIMIT_PUBLIC=200  # Higher for API usage
 ```
 
+### Container Orchestration
+
+For Kubernetes, Docker Swarm, or similar platforms:
+
+```bash
+# Container-optimized configuration
+HEALTH_ENABLED=true
+HEALTH_DETAILED_ENABLED=false
+HEALTH_DB_TIMEOUT=3s
+HEALTH_CACHE_TTL=15s
+HEALTH_ALLOWED_IPS=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+```
+
+#### Kubernetes Health Check Configuration
+
+```yaml
+# Example Kubernetes probe configuration
+livenessProbe:
+  httpGet:
+    path: /health/live
+    port: 8090
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: 8090
+  initialDelaySeconds: 5
+  periodSeconds: 5
+```
+
 ## Monitoring and Observability
+
+### Health Check Endpoints
+
+The application provides three health check endpoints for monitoring and orchestration:
+
+- **Liveness**: `GET /health/live` - Always returns 200 if the process is running
+- **Readiness**: `GET /health/ready` - Checks database connectivity and service availability
+- **Detailed Health**: `GET /health` - Comprehensive health information (configurable access)
+
+#### Health Check Responses
+
+All endpoints return JSON with consistent structure:
+
+```json
+{
+  "status": "healthy|warning|unhealthy",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "uptime": "2h15m30s"
+}
+```
+
+The detailed endpoint includes additional system information:
+- Database connectivity and response times
+- Service availability status
+- System resources (memory, goroutines)
+- Component-level health checks
+
+### Security Event Logging
 
 The application logs security events with structured logging. Key metrics to monitor:
 
@@ -176,5 +254,14 @@ Without any environment variables set, the application runs with:
 - Brute force protection enabled
 - Request logging enabled
 - HSTS disabled (suitable for HTTP development)
+- Health checks enabled with detailed health in development
 
 This provides a secure baseline while remaining developer-friendly for local development.
+
+## Health Check Status Codes
+
+The health endpoints return appropriate HTTP status codes:
+
+- **200 OK**: Service is healthy and operating normally
+- **503 Service Unavailable**: Service is unhealthy (database down, critical failure)
+- **Detailed health endpoint**: May return 403 Forbidden if IP restrictions are enabled

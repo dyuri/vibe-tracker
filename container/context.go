@@ -22,7 +22,7 @@ const (
 // ContainerInterface defines methods needed from the container
 type ContainerInterface interface {
 	GetRepositories() (repositories.UserRepository, repositories.SessionRepository, repositories.LocationRepository)
-	GetServices() (*services.AuthService, *services.UserService, *services.SessionService, *services.LocationService)
+	GetServices() (*services.AuthService, *services.UserService, *services.SessionService, *services.LocationService, *services.HealthService)
 }
 
 // WithContainer adds the DI container to the context
@@ -107,7 +107,7 @@ func GetLocationService(ctx context.Context) *services.LocationService {
 func InjectServices(ctx context.Context, container ContainerInterface) context.Context {
 	ctx = WithContainer(ctx, container)
 	userRepo, _, _ := container.GetRepositories()
-	authService, userService, sessionService, locationService := container.GetServices()
+	authService, userService, sessionService, locationService, _ := container.GetServices()
 	
 	ctx = WithUserRepository(ctx, userRepo)
 	ctx = WithUserService(ctx, userService)
