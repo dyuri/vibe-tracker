@@ -4,6 +4,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 	
 	"vibe-tracker/constants"
 )
@@ -21,10 +22,41 @@ type AppConfig struct {
 	DefaultPage    int
 	DefaultPerPage int
 	MaxPerPage     int
+	
+	// Security configuration
+	Security SecurityConfig
+}
+
+// SecurityConfig holds security-related configuration
+type SecurityConfig struct {
+	// Rate limiting
+	EnableRateLimiting bool
+	RateLimitStrict    bool // Stricter limits for production
+	
+	// Request security
+	MaxRequestSize     int64
+	RequestTimeout     time.Duration
+	EnableRequestLogs  bool
+	
+	// Authentication security  
+	EnableBruteForceProtection bool
+	FailedLoginThreshold       int
+	AccountLockoutDuration     time.Duration
+	
+	// CORS configuration
+	CORSAllowedOrigins []string
+	CORSAllowAll       bool
+	
+	// Security headers
+	EnableSecurityHeaders bool
+	HSTSEnabled          bool
+	CSPEnabled           bool
 }
 
 // NewAppConfig creates a new configuration instance with values from environment variables
 func NewAppConfig() *AppConfig {
+	isProd := isProductionMode()
+	
 	return &AppConfig{
 		Port:           getEnvOrDefault(constants.EnvPort, constants.DefaultPort),
 		Host:           getEnvOrDefault(constants.EnvHost, constants.DefaultHost),
@@ -32,6 +64,35 @@ func NewAppConfig() *AppConfig {
 		DefaultPage:    constants.DefaultPage,
 		DefaultPerPage: constants.DefaultPerPage,
 		MaxPerPage:     constants.MaxPerPageLimit,
+		Security:       newSecurityConfig(isProd),
+	}
+}
+
+// newSecurityConfig creates security configuration based on environment
+func newSecurityConfig(isProduction bool) SecurityConfig {
+	corsOrigins := []string{}
+	if originsEnv := os.Getenv("CORS_ALLOWED_ORIGINS"); originsEnv != "" {
+		corsOrigins = strings.Split(originsEnv, ",")
+	}
+	
+	return SecurityConfig{
+		EnableRateLimiting: getBoolEnvOrDefault("ENABLE_RATE_LIMITING", true),
+		RateLimitStrict:    isProduction,
+		
+		MaxRequestSize:    getInt64EnvOrDefault("MAX_REQUEST_SIZE", constants.MaxJSONRequestSize),
+		RequestTimeout:    getDurationEnvOrDefault("REQUEST_TIMEOUT", time.Duration(constants.RequestTimeout)*time.Second),
+		EnableRequestLogs: getBoolEnvOrDefault("ENABLE_REQUEST_LOGS", !isProduction),
+		
+		EnableBruteForceProtection: getBoolEnvOrDefault("ENABLE_BRUTE_FORCE_PROTECTION", true),
+		FailedLoginThreshold:       getIntEnvOrDefault("FAILED_LOGIN_THRESHOLD", constants.MaxFailedLoginAttempts),
+		AccountLockoutDuration:     getDurationEnvOrDefault("ACCOUNT_LOCKOUT_DURATION", constants.LoginLockoutDuration),
+		
+		CORSAllowedOrigins: corsOrigins,
+		CORSAllowAll:       getBoolEnvOrDefault("CORS_ALLOW_ALL", !isProduction),
+		
+		EnableSecurityHeaders: getBoolEnvOrDefault("ENABLE_SECURITY_HEADERS", true),
+		HSTSEnabled:          getBoolEnvOrDefault("HSTS_ENABLED", isProduction),
+		CSPEnabled:           getBoolEnvOrDefault("CSP_ENABLED", true),
 	}
 }
 
@@ -42,13 +103,18 @@ func (c *AppConfig) GetServerAddress() string {
 
 // IsProductionMode returns true if running in production mode
 func (c *AppConfig) IsProductionMode() bool {
-	env := strings.ToLower(os.Getenv("GO_ENV"))
-	return env == "production" || env == "prod"
+	return isProductionMode()
 }
 
 // IsDevelopmentMode returns true if running in development mode
 func (c *AppConfig) IsDevelopmentMode() bool {
 	return !c.IsProductionMode()
+}
+
+// isProductionMode checks environment for production mode
+func isProductionMode() bool {
+	env := strings.ToLower(os.Getenv("GO_ENV"))
+	return env == "production" || env == "prod"
 }
 
 // Helper functions
@@ -78,6 +144,26 @@ func getIntEnvOrDefault(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intValue, err := strconv.Atoi(value); err == nil {
 			return intValue
+		}
+	}
+	return defaultValue
+}
+
+// getInt64EnvOrDefault returns int64 environment variable value or default if not set/invalid
+func getInt64EnvOrDefault(key string, defaultValue int64) int64 {
+	if value := os.Getenv(key); value != "" {
+		if intValue, err := strconv.ParseInt(value, 10, 64); err == nil {
+			return intValue
+		}
+	}
+	return defaultValue
+}
+
+// getDurationEnvOrDefault returns duration environment variable value or default if not set/invalid
+func getDurationEnvOrDefault(key string, defaultValue time.Duration) time.Duration {
+	if value := os.Getenv(key); value != "" {
+		if duration, err := time.ParseDuration(value); err == nil {
+			return duration
 		}
 	}
 	return defaultValue

@@ -83,3 +83,102 @@ func RequestLogger(method, path, userID string) *zerolog.Event {
 		Str("path", path).
 		Str("user_id", userID)
 }
+
+// Security Event Logging Functions
+
+// LogSecurityEvent logs security-related events with standardized fields
+func LogSecurityEvent(eventType, message string) *zerolog.Event {
+	return Logger.Warn().
+		Str("event_type", "security").
+		Str("security_event", eventType).
+		Str("message", message)
+}
+
+// LogRateLimitViolation logs rate limit violations
+func LogRateLimitViolation(clientIP, endpoint string, limit int) {
+	Logger.Warn().
+		Str("event_type", "security").
+		Str("security_event", "rate_limit_exceeded").
+		Str("client_ip", clientIP).
+		Str("endpoint", endpoint).
+		Int("limit", limit).
+		Msg("Rate limit exceeded")
+}
+
+// LogBruteForceAttempt logs brute force protection events
+func LogBruteForceAttempt(clientIP string, attemptCount, maxAttempts int) {
+	Logger.Warn().
+		Str("event_type", "security").
+		Str("security_event", "brute_force_attempt").
+		Str("client_ip", clientIP).
+		Int("attempt_count", attemptCount).
+		Int("max_attempts", maxAttempts).
+		Msg("Failed login attempt recorded")
+}
+
+// LogBruteForceBlocked logs when a client is blocked due to brute force protection
+func LogBruteForceBlocked(clientIP string, lockedUntil time.Time) {
+	Logger.Error().
+		Str("event_type", "security").
+		Str("security_event", "brute_force_blocked").
+		Str("client_ip", clientIP).
+		Time("locked_until", lockedUntil).
+		Msg("Client locked out due to brute force protection")
+}
+
+// LogSuspiciousRequest logs suspicious request patterns
+func LogSuspiciousRequest(clientIP, userAgent, path, reason string) {
+	Logger.Error().
+		Str("event_type", "security").
+		Str("security_event", "suspicious_request").
+		Str("client_ip", clientIP).
+		Str("user_agent", userAgent).
+		Str("path", path).
+		Str("reason", reason).
+		Msg("Suspicious request detected")
+}
+
+// LogSecurityViolation logs general security violations
+func LogSecurityViolation(clientIP, violationType, details string) {
+	Logger.Error().
+		Str("event_type", "security").
+		Str("security_event", "security_violation").
+		Str("client_ip", clientIP).
+		Str("violation_type", violationType).
+		Str("details", details).
+		Msg("Security violation detected")
+}
+
+// LogAuthenticationFailure logs authentication failures with context
+func LogAuthenticationFailure(clientIP, username, reason string) {
+	Logger.Warn().
+		Str("event_type", "security").
+		Str("security_event", "auth_failure").
+		Str("client_ip", clientIP).
+		Str("username", username).
+		Str("reason", reason).
+		Msg("Authentication failure")
+}
+
+// LogUnauthorizedAccess logs unauthorized access attempts
+func LogUnauthorizedAccess(clientIP, path, userID, reason string) {
+	Logger.Warn().
+		Str("event_type", "security").
+		Str("security_event", "unauthorized_access").
+		Str("client_ip", clientIP).
+		Str("path", path).
+		Str("user_id", userID).
+		Str("reason", reason).
+		Msg("Unauthorized access attempt")
+}
+
+// LogFileUploadViolation logs file upload security violations
+func LogFileUploadViolation(clientIP, filename, violationType string) {
+	Logger.Error().
+		Str("event_type", "security").
+		Str("security_event", "file_upload_violation").
+		Str("client_ip", clientIP).
+		Str("filename", filename).
+		Str("violation_type", violationType).
+		Msg("File upload security violation")
+}
