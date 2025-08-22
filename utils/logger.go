@@ -7,21 +7,30 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"vibe-tracker/config"
 )
+
+// AppConfigProvider defines the methods of config.AppConfig that InitLogger uses
+type AppConfigProvider interface {
+	IsDevelopmentMode() bool
+}
 
 var Logger zerolog.Logger
 
 // InitLogger initializes the global structured logger
-func InitLogger(cfg *config.AppConfig) {
-	// Configure output format
-	var output io.Writer = os.Stdout
-	
-	// Pretty print for development
-	if cfg.IsDevelopmentMode() {
-		output = zerolog.ConsoleWriter{
-			Out:        os.Stdout,
-			TimeFormat: time.RFC3339,
+func InitLogger(cfg AppConfigProvider, outputWriter ...io.Writer) {
+	var output io.Writer
+
+	if len(outputWriter) > 0 && outputWriter[0] != nil {
+		output = outputWriter[0] // Always use provided writer if available
+	} else {
+		// Original logic for development/production mode
+		if cfg.IsDevelopmentMode() {
+			output = zerolog.ConsoleWriter{
+				Out:        os.Stdout,
+				TimeFormat: time.RFC3339,
+			}
+		} else {
+			output = os.Stdout // Default to JSON output for production
 		}
 	}
 
