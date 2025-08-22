@@ -30,6 +30,24 @@ func NewTrackingHandler(app *pocketbase.PocketBase, locationService *services.Lo
 	}
 }
 
+// TrackLocationGET tracks location via GET request with query parameters
+//
+//	@Summary		Track location (GET)
+//	@Description	Tracks user location using GET request with query parameters
+//	@Tags			Tracking
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Security		TokenAuth
+//	@Param			lat			query		float64	true	"Latitude (-90 to 90)"
+//	@Param			lon			query		float64	true	"Longitude (-180 to 180)"
+//	@Param			alt			query		float64	false	"Altitude in meters"
+//	@Param			speed		query		float64	false	"Speed in m/s"
+//	@Param			timestamp	query		int64	false	"Unix timestamp"
+//	@Param			session		query		string	false	"Session name"
+//	@Success		200			{object}	models.SuccessResponse	"Location tracked successfully"
+//	@Failure		400			{object}	models.ErrorResponse		"Invalid request"
+//	@Failure		401			{object}	models.ErrorResponse		"Authentication required"
+//	@Router			/track [get]
 func (h *TrackingHandler) TrackLocationGET(c echo.Context) error {
 	// Get authenticated user from middleware context
 	user, exists := GetAuthUser(c)
@@ -87,6 +105,20 @@ func (h *TrackingHandler) TrackLocationGET(c echo.Context) error {
 	return utils.SendSuccess(c, http.StatusOK, record, "Location tracked successfully")
 }
 
+// TrackLocationPOST tracks location via POST request with JSON body
+//
+//	@Summary		Track location (POST)
+//	@Description	Tracks user location using POST request with JSON payload
+//	@Tags			Tracking
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Security		TokenAuth
+//	@Param			request	body		models.LocationRequest	true	"Location data"
+//	@Success		200		{object}	models.SuccessResponse	"Location tracked successfully"
+//	@Failure		400		{object}	models.ErrorResponse		"Invalid request"
+//	@Failure		401		{object}	models.ErrorResponse		"Authentication required"
+//	@Router			/track [post]
 func (h *TrackingHandler) TrackLocationPOST(c echo.Context) error {
 	// Get authenticated user from middleware context
 	user, exists := GetAuthUser(c)

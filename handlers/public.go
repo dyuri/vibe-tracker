@@ -29,6 +29,19 @@ func NewPublicHandler(app *pocketbase.PocketBase, locationService *services.Loca
 	}
 }
 
+// GetLocation retrieves the latest location for a user
+//
+//	@Summary		Get user location
+//	@Description	Returns the latest location data for the specified user
+//	@Tags			Public
+//	@Produce		json
+//	@Param			username	path		string	true	"Username"
+//	@Param			session		query		string	false	"Session name filter"
+//	@Param			limit		query		int		false	"Number of locations to return (default: 50)"
+//	@Param			since		query		string	false	"ISO timestamp to filter locations since"
+//	@Success		200			{object}	models.SuccessResponse	"Location data retrieved successfully"
+//	@Failure		404			{object}	models.ErrorResponse		"User not found"
+//	@Router			/location/{username} [get]
 func (h *PublicHandler) GetLocation(c echo.Context) error {
 	// Get user from middleware context
 	user, exists := GetRequestUser(c)
@@ -103,6 +116,16 @@ func (h *PublicHandler) GetLocation(c echo.Context) error {
 	return utils.SendGeoJSON(c, http.StatusOK, response, "")
 }
 
+// GetPublicLocations retrieves all public location data
+//
+//	@Summary		Get public locations
+//	@Description	Returns public location data from all users in GeoJSON format
+//	@Tags			Public
+//	@Produce		json
+//	@Param			limit		query		int		false	"Number of locations to return (default: 1000)"
+//	@Param			since		query		string	false	"ISO timestamp to filter locations since"
+//	@Success		200			{object}	models.SuccessResponse	"Public locations retrieved successfully"
+//	@Router			/public-location [get]
 func (h *PublicHandler) GetPublicLocations(c echo.Context) error {
 	// Get all users
 	users, err := h.app.Dao().FindRecordsByFilter("users", "id != ''", "", 0, 0, nil)
@@ -183,6 +206,17 @@ func (h *PublicHandler) GetPublicLocations(c echo.Context) error {
 	return utils.SendGeoJSON(c, http.StatusOK, response, "")
 }
 
+// GetSessionData retrieves location data for a specific session
+//
+//	@Summary		Get session data
+//	@Description	Returns location data for a specific user session in GeoJSON format
+//	@Tags			Public
+//	@Produce		json
+//	@Param			username	path		string	true	"Username"
+//	@Param			session		path		string	true	"Session name"
+//	@Success		200			{object}	models.SuccessResponse	"Session data retrieved successfully"
+//	@Failure		404			{object}	models.ErrorResponse		"User or session not found"
+//	@Router			/session/{username}/{session} [get]
 func (h *PublicHandler) GetSessionData(c echo.Context) error {
 	// Get user from middleware context
 	user, exists := GetRequestUser(c)

@@ -33,6 +33,7 @@ type Container struct {
 	SessionHandler  *handlers.SessionHandler
 	TrackingHandler *handlers.TrackingHandler
 	PublicHandler   *handlers.PublicHandler
+	DocsHandler     *handlers.DocsHandler
 
 	// Middleware
 	AuthMiddleware       *middleware.AuthMiddleware
@@ -83,6 +84,7 @@ func (c *Container) initHandlers() {
 	c.SessionHandler = handlers.NewSessionHandler(c.App, c.SessionService)
 	c.TrackingHandler = handlers.NewTrackingHandler(c.App, c.LocationService)
 	c.PublicHandler = handlers.NewPublicHandler(c.App, c.LocationService, c.UserService)
+	c.DocsHandler = handlers.NewDocsHandler(c.App)
 }
 
 // initMiddleware initializes all middleware dependencies
@@ -104,8 +106,8 @@ func (c *Container) GetServices() (*services.AuthService, *services.UserService,
 }
 
 // GetHandlers returns all handlers for testing purposes
-func (c *Container) GetHandlers() (*handlers.AuthHandler, *handlers.SessionHandler, *handlers.TrackingHandler, *handlers.PublicHandler) {
-	return c.AuthHandler, c.SessionHandler, c.TrackingHandler, c.PublicHandler
+func (c *Container) GetHandlers() (*handlers.AuthHandler, *handlers.SessionHandler, *handlers.TrackingHandler, *handlers.PublicHandler, *handlers.DocsHandler) {
+	return c.AuthHandler, c.SessionHandler, c.TrackingHandler, c.PublicHandler, c.DocsHandler
 }
 
 // GetMiddleware returns all middleware for testing purposes

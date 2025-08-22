@@ -30,6 +30,18 @@ func NewSessionHandler(app *pocketbase.PocketBase, sessionService *services.Sess
 	}
 }
 
+// ListSessions lists all sessions for a user
+//
+//	@Summary		List user sessions
+//	@Description	Returns a paginated list of sessions for the specified user
+//	@Tags			Sessions
+//	@Produce		json
+//	@Param			username	path		string	true	"Username"
+//	@Param			page		query		int		false	"Page number (default: 1)"
+//	@Param			per_page	query		int		false	"Items per page (default: 20, max: 100)"
+//	@Success		200			{object}	models.SuccessResponse	"Sessions retrieved successfully"
+//	@Failure		404			{object}	models.ErrorResponse		"User not found"
+//	@Router			/sessions/{username} [get]
 func (h *SessionHandler) ListSessions(c echo.Context) error {
 	// Get user from middleware context
 	user, exists := GetRequestUser(c)
@@ -98,6 +110,17 @@ func (h *SessionHandler) ListSessions(c echo.Context) error {
 	return utils.SendPaginated(c, http.StatusOK, sessionList, paginationMeta, "")
 }
 
+// GetSession retrieves a specific session for a user
+//
+//	@Summary		Get user session
+//	@Description	Returns a specific session by username and session name
+//	@Tags			Sessions
+//	@Produce		json
+//	@Param			username	path		string	true	"Username"
+//	@Param			name		path		string	true	"Session name"
+//	@Success		200			{object}	models.SuccessResponse	"Session retrieved successfully"
+//	@Failure		404			{object}	models.ErrorResponse		"Session not found"
+//	@Router			/sessions/{username}/{name} [get]
 func (h *SessionHandler) GetSession(c echo.Context) error {
 	username := c.PathParam("username")
 	sessionName := c.PathParam("name")
@@ -125,6 +148,20 @@ func (h *SessionHandler) GetSession(c echo.Context) error {
 	return utils.SendSuccess(c, http.StatusOK, sessionData, "")
 }
 
+// CreateSession creates a new session for the authenticated user
+//
+//	@Summary		Create session
+//	@Description	Creates a new tracking session for the authenticated user
+//	@Tags			Sessions
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		models.CreateSessionRequest	true	"Session data"
+//	@Success		201		{object}	models.SuccessResponse			"Session created successfully"
+//	@Failure		400		{object}	models.ErrorResponse				"Invalid request"
+//	@Failure		401		{object}	models.ErrorResponse				"Authentication required"
+//	@Failure		409		{object}	models.ErrorResponse				"Session already exists"
+//	@Router			/sessions [post]
 func (h *SessionHandler) CreateSession(c echo.Context) error {
 	record, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
 	if record == nil {
@@ -178,6 +215,23 @@ func (h *SessionHandler) CreateSession(c echo.Context) error {
 	return utils.SendSuccess(c, http.StatusCreated, sessionData, "Session created successfully")
 }
 
+// UpdateSession updates an existing session
+//
+//	@Summary		Update session
+//	@Description	Updates an existing session for the authenticated user
+//	@Tags			Sessions
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			username	path		string						true	"Username"
+//	@Param			name		path		string						true	"Session name"
+//	@Param			request		body		models.UpdateSessionRequest	true	"Updated session data"
+//	@Success		200			{object}	models.SuccessResponse			"Session updated successfully"
+//	@Failure		400			{object}	models.ErrorResponse				"Invalid request"
+//	@Failure		401			{object}	models.ErrorResponse				"Authentication required"
+//	@Failure		403			{object}	models.ErrorResponse				"Forbidden"
+//	@Failure		404			{object}	models.ErrorResponse				"Session not found"
+//	@Router			/sessions/{username}/{name} [put]
 func (h *SessionHandler) UpdateSession(c echo.Context) error {
 	record, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
 	if record == nil {
@@ -226,6 +280,20 @@ func (h *SessionHandler) UpdateSession(c echo.Context) error {
 	return utils.SendSuccess(c, http.StatusOK, sessionData, "Session updated successfully")
 }
 
+// DeleteSession deletes an existing session
+//
+//	@Summary		Delete session
+//	@Description	Deletes an existing session for the authenticated user
+//	@Tags			Sessions
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			username	path		string	true	"Username"
+//	@Param			name		path		string	true	"Session name"
+//	@Success		200			{object}	models.SuccessResponse	"Session deleted successfully"
+//	@Failure		401			{object}	models.ErrorResponse		"Authentication required"
+//	@Failure		403			{object}	models.ErrorResponse		"Forbidden"
+//	@Failure		404			{object}	models.ErrorResponse		"Session not found"
+//	@Router			/sessions/{username}/{name} [delete]
 func (h *SessionHandler) DeleteSession(c echo.Context) error {
 	record, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
 	if record == nil {

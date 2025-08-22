@@ -1,3 +1,24 @@
+// Vibe Tracker API
+//
+//	@title			Vibe Tracker API
+//	@version		1.0
+//	@description	A location tracking API built with Go/PocketBase backend
+//	@contact.name	API Support
+//	@contact.email	support@vibetracker.com
+//	@license.name	MIT
+//	@host			localhost:8090
+//	@BasePath		/api
+//	@schemes		http https
+//
+//	@securityDefinitions.apikey	BearerAuth
+//	@in							header
+//	@name						Authorization
+//	@description				JWT Authorization header using the Bearer scheme. Example: "Authorization: Bearer {token}"
+//
+//	@securityDefinitions.apikey	TokenAuth
+//	@in							query
+//	@name						token
+//	@description				Custom token for location tracking endpoints
 package main
 
 import (
@@ -9,6 +30,7 @@ import (
 	"vibe-tracker/config"
 	"vibe-tracker/constants"
 	"vibe-tracker/container"
+	_ "vibe-tracker/docs/api"
 	"vibe-tracker/models"
 	"vibe-tracker/utils"
 	_ "vibe-tracker/migrations"
@@ -69,6 +91,10 @@ func main() {
 	})
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+		// API Documentation endpoints
+		e.Router.GET("/swagger/json", di.DocsHandler.ServeSwaggerJSON)
+		e.Router.GET("/swagger", di.DocsHandler.ServeSwaggerUI)
+
 		// Static routes for frontend
 		e.Router.GET("/u/:username", func(c echo.Context) error {
 			return c.File("public/index.html")

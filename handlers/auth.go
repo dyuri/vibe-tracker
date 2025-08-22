@@ -30,6 +30,18 @@ func NewAuthHandler(app *pocketbase.PocketBase, authService *services.AuthServic
 	}
 }
 
+// Login handles user authentication
+//
+//	@Summary		User login
+//	@Description	Authenticate user with email and password
+//	@Tags			Authentication
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		models.LoginRequest		true	"Login credentials"
+//	@Success		200		{object}	models.SuccessResponse	"Login successful"
+//	@Failure		400		{object}	models.ErrorResponse		"Invalid request"
+//	@Failure		401		{object}	models.ErrorResponse		"Invalid credentials"
+//	@Router			/login [post]
 func (h *AuthHandler) Login(c echo.Context) error {
 	// Get validated data from middleware
 	data := middleware.GetValidatedData(c)
@@ -46,6 +58,18 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	return utils.SendSuccess(c, http.StatusOK, response, "Login successful")
 }
 
+// RefreshToken refreshes an expired JWT token
+//
+//	@Summary		Refresh JWT token
+//	@Description	Refresh an expired JWT token using refresh token
+//	@Tags			Authentication
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		models.RefreshTokenRequest	true	"Refresh token request"
+//	@Success		200		{object}	models.SuccessResponse		"Token refreshed successfully"
+//	@Failure		400		{object}	models.ErrorResponse			"Invalid request"
+//	@Failure		401		{object}	models.ErrorResponse			"Invalid refresh token"
+//	@Router			/auth/refresh [post]
 func (h *AuthHandler) RefreshToken(c echo.Context) error {
 	authHeader := c.Request().Header.Get("Authorization")
 	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
@@ -79,6 +103,16 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 	return utils.SendSuccess(c, http.StatusOK, userData, "Token refreshed successfully")
 }
 
+// GetMe returns the current authenticated user's profile
+//
+//	@Summary		Get current user profile
+//	@Description	Returns the authenticated user's profile information
+//	@Tags			Authentication
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	models.SuccessResponse	"User profile retrieved successfully"
+//	@Failure		401	{object}	models.ErrorResponse		"Authentication required"
+//	@Router			/me [get]
 func (h *AuthHandler) GetMe(c echo.Context) error {
 	// Get authenticated user from middleware context
 	info, exists := GetAuthUser(c)
@@ -97,6 +131,19 @@ func (h *AuthHandler) GetMe(c echo.Context) error {
 	return utils.SendSuccess(c, http.StatusOK, userData, "")
 }
 
+// UpdateProfile updates the current user's profile
+//
+//	@Summary		Update user profile
+//	@Description	Updates the authenticated user's profile information
+//	@Tags			Authentication
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		models.UpdateProfileRequest	true	"Profile update data"
+//	@Success		200		{object}	models.SuccessResponse		"Profile updated successfully"
+//	@Failure		400		{object}	models.ErrorResponse			"Invalid request"
+//	@Failure		401		{object}	models.ErrorResponse			"Authentication required"
+//	@Router			/profile [put]
 func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 	record, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
 	if record == nil {
@@ -126,6 +173,19 @@ func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 	return utils.SendSuccess(c, http.StatusOK, userData, "Profile updated successfully")
 }
 
+// UploadAvatar uploads a new avatar for the current user
+//
+//	@Summary		Upload user avatar
+//	@Description	Uploads a new avatar image for the authenticated user
+//	@Tags			Authentication
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			avatar	formData	file					true	"Avatar image file"
+//	@Success		200		{object}	models.SuccessResponse	"Avatar uploaded successfully"
+//	@Failure		400		{object}	models.ErrorResponse		"Invalid file or request"
+//	@Failure		401		{object}	models.ErrorResponse		"Authentication required"
+//	@Router			/profile/avatar [post]
 func (h *AuthHandler) UploadAvatar(c echo.Context) error {
 	record, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
 	if record == nil {
@@ -157,6 +217,17 @@ func (h *AuthHandler) UploadAvatar(c echo.Context) error {
 	return utils.SendSuccess(c, http.StatusOK, userData, "Avatar updated successfully")
 }
 
+// RegenerateToken generates a new custom token for the user
+//
+//	@Summary		Regenerate custom token
+//	@Description	Generates a new custom token for location tracking
+//	@Tags			Authentication
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	models.SuccessResponse	"Token regenerated successfully"
+//	@Failure		401	{object}	models.ErrorResponse		"Authentication required"
+//	@Failure		500	{object}	models.ErrorResponse		"Internal server error"
+//	@Router			/profile/regenerate-token [put]
 func (h *AuthHandler) RegenerateToken(c echo.Context) error {
 	record, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
 	if record == nil {

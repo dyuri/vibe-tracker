@@ -144,13 +144,42 @@
 - ✅ All compilation errors resolved and API tests passing (8/8 test suites)
 - ✅ Application startup verified with structured logging functionality
 
-## 12. Dependency Injection
-- Use constructor functions or a lightweight DI pattern for services and repositories.
-- Pass dependencies via context where appropriate.
+## ✅ 12. Dependency Injection - COMPLETED
+- ✅ Created dedicated `container/` package with comprehensive DI container
+- ✅ Implemented lightweight DI pattern managing all application dependencies:
+  - ✅ `container/container.go` with Container struct holding all dependencies
+  - ✅ `container/context.go` with context utilities for dependency injection
+- ✅ Used existing constructor functions for services and repositories
+- ✅ Created proper initialization order: repositories → services → handlers → middleware
+- ✅ Added context-based dependency passing with utilities:
+  - ✅ `WithContainer()`, `GetContainer()` for DI container access
+  - ✅ `InjectServices()` for injecting common services into request context
+  - ✅ Individual context helpers for each service type
+- ✅ Updated main.go to use DI container, reducing complexity significantly
+- ✅ Added injection middleware to make dependencies available in request context
+- ✅ Maintained backward compatibility - all existing tests pass
+- ✅ Application builds successfully and starts correctly
+- ✅ All API tests passing (8/8 test suites)
 
-## 13. API Documentation
-- Add Swagger/OpenAPI annotations to handlers.
-- Generate and publish API docs for onboarding and external use.
+## ✅ 13. API Documentation - COMPLETED
+- ✅ Installed and setup swaggo/swag for OpenAPI documentation generation
+- ✅ Added comprehensive Swagger/OpenAPI annotations to all handlers:
+  - ✅ Authentication endpoints (login, refresh, profile, avatar, token regeneration)
+  - ✅ Session management endpoints (list, get, create, update, delete)
+  - ✅ Location tracking endpoints (GET and POST methods)
+  - ✅ Public data endpoints (user locations, session data, public locations)
+- ✅ Created documentation generation script (`scripts/generate-docs.sh`)
+- ✅ Generated API docs into `docs/api/` folder:
+  - ✅ `swagger.json` - OpenAPI specification in JSON format
+  - ✅ `swagger.yaml` - OpenAPI specification in YAML format
+  - ✅ `docs.go` - Embedded Go documentation
+  - ✅ `README.md` - Documentation overview and usage guide
+- ✅ Added Swagger UI endpoint for interactive documentation:
+  - ✅ Accessible at `/swagger` when server is running
+  - ✅ JSON specification available at `/swagger/json`
+  - ✅ Custom Swagger UI implementation for Echo v5 compatibility
+- ✅ All API tests passing, confirming documentation doesn't break functionality
+- ✅ Comprehensive documentation covering authentication, request/response formats, and error handling
 
 ## 14. Security & Rate Limiting
 - Add rate limiting middleware for sensitive endpoints.
