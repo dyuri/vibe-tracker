@@ -154,7 +154,6 @@
 
 ## 14. Security & Rate Limiting
 - Add rate limiting middleware for sensitive endpoints.
-- Consider CSRF protection for POST/PUT/DELETE if exposed to browsers.
 - Review authentication and authorization logic for consistency.
 
 ## 15. Health Checks & Metrics

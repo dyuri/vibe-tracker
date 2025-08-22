@@ -8,11 +8,8 @@ import (
 
 	"vibe-tracker/config"
 	"vibe-tracker/constants"
-	"vibe-tracker/handlers"
-	"vibe-tracker/middleware"
+	"vibe-tracker/container"
 	"vibe-tracker/models"
-	"vibe-tracker/repositories"
-	"vibe-tracker/services"
 	"vibe-tracker/utils"
 	_ "vibe-tracker/migrations"
 )
@@ -31,61 +28,42 @@ func main() {
 		Automigrate: cfg.Automigrate,
 	})
 
-	// Initialize repositories
-	userRepo := repositories.NewUserRepository(app)
-	sessionRepo := repositories.NewSessionRepository(app)
-	locationRepo := repositories.NewLocationRepository(app)
-
-	// Initialize services
-	authService := services.NewAuthService(app, userRepo)
-	userService := services.NewUserService(userRepo)
-	sessionService := services.NewSessionService(sessionRepo)
-	locationService := services.NewLocationService(locationRepo, userRepo, sessionRepo, sessionService)
-
-	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(app, authService)
-	sessionHandler := handlers.NewSessionHandler(app, sessionService)
-	trackingHandler := handlers.NewTrackingHandler(app, locationService)
-	publicHandler := handlers.NewPublicHandler(app, locationService, userService)
-
-	// Initialize middleware
-	authMiddleware := middleware.NewAuthMiddleware(app)
-	userMiddleware := middleware.NewUserMiddleware(app)
-	errorHandler := middleware.NewErrorHandler()
-	validationMiddleware := middleware.NewValidationMiddleware()
+	// Initialize dependency injection container
+	di := container.NewContainer(app, cfg)
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		// Apply global middleware
-		e.Router.Use(errorHandler.RecoveryMiddleware())
-		e.Router.Use(errorHandler.SecurityHeaders())
-		e.Router.Use(errorHandler.CORSMiddleware())
+		e.Router.Use(di.ErrorHandler.RecoveryMiddleware())
+		e.Router.Use(di.ErrorHandler.SecurityHeaders())
+		e.Router.Use(di.ErrorHandler.CORSMiddleware())
+		e.Router.Use(di.InjectMiddleware()) // Inject DI container into context
 
 		// API routes group
 		api := e.Router.Group(constants.APIPrefix)
 
 		// Location endpoints - public but can have optional auth for additional features
-		api.GET(constants.EndpointLocation, publicHandler.GetLocation, userMiddleware.LoadUserFromPath())
-		api.GET(constants.EndpointPublicLocation, publicHandler.GetPublicLocations)
-		api.GET("/session/:username/:session", publicHandler.GetSessionData, userMiddleware.LoadUserFromPath())
+		api.GET(constants.EndpointLocation, di.PublicHandler.GetLocation, di.UserMiddleware.LoadUserFromPath())
+		api.GET(constants.EndpointPublicLocation, di.PublicHandler.GetPublicLocations)
+		api.GET("/session/:username/:session", di.PublicHandler.GetSessionData, di.UserMiddleware.LoadUserFromPath())
 
 		// Session management endpoints
-		api.GET("/sessions/:username", sessionHandler.ListSessions, userMiddleware.LoadUserFromPath())
-		api.GET("/sessions/:username/:name", sessionHandler.GetSession, userMiddleware.LoadUserFromPath())
-		api.POST("/sessions", sessionHandler.CreateSession, authMiddleware.RequireJWTAuth(), validationMiddleware.ValidateJSON(&models.CreateSessionRequest{}))
-		api.PUT("/sessions/:username/:name", sessionHandler.UpdateSession, authMiddleware.RequireJWTAuth(), userMiddleware.RequireUserOwnership(), validationMiddleware.ValidateJSON(&models.UpdateSessionRequest{}))
-		api.DELETE("/sessions/:username/:name", sessionHandler.DeleteSession, authMiddleware.RequireJWTAuth(), userMiddleware.RequireUserOwnership())
+		api.GET("/sessions/:username", di.SessionHandler.ListSessions, di.UserMiddleware.LoadUserFromPath())
+		api.GET("/sessions/:username/:name", di.SessionHandler.GetSession, di.UserMiddleware.LoadUserFromPath())
+		api.POST("/sessions", di.SessionHandler.CreateSession, di.AuthMiddleware.RequireJWTAuth(), di.ValidationMiddleware.ValidateJSON(&models.CreateSessionRequest{}))
+		api.PUT("/sessions/:username/:name", di.SessionHandler.UpdateSession, di.AuthMiddleware.RequireJWTAuth(), di.UserMiddleware.RequireUserOwnership(), di.ValidationMiddleware.ValidateJSON(&models.UpdateSessionRequest{}))
+		api.DELETE("/sessions/:username/:name", di.SessionHandler.DeleteSession, di.AuthMiddleware.RequireJWTAuth(), di.UserMiddleware.RequireUserOwnership())
 
 		// Authentication endpoints
-		api.POST(constants.EndpointLogin, authHandler.Login, validationMiddleware.ValidateJSON(&models.LoginRequest{}))
-		api.POST("/auth/refresh", authHandler.RefreshToken, validationMiddleware.ValidateJSON(&models.RefreshTokenRequest{}))
-		api.GET("/me", authHandler.GetMe, authMiddleware.RequireJWTAuth())
-		api.PUT("/profile", authHandler.UpdateProfile, authMiddleware.RequireJWTAuth(), validationMiddleware.ValidateJSON(&models.UpdateProfileRequest{}))
-		api.POST("/profile/avatar", authHandler.UploadAvatar, authMiddleware.RequireJWTAuth())
-		api.PUT("/profile/regenerate-token", authHandler.RegenerateToken, authMiddleware.RequireJWTAuth())
+		api.POST(constants.EndpointLogin, di.AuthHandler.Login, di.ValidationMiddleware.ValidateJSON(&models.LoginRequest{}))
+		api.POST("/auth/refresh", di.AuthHandler.RefreshToken, di.ValidationMiddleware.ValidateJSON(&models.RefreshTokenRequest{}))
+		api.GET("/me", di.AuthHandler.GetMe, di.AuthMiddleware.RequireJWTAuth())
+		api.PUT("/profile", di.AuthHandler.UpdateProfile, di.AuthMiddleware.RequireJWTAuth(), di.ValidationMiddleware.ValidateJSON(&models.UpdateProfileRequest{}))
+		api.POST("/profile/avatar", di.AuthHandler.UploadAvatar, di.AuthMiddleware.RequireJWTAuth())
+		api.PUT("/profile/regenerate-token", di.AuthHandler.RegenerateToken, di.AuthMiddleware.RequireJWTAuth())
 
 		// Tracking endpoints - support both JWT and custom token auth
-		api.GET(constants.EndpointTrack, trackingHandler.TrackLocationGET, authMiddleware.RequireFlexibleAuth(), validationMiddleware.ValidateQueryParams(&models.TrackingQueryParams{}))
-		api.POST(constants.EndpointTrack, trackingHandler.TrackLocationPOST, authMiddleware.RequireFlexibleAuth(), validationMiddleware.ValidateJSON(&models.LocationRequest{}))
+		api.GET(constants.EndpointTrack, di.TrackingHandler.TrackLocationGET, di.AuthMiddleware.RequireFlexibleAuth(), di.ValidationMiddleware.ValidateQueryParams(&models.TrackingQueryParams{}))
+		api.POST(constants.EndpointTrack, di.TrackingHandler.TrackLocationPOST, di.AuthMiddleware.RequireFlexibleAuth(), di.ValidationMiddleware.ValidateJSON(&models.LocationRequest{}))
 
 		return nil
 	})
