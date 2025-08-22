@@ -12,7 +12,7 @@ import (
 	"github.com/pocketbase/pocketbase/daos"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tools/security"
-	
+
 	"vibe-tracker/utils"
 )
 

@@ -2,7 +2,7 @@ package container
 
 import (
 	"context"
-	
+
 	"vibe-tracker/repositories"
 	"vibe-tracker/services"
 )
@@ -108,7 +108,7 @@ func InjectServices(ctx context.Context, container ContainerInterface) context.C
 	ctx = WithContainer(ctx, container)
 	userRepo, _, _ := container.GetRepositories()
 	authService, userService, sessionService, locationService, _ := container.GetServices()
-	
+
 	ctx = WithUserRepository(ctx, userRepo)
 	ctx = WithUserService(ctx, userService)
 	ctx = WithAuthService(ctx, authService)

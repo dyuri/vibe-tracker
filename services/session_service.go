@@ -2,9 +2,9 @@ package services
 
 import (
 	"github.com/pocketbase/pocketbase/models"
-	
-	appmodels "vibe-tracker/models"
+
 	"vibe-tracker/constants"
+	appmodels "vibe-tracker/models"
 	"vibe-tracker/repositories"
 	"vibe-tracker/utils"
 )
@@ -62,7 +62,7 @@ func (s *SessionService) ListSessions(userID string, page, perPage int) (*appmod
 
 // GetSession returns a single session by name and user
 func (s *SessionService) GetSession(sessionName, userID string) (*appmodels.Session, error) {
-	session, err := s.findSessionByNameAndUser(sessionName, userID)
+	session, err := s.FindSessionByNameAndUser(sessionName, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (s *SessionService) CreateSession(req appmodels.CreateSessionRequest, userI
 	}
 
 	// Check if session with this name already exists for the user
-	existingSession, _ := s.findSessionByNameAndUser(req.Name, userID)
+	existingSession, _ := s.FindSessionByNameAndUser(req.Name, userID)
 	if existingSession != nil {
 		return nil, &SessionError{Message: "Session with this name already exists"}
 	}
@@ -104,7 +104,7 @@ func (s *SessionService) CreateSession(req appmodels.CreateSessionRequest, userI
 
 // UpdateSession updates an existing session
 func (s *SessionService) UpdateSession(sessionName, userID string, req appmodels.UpdateSessionRequest) (*appmodels.Session, error) {
-	session, err := s.findSessionByNameAndUser(sessionName, userID)
+	session, err := s.FindSessionByNameAndUser(sessionName, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (s *SessionService) UpdateSession(sessionName, userID string, req appmodels
 
 // DeleteSession deletes a session
 func (s *SessionService) DeleteSession(sessionName, userID string) error {
-	session, err := s.findSessionByNameAndUser(sessionName, userID)
+	session, err := s.FindSessionByNameAndUser(sessionName, userID)
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func (s *SessionService) FindOrCreateSession(sessionName string, user *models.Re
 	}
 
 	// Try to find existing session
-	session, err := s.findSessionByNameAndUser(sessionName, user.Id)
+	session, err := s.FindSessionByNameAndUser(sessionName, user.Id)
 	if err == nil {
 		return session, nil // Found existing session
 	}
@@ -166,7 +166,7 @@ func (s *SessionService) FindOrCreateSession(sessionName string, user *models.Re
 
 // Helper methods
 
-func (s *SessionService) findSessionByNameAndUser(sessionName string, userID string) (*models.Record, error) {
+func (s *SessionService) FindSessionByNameAndUser(sessionName string, userID string) (*models.Record, error) {
 	if sessionName == "" || userID == "" {
 		return nil, &SessionError{Message: "session name or user ID is missing"}
 	}

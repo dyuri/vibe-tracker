@@ -20,9 +20,9 @@ type LivenessResponse struct {
 
 // ReadinessResponse represents the response for readiness check
 type ReadinessResponse struct {
-	Status    HealthStatus           `json:"status"`
+	Status    HealthStatus            `json:"status"`
 	Checks    map[string]HealthStatus `json:"checks"`
-	Timestamp time.Time              `json:"timestamp"`
+	Timestamp time.Time               `json:"timestamp"`
 }
 
 // ComponentHealth represents the health status of an individual component
@@ -51,13 +51,13 @@ type ResourceHealth struct {
 
 // DetailedHealthResponse represents the comprehensive health check response
 type DetailedHealthResponse struct {
-	Status    HealthStatus                    `json:"status"`
-	Version   string                          `json:"version"`
-	Uptime    string                          `json:"uptime"`
-	Timestamp time.Time                       `json:"timestamp"`
-	Checks    map[string]*ComponentHealth     `json:"checks"`
-	Services  *ServiceHealth                  `json:"services,omitempty"`
-	Resources *ResourceHealth                 `json:"resources,omitempty"`
+	Status    HealthStatus                `json:"status"`
+	Version   string                      `json:"version"`
+	Uptime    string                      `json:"uptime"`
+	Timestamp time.Time                   `json:"timestamp"`
+	Checks    map[string]*ComponentHealth `json:"checks"`
+	Services  *ServiceHealth              `json:"services,omitempty"`
+	Resources *ResourceHealth             `json:"resources,omitempty"`
 }
 
 // SystemHealth aggregates all health information

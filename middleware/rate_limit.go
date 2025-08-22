@@ -35,7 +35,7 @@ type RateLimiter struct {
 	mu       sync.RWMutex
 	limiters map[string]*rate.Limiter
 	config   RateLimitConfig
-	
+
 	// Cleanup ticker to remove stale entries
 	cleanupTicker *time.Ticker
 	done          chan bool
@@ -80,7 +80,7 @@ func newRateLimiter(config RateLimitConfig) *RateLimiter {
 
 	// Start cleanup goroutine
 	go rl.cleanup()
-	
+
 	return rl
 }
 
@@ -185,12 +185,12 @@ func (m *RateLimitMiddleware) getClientIP(c echo.Context) string {
 // rateLimitError creates a standardized rate limit error response
 func (m *RateLimitMiddleware) rateLimitError(c echo.Context, clientID string, limitType string) error {
 	ip := m.getClientIP(c)
-	
+
 	// Log the rate limit violation
 	utils.LogRateLimitViolation(ip, c.Request().URL.Path, 0)
 
 	return apis.NewBadRequestError("Rate limit exceeded. Please try again later.", map[string]any{
-		"error_type": "rate_limit_exceeded",
+		"error_type":  "rate_limit_exceeded",
 		"retry_after": "60s",
 	})
 }
@@ -200,11 +200,11 @@ func (m *RateLimitMiddleware) AuthEndpoints() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			clientID := m.getClientID(c, false) // Use IP for auth endpoints
-			
+
 			if !m.authLimiter.allow(clientID) {
 				return m.rateLimitError(c, clientID, "auth")
 			}
-			
+
 			return next(c)
 		}
 	}
@@ -215,11 +215,11 @@ func (m *RateLimitMiddleware) TrackingEndpoints() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			clientID := m.getClientID(c, true) // Use user ID for tracking endpoints
-			
+
 			if !m.trackLimiter.allow(clientID) {
 				return m.rateLimitError(c, clientID, "tracking")
 			}
-			
+
 			return next(c)
 		}
 	}
@@ -230,11 +230,11 @@ func (m *RateLimitMiddleware) SessionEndpoints() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			clientID := m.getClientID(c, true) // Use user ID for session endpoints
-			
+
 			if !m.sessionLimiter.allow(clientID) {
 				return m.rateLimitError(c, clientID, "session")
 			}
-			
+
 			return next(c)
 		}
 	}
@@ -245,11 +245,11 @@ func (m *RateLimitMiddleware) PublicEndpoints() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			clientID := m.getClientID(c, false) // Use IP for public endpoints
-			
+
 			if !m.publicLimiter.allow(clientID) {
 				return m.rateLimitError(c, clientID, "public")
 			}
-			
+
 			return next(c)
 		}
 	}
@@ -260,11 +260,11 @@ func (m *RateLimitMiddleware) DocsEndpoints() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			clientID := m.getClientID(c, false) // Use IP for docs endpoints
-			
+
 			if !m.docsLimiter.allow(clientID) {
 				return m.rateLimitError(c, clientID, "docs")
 			}
-			
+
 			return next(c)
 		}
 	}

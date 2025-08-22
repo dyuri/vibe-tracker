@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"time"
-	
+
 	"github.com/pocketbase/pocketbase/models"
 )
 
@@ -37,4 +37,10 @@ type LocationRepository interface {
 	FindAllLocations(userID, sessionFilter string, fromTime, toTime *time.Time, sort string, limit, offset int) ([]*models.Record, error)
 	GetCollection() (*models.Collection, error)
 	CreateNewRecord() (*models.Record, error)
+}
+
+// SessionServiceInterface defines the interface for session service operations
+type SessionServiceInterface interface {
+	FindOrCreateSession(sessionName string, user *models.Record) (*models.Record, error)
+	FindSessionByNameAndUser(sessionName string, userID string) (*models.Record, error)
 }

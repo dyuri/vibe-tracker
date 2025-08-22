@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v5"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/dbx"
 )
 
 const (
@@ -87,7 +87,7 @@ func (m *AuthMiddleware) RequireFlexibleAuth() echo.MiddlewareFunc {
 			authHeader := c.Request().Header.Get("Authorization")
 			if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
 				token := authHeader[7:]
-				
+
 				// Try to get the auth record from context first (if already processed by PocketBase middleware)
 				if info := c.Get(apis.ContextAuthRecordKey); info != nil {
 					if r, ok := info.(*models.Record); ok {

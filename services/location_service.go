@@ -6,9 +6,9 @@ import (
 
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tools/types"
-	
-	appmodels "vibe-tracker/models"
+
 	"vibe-tracker/constants"
+	appmodels "vibe-tracker/models"
 	"vibe-tracker/repositories"
 )
 
@@ -17,11 +17,11 @@ type LocationService struct {
 	locationRepo   repositories.LocationRepository
 	userRepo       repositories.UserRepository
 	sessionRepo    repositories.SessionRepository
-	sessionService *SessionService
+	sessionService repositories.SessionServiceInterface
 }
 
 // NewLocationService creates a new LocationService instance
-func NewLocationService(locationRepo repositories.LocationRepository, userRepo repositories.UserRepository, sessionRepo repositories.SessionRepository, sessionService *SessionService) *LocationService {
+func NewLocationService(locationRepo repositories.LocationRepository, userRepo repositories.UserRepository, sessionRepo repositories.SessionRepository, sessionService repositories.SessionServiceInterface) *LocationService {
 	return &LocationService{
 		locationRepo:   locationRepo,
 		userRepo:       userRepo,
@@ -49,7 +49,7 @@ func (s *LocationService) TrackLocationFromGeoJSON(req appmodels.LocationRequest
 	// Set coordinates
 	record.Set("longitude", req.Geometry.Coordinates[0])
 	record.Set("latitude", req.Geometry.Coordinates[1])
-	
+
 	// Set altitude if provided
 	if len(req.Geometry.Coordinates) > 2 {
 		record.Set("altitude", req.Geometry.Coordinates[2])
@@ -121,7 +121,7 @@ func (s *LocationService) GetLatestLocationByUser(username string) (*appmodels.L
 		return nil, err
 	}
 
-	// Get latest location  
+	// Get latest location
 	locations, err := s.locationRepo.FindByUser(user.Id, nil, "-timestamp", 1, 0)
 	if err != nil || len(locations) == 0 {
 		return nil, err
@@ -146,7 +146,7 @@ func (s *LocationService) GetPublicLocations() (*appmodels.LocationsResponse, er
 	for _, record := range records {
 		userID := record.GetString("user")
 		sessionID := record.GetString("session")
-		
+
 		if sessionID != "" {
 			// Check if session is public
 			session, err := s.sessionRepo.FindByID(sessionID)
@@ -156,7 +156,7 @@ func (s *LocationService) GetPublicLocations() (*appmodels.LocationsResponse, er
 		}
 
 		// Keep only the latest location per user
-		if existing, exists := userLatestMap[userID]; !exists || 
+		if existing, exists := userLatestMap[userID]; !exists ||
 			record.GetDateTime("timestamp").Time().After(existing.GetDateTime("timestamp").Time()) {
 			userLatestMap[userID] = record
 		}
@@ -192,7 +192,7 @@ func (s *LocationService) GetSessionData(username, sessionName string) (*appmode
 	}
 
 	// Find session
-	session, err := s.sessionService.findSessionByNameAndUser(sessionName, user.Id)
+	session, err := s.sessionService.FindSessionByNameAndUser(sessionName, user.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (s *LocationService) recordToGeoJSON(record *models.Record, user *models.Re
 		record.GetFloat("longitude"),
 		record.GetFloat("latitude"),
 	}
-	
+
 	if altitude := record.GetFloat("altitude"); altitude != 0 {
 		coordinates = append(coordinates, altitude)
 	}

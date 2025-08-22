@@ -35,24 +35,24 @@ func (m *SecurityMiddleware) RequestSizeLimit() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			req := c.Request()
-			
+
 			// Get content length
 			contentLength := req.ContentLength
 			if contentLength > m.maxRequestSize {
 				if m.enableLogging {
 					utils.LogSecurityViolation(c.RealIP(), "request_size_exceeded", fmt.Sprintf("Content-Length: %d bytes", contentLength))
 				}
-				
+
 				return apis.NewBadRequestError("Request size exceeds limit", map[string]any{
 					"max_size_mb": m.maxRequestSize / (1024 * 1024),
 				})
 			}
-			
+
 			// Wrap request body with a limited reader for additional protection
 			if req.Body != nil {
 				req.Body = http.MaxBytesReader(c.Response(), req.Body, m.maxRequestSize)
 			}
-			
+
 			return next(c)
 		}
 	}
@@ -65,18 +65,18 @@ func (m *SecurityMiddleware) RequestTimeout() echo.MiddlewareFunc {
 			// Create context with timeout
 			ctx, cancel := context.WithTimeout(c.Request().Context(), m.requestTimeout)
 			defer cancel()
-			
+
 			// Set the new context
 			c.SetRequest(c.Request().WithContext(ctx))
-			
+
 			// Channel to receive the result
 			done := make(chan error, 1)
-			
+
 			// Execute the handler in a goroutine
 			go func() {
 				done <- next(c)
 			}()
-			
+
 			// Wait for completion or timeout
 			select {
 			case err := <-done:
@@ -90,7 +90,7 @@ func (m *SecurityMiddleware) RequestTimeout() echo.MiddlewareFunc {
 						Str("client_ip", c.RealIP()).
 						Msg("Request timed out")
 				}
-				
+
 				return apis.NewApiError(http.StatusRequestTimeout, "Request timeout", map[string]any{
 					"timeout_seconds": int(m.requestTimeout.Seconds()),
 				})
@@ -118,11 +118,11 @@ func (m *SecurityMiddleware) UserAgentFilter() echo.MiddlewareFunc {
 		"javascript:",      // XSS attempts
 		"data:text/html",   // XSS attempts
 	}
-	
+
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			userAgent := c.Request().Header.Get("User-Agent")
-			
+
 			// Block empty user agents
 			if userAgent == "" {
 				if m.enableLogging {
@@ -131,10 +131,10 @@ func (m *SecurityMiddleware) UserAgentFilter() echo.MiddlewareFunc {
 						Str("path", c.Request().URL.Path).
 						Msg("Request blocked: empty user agent")
 				}
-				
+
 				return apis.NewForbiddenError("User-Agent header required", nil)
 			}
-			
+
 			// Check against blocked patterns
 			userAgentLower := strings.ToLower(userAgent)
 			for _, pattern := range blockedPatterns {
@@ -142,11 +142,11 @@ func (m *SecurityMiddleware) UserAgentFilter() echo.MiddlewareFunc {
 					if m.enableLogging {
 						utils.LogSuspiciousRequest(c.RealIP(), userAgent, c.Request().URL.Path, fmt.Sprintf("malicious_user_agent_pattern_%s", pattern))
 					}
-					
+
 					return apis.NewForbiddenError("Access denied", nil)
 				}
 			}
-			
+
 			return next(c)
 		}
 	}
@@ -159,17 +159,17 @@ func (m *SecurityMiddleware) IPWhitelist(allowedIPs []string) echo.MiddlewareFun
 			if len(allowedIPs) == 0 {
 				return next(c) // No restriction if no IPs specified
 			}
-			
+
 			clientIP := c.RealIP()
 			allowed := false
-			
+
 			for _, ip := range allowedIPs {
 				if clientIP == ip || ip == "*" {
 					allowed = true
 					break
 				}
 			}
-			
+
 			if !allowed {
 				if m.enableLogging {
 					utils.LogError(nil, "IP not in whitelist").
@@ -177,10 +177,10 @@ func (m *SecurityMiddleware) IPWhitelist(allowedIPs []string) echo.MiddlewareFun
 						Str("path", c.Request().URL.Path).
 						Msg("Request blocked: IP not whitelisted")
 				}
-				
+
 				return apis.NewForbiddenError("Access denied", nil)
 			}
-			
+
 			return next(c)
 		}
 	}
@@ -198,7 +198,7 @@ func (m *SecurityMiddleware) FileUploadSecurity() echo.MiddlewareFunc {
 		".py", ".rb", ".pl",
 		".htaccess", ".htpasswd",
 	}
-	
+
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			// Only process multipart forms (file uploads)
@@ -206,7 +206,7 @@ func (m *SecurityMiddleware) FileUploadSecurity() echo.MiddlewareFunc {
 			if !strings.Contains(contentType, "multipart/form-data") {
 				return next(c)
 			}
-			
+
 			// Parse multipart form with size limit
 			err := c.Request().ParseMultipartForm(constants.MaxFileUploadSize)
 			if err != nil {
@@ -216,10 +216,10 @@ func (m *SecurityMiddleware) FileUploadSecurity() echo.MiddlewareFunc {
 						Str("path", c.Request().URL.Path).
 						Msg("File upload parsing failed")
 				}
-				
+
 				return apis.NewBadRequestError("Invalid file upload", nil)
 			}
-			
+
 			// Check uploaded files
 			if c.Request().MultipartForm != nil && c.Request().MultipartForm.File != nil {
 				for fieldName, files := range c.Request().MultipartForm.File {
@@ -236,13 +236,13 @@ func (m *SecurityMiddleware) FileUploadSecurity() echo.MiddlewareFunc {
 										Str("client_ip", c.RealIP()).
 										Msg("File upload blocked: dangerous extension")
 								}
-								
+
 								return apis.NewBadRequestError("File type not allowed", map[string]any{
 									"filename": file.Filename,
 								})
 							}
 						}
-						
+
 						// Check file size
 						if file.Size > constants.MaxFileUploadSize {
 							if m.enableLogging {
@@ -253,7 +253,7 @@ func (m *SecurityMiddleware) FileUploadSecurity() echo.MiddlewareFunc {
 									Str("client_ip", c.RealIP()).
 									Msg("File upload blocked: size limit exceeded")
 							}
-							
+
 							return apis.NewBadRequestError("File size exceeds limit", map[string]any{
 								"filename":    file.Filename,
 								"max_size_mb": constants.MaxFileUploadSize / (1024 * 1024),
@@ -262,7 +262,7 @@ func (m *SecurityMiddleware) FileUploadSecurity() echo.MiddlewareFunc {
 					}
 				}
 			}
-			
+
 			return next(c)
 		}
 	}
@@ -275,40 +275,40 @@ func (m *SecurityMiddleware) RequestLogging() echo.MiddlewareFunc {
 			if !m.enableLogging {
 				return next(c)
 			}
-			
+
 			start := time.Now()
-			
+
 			// Execute the request
 			err := next(c)
-			
+
 			// Log the request
 			duration := time.Since(start)
 			status := c.Response().Status
-			
+
 			// Log suspicious patterns
 			suspicious := false
 			suspiciousReasons := []string{}
-			
+
 			// Check for suspicious paths
 			path := c.Request().URL.Path
-			if strings.Contains(path, "..") || 
-			   strings.Contains(path, "<script") ||
-			   strings.Contains(path, "javascript:") ||
-			   strings.Contains(path, "data:text/html") {
+			if strings.Contains(path, "..") ||
+				strings.Contains(path, "<script") ||
+				strings.Contains(path, "javascript:") ||
+				strings.Contains(path, "data:text/html") {
 				suspicious = true
 				suspiciousReasons = append(suspiciousReasons, "suspicious_path")
 			}
-			
+
 			// Check for suspicious query parameters
 			query := c.Request().URL.RawQuery
 			if strings.Contains(query, "<script") ||
-			   strings.Contains(query, "javascript:") ||
-			   strings.Contains(query, "union select") ||
-			   strings.Contains(query, "drop table") {
+				strings.Contains(query, "javascript:") ||
+				strings.Contains(query, "union select") ||
+				strings.Contains(query, "drop table") {
 				suspicious = true
 				suspiciousReasons = append(suspiciousReasons, "suspicious_query")
 			}
-			
+
 			// Log entry
 			logger := utils.GetLogger().With().
 				Str("method", c.Request().Method).
@@ -319,7 +319,7 @@ func (m *SecurityMiddleware) RequestLogging() echo.MiddlewareFunc {
 				Dur("duration", duration).
 				Int64("request_size", c.Request().ContentLength).
 				Logger()
-			
+
 			if suspicious {
 				logger.Warn().
 					Strs("suspicious_reasons", suspiciousReasons).
@@ -331,7 +331,7 @@ func (m *SecurityMiddleware) RequestLogging() echo.MiddlewareFunc {
 				logger.Info().
 					Msg("Request completed")
 			}
-			
+
 			return err
 		}
 	}

@@ -1,10 +1,10 @@
 package repositories
 
 import (
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/dbx"
-	
+
 	"vibe-tracker/constants"
 )
 

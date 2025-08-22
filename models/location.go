@@ -55,17 +55,17 @@ type TrackingQueryParams struct {
 
 // Location represents a stored location record
 type Location struct {
-	ID         string    `json:"id"`
-	User       string    `json:"user"`
-	Latitude   float64   `json:"latitude"`
-	Longitude  float64   `json:"longitude"`
-	Altitude   float64   `json:"altitude,omitempty"`
-	Speed      float64   `json:"speed,omitempty"`
-	HeartRate  float64   `json:"heart_rate,omitempty"`
-	Session    string    `json:"session,omitempty"`
-	Timestamp  int64     `json:"timestamp"`
-	Created    time.Time `json:"created"`
-	Updated    time.Time `json:"updated"`
+	ID        string    `json:"id"`
+	User      string    `json:"user"`
+	Latitude  float64   `json:"latitude"`
+	Longitude float64   `json:"longitude"`
+	Altitude  float64   `json:"altitude,omitempty"`
+	Speed     float64   `json:"speed,omitempty"`
+	HeartRate float64   `json:"heart_rate,omitempty"`
+	Session   string    `json:"session,omitempty"`
+	Timestamp int64     `json:"timestamp"`
+	Created   time.Time `json:"created"`
+	Updated   time.Time `json:"updated"`
 }
 
 // SessionDataResponse represents session location data as GeoJSON

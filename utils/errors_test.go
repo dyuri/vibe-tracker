@@ -24,8 +24,8 @@ func TestAppError_Error(t *testing.T) {
 		{
 			name: "with internal error",
 			appError: &AppError{
-				Type:    ErrorTypeInternal,
-				Message: "Something went wrong",
+				Type:     ErrorTypeInternal,
+				Message:  "Something went wrong",
 				Internal: errors.New("database connection failed"),
 			},
 			expected: "internal: Something went wrong (caused by: database connection failed)",

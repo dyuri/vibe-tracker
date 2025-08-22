@@ -2,7 +2,7 @@ package services
 
 import (
 	"github.com/pocketbase/pocketbase/models"
-	
+
 	appmodels "vibe-tracker/models"
 	"vibe-tracker/repositories"
 )

@@ -20,13 +20,13 @@ type LoginAttempt struct {
 
 // AuthSecurityMiddleware provides authentication security features
 type AuthSecurityMiddleware struct {
-	mu                 sync.RWMutex
-	failedAttempts     map[string]*LoginAttempt // key: IP or email
-	maxFailedAttempts  int
-	lockoutDuration    time.Duration
-	cleanupTicker      *time.Ticker
-	done               chan bool
-	enableLogging      bool
+	mu                sync.RWMutex
+	failedAttempts    map[string]*LoginAttempt // key: IP or email
+	maxFailedAttempts int
+	lockoutDuration   time.Duration
+	cleanupTicker     *time.Ticker
+	done              chan bool
+	enableLogging     bool
 }
 
 // NewAuthSecurityMiddleware creates a new authentication security middleware
@@ -39,10 +39,10 @@ func NewAuthSecurityMiddleware(maxFailedAttempts int, lockoutDuration time.Durat
 		done:              make(chan bool),
 		enableLogging:     enableLogging,
 	}
-	
+
 	// Start cleanup goroutine
 	go m.cleanup()
-	
+
 	return m
 }
 
@@ -55,8 +55,8 @@ func (m *AuthSecurityMiddleware) cleanup() {
 			now := time.Now()
 			for key, attempt := range m.failedAttempts {
 				// Remove records older than 24 hours or that are no longer locked
-				if now.Sub(attempt.LastAttempt) > 24*time.Hour || 
-				   (attempt.Count < m.maxFailedAttempts && now.After(attempt.LockedUntil)) {
+				if now.Sub(attempt.LastAttempt) > 24*time.Hour ||
+					(attempt.Count < m.maxFailedAttempts && now.After(attempt.LockedUntil)) {
 					delete(m.failedAttempts, key)
 				}
 			}
@@ -79,21 +79,21 @@ func (m *AuthSecurityMiddleware) BruteForceProtection() echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			// Get client identifier (IP address)
 			clientIP := m.getClientIP(c)
-			
+
 			// Check if client is currently locked out
 			if m.isLockedOut(clientIP) {
 				if m.enableLogging {
 					utils.LogSuspiciousRequest(clientIP, c.Request().Header.Get("User-Agent"), c.Request().URL.Path, "brute_force_blocked")
 				}
-				
+
 				return apis.NewApiError(http.StatusTooManyRequests, "Too many failed login attempts. Please try again later.", map[string]any{
 					"retry_after_minutes": int(m.lockoutDuration.Minutes()),
 				})
 			}
-			
+
 			// Execute the handler
 			err := next(c)
-			
+
 			// Check if this was a failed login attempt
 			if err != nil {
 				// Check if it's an authentication error
@@ -101,7 +101,7 @@ func (m *AuthSecurityMiddleware) BruteForceProtection() echo.MiddlewareFunc {
 					if apiErr.Code == 401 || apiErr.Code == 400 {
 						// This was likely a failed login attempt
 						m.recordFailedAttempt(clientIP)
-						
+
 						if m.enableLogging {
 							attempts := m.getAttemptCount(clientIP)
 							utils.LogBruteForceAttempt(clientIP, attempts, m.maxFailedAttempts)
@@ -112,7 +112,7 @@ func (m *AuthSecurityMiddleware) BruteForceProtection() echo.MiddlewareFunc {
 				// Successful request - clear failed attempts for this client
 				m.clearFailedAttempts(clientIP)
 			}
-			
+
 			return err
 		}
 	}
@@ -124,12 +124,12 @@ func (m *AuthSecurityMiddleware) getClientIP(c echo.Context) string {
 	if xff := c.Request().Header.Get("X-Forwarded-For"); xff != "" {
 		return xff
 	}
-	
+
 	// Try X-Real-IP
 	if xri := c.Request().Header.Get("X-Real-IP"); xri != "" {
 		return xri
 	}
-	
+
 	// Fall back to remote address
 	return c.RealIP()
 }
@@ -138,17 +138,17 @@ func (m *AuthSecurityMiddleware) getClientIP(c echo.Context) string {
 func (m *AuthSecurityMiddleware) isLockedOut(clientID string) bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	attempt, exists := m.failedAttempts[clientID]
 	if !exists {
 		return false
 	}
-	
+
 	// Check if lockout period has expired
 	if time.Now().After(attempt.LockedUntil) {
 		return false
 	}
-	
+
 	// Client is locked out if they've exceeded max attempts
 	return attempt.Count >= m.maxFailedAttempts
 }
@@ -157,22 +157,22 @@ func (m *AuthSecurityMiddleware) isLockedOut(clientID string) bool {
 func (m *AuthSecurityMiddleware) recordFailedAttempt(clientID string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	now := time.Now()
-	
+
 	attempt, exists := m.failedAttempts[clientID]
 	if !exists {
 		attempt = &LoginAttempt{}
 		m.failedAttempts[clientID] = attempt
 	}
-	
+
 	attempt.Count++
 	attempt.LastAttempt = now
-	
+
 	// If max attempts reached, set lockout period
 	if attempt.Count >= m.maxFailedAttempts {
 		attempt.LockedUntil = now.Add(m.lockoutDuration)
-		
+
 		if m.enableLogging {
 			utils.LogBruteForceBlocked(clientID, attempt.LockedUntil)
 		}
@@ -183,7 +183,7 @@ func (m *AuthSecurityMiddleware) recordFailedAttempt(clientID string) {
 func (m *AuthSecurityMiddleware) clearFailedAttempts(clientID string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if _, exists := m.failedAttempts[clientID]; exists {
 		delete(m.failedAttempts, clientID)
 	}
@@ -193,7 +193,7 @@ func (m *AuthSecurityMiddleware) clearFailedAttempts(clientID string) {
 func (m *AuthSecurityMiddleware) getAttemptCount(clientID string) int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	if attempt, exists := m.failedAttempts[clientID]; exists {
 		return attempt.Count
 	}
@@ -204,17 +204,17 @@ func (m *AuthSecurityMiddleware) getAttemptCount(clientID string) int {
 func (m *AuthSecurityMiddleware) GetFailedAttemptsStats() map[string]interface{} {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	totalClients := len(m.failedAttempts)
 	lockedClients := 0
 	now := time.Now()
-	
+
 	for _, attempt := range m.failedAttempts {
 		if attempt.Count >= m.maxFailedAttempts && now.Before(attempt.LockedUntil) {
 			lockedClients++
 		}
 	}
-	
+
 	return map[string]interface{}{
 		"total_clients_with_failures": totalClients,
 		"currently_locked_clients":    lockedClients,
@@ -229,15 +229,15 @@ func (m *AuthSecurityMiddleware) SessionSecurity() echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			// Add session security headers
 			c.Response().Header().Set("X-Session-Timeout", "1440") // 24 hours in minutes
-			
+
 			// Check for session hijacking indicators
 			userAgent := c.Request().Header.Get("User-Agent")
 			clientIP := m.getClientIP(c)
-			
+
 			// Store initial session info in context for comparison
 			c.Set("session_user_agent", userAgent)
 			c.Set("session_client_ip", clientIP)
-			
+
 			return next(c)
 		}
 	}
@@ -258,9 +258,9 @@ func NewTokenBlacklist() *TokenBlacklist {
 		cleanupTicker:   time.NewTicker(time.Hour), // Cleanup every hour
 		done:            make(chan bool),
 	}
-	
+
 	go tb.cleanup()
-	
+
 	return tb
 }
 
@@ -300,12 +300,12 @@ func (tb *TokenBlacklist) BlacklistToken(jti string, expiration time.Time) {
 func (tb *TokenBlacklist) IsBlacklisted(jti string) bool {
 	tb.mu.RLock()
 	defer tb.mu.RUnlock()
-	
+
 	expTime, exists := tb.blacklistedJTIs[jti]
 	if !exists {
 		return false
 	}
-	
+
 	// Check if blacklist entry has expired
 	if time.Now().After(expTime) {
 		// Clean up expired entry
@@ -316,7 +316,7 @@ func (tb *TokenBlacklist) IsBlacklisted(jti string) bool {
 		}()
 		return false
 	}
-	
+
 	return true
 }
 
@@ -328,7 +328,7 @@ func (tb *TokenBlacklist) TokenSecurityMiddleware() echo.MiddlewareFunc {
 			// to check JTI (JWT ID) against the blacklist
 			// For now, we'll add it to the request context for use by auth middleware
 			c.Set("token_blacklist", tb)
-			
+
 			return next(c)
 		}
 	}

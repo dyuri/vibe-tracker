@@ -9,7 +9,7 @@ import (
 
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase/apis"
-	
+
 	"vibe-tracker/utils"
 )
 
@@ -87,7 +87,6 @@ func (v *ValidationMiddleware) ValidateRequired(params ...string) echo.Middlewar
 	}
 }
 
-
 // Common validators
 func ValidatePositiveInt(value string) error {
 	if value == "0" || strings.HasPrefix(value, "-") {
@@ -142,17 +141,17 @@ func (v *ValidationMiddleware) ValidateQueryParams(target interface{}) echo.Midd
 		return func(c echo.Context) error {
 			// Create a new instance of the target type
 			targetValue := reflect.New(reflect.TypeOf(target).Elem()).Interface()
-			
+
 			// Bind query parameters
 			if err := c.Bind(targetValue); err != nil {
 				return apis.NewBadRequestError("Failed to bind query parameters", err)
 			}
-			
+
 			// Validate the bound data
 			if err := utils.ValidateStruct(targetValue); err != nil {
 				return apis.NewBadRequestError("Query parameter validation failed", err)
 			}
-			
+
 			// Store the validated data in context
 			c.Set("validated_query", targetValue)
 			return next(c)

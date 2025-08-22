@@ -3,7 +3,7 @@ package container
 import (
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
-	
+
 	"vibe-tracker/config"
 	"vibe-tracker/handlers"
 	"vibe-tracker/middleware"
@@ -38,12 +38,12 @@ type Container struct {
 	HealthHandler   *handlers.HealthHandler
 
 	// Middleware
-	AuthMiddleware       *middleware.AuthMiddleware
-	UserMiddleware       *middleware.UserMiddleware
-	ErrorHandler         *middleware.ErrorHandler
-	ValidationMiddleware *middleware.ValidationMiddleware
-	RateLimitMiddleware  *middleware.RateLimitMiddleware
-	SecurityMiddleware   *middleware.SecurityMiddleware
+	AuthMiddleware         *middleware.AuthMiddleware
+	UserMiddleware         *middleware.UserMiddleware
+	ErrorHandler           *middleware.ErrorHandler
+	ValidationMiddleware   *middleware.ValidationMiddleware
+	RateLimitMiddleware    *middleware.RateLimitMiddleware
+	SecurityMiddleware     *middleware.SecurityMiddleware
 	AuthSecurityMiddleware *middleware.AuthSecurityMiddleware
 }
 
@@ -111,18 +111,18 @@ func (c *Container) initMiddleware() {
 	c.UserMiddleware = middleware.NewUserMiddleware(c.App)
 	c.ErrorHandler = middleware.NewErrorHandler()
 	c.ValidationMiddleware = middleware.NewValidationMiddleware()
-	
+
 	// Security middleware
 	if c.Config.Security.EnableRateLimiting {
 		c.RateLimitMiddleware = middleware.NewRateLimitMiddleware()
 	}
-	
+
 	c.SecurityMiddleware = middleware.NewSecurityMiddleware(
 		c.Config.Security.MaxRequestSize,
 		c.Config.Security.RequestTimeout,
 		c.Config.Security.EnableRequestLogs,
 	)
-	
+
 	if c.Config.Security.EnableBruteForceProtection {
 		c.AuthSecurityMiddleware = middleware.NewAuthSecurityMiddleware(
 			c.Config.Security.FailedLoginThreshold,

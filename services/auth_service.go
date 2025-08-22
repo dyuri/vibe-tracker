@@ -5,7 +5,7 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tokens"
 	"github.com/pocketbase/pocketbase/tools/security"
-	
+
 	appmodels "vibe-tracker/models"
 	"vibe-tracker/repositories"
 	"vibe-tracker/utils"
@@ -90,14 +90,14 @@ func (s *AuthService) UpdateProfile(record *models.Record, req appmodels.UpdateP
 func (s *AuthService) RegenerateToken(record *models.Record) (string, error) {
 	// Generate a new random token
 	newToken := security.RandomString(32)
-	
+
 	// Update the user's token
 	record.Set("token", newToken)
-	
+
 	if err := s.userRepo.Save(record); err != nil {
 		return "", utils.LogAndWrapError(err, utils.ErrorTypeInternal, "Failed to save new token")
 	}
-	
+
 	return newToken, nil
 }
 
@@ -130,4 +130,3 @@ func (s *AuthService) recordToUser(record *models.Record) appmodels.User {
 		Updated:  record.Updated.String(),
 	}
 }
-

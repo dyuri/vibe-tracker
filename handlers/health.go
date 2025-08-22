@@ -62,13 +62,13 @@ func (h *HealthHandler) GetReadiness(c echo.Context) error {
 	}
 
 	response := h.healthService.GetReadiness()
-	
+
 	// Return 503 if not healthy
 	statusCode := 200
 	if response.Status != "healthy" {
 		statusCode = 503
 	}
-	
+
 	return c.JSON(statusCode, response)
 }
 
@@ -101,13 +101,13 @@ func (h *HealthHandler) GetDetailedHealth(c echo.Context) error {
 	}
 
 	response := h.healthService.GetDetailedHealth()
-	
+
 	// Return 503 if not healthy
 	statusCode := 200
 	if response.Status != "healthy" {
 		statusCode = 503
 	}
-	
+
 	return c.JSON(statusCode, response)
 }
 
@@ -121,12 +121,12 @@ func (h *HealthHandler) getClientIP(c echo.Context) string {
 			return strings.TrimSpace(ips[0])
 		}
 	}
-	
+
 	// Try X-Real-IP
 	if xri := c.Request().Header.Get("X-Real-IP"); xri != "" {
 		return xri
 	}
-	
+
 	// Fall back to remote address
 	return c.RealIP()
 }
@@ -136,26 +136,26 @@ func (h *HealthHandler) isIPAllowed(clientIP string) bool {
 	if len(h.config.AllowedIPs) == 0 {
 		return true // No restrictions
 	}
-	
+
 	for _, allowedIP := range h.config.AllowedIPs {
 		allowedIP = strings.TrimSpace(allowedIP)
-		
+
 		// Check for wildcard
 		if allowedIP == "*" {
 			return true
 		}
-		
+
 		// Check for exact match
 		if clientIP == allowedIP {
 			return true
 		}
-		
+
 		// Check for CIDR match
 		if h.isIPInCIDR(clientIP, allowedIP) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -165,16 +165,16 @@ func (h *HealthHandler) isIPInCIDR(ip, cidr string) bool {
 	if !strings.Contains(cidr, "/") {
 		return false
 	}
-	
+
 	_, network, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return false
 	}
-	
+
 	clientIP := net.ParseIP(ip)
 	if clientIP == nil {
 		return false
 	}
-	
+
 	return network.Contains(clientIP)
 }

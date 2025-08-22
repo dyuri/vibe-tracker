@@ -32,7 +32,7 @@ func (ve ValidationErrors) Error() string {
 // Initialize the validator instance
 func init() {
 	validate = validator.New()
-	
+
 	// Register custom validators
 	registerCustomValidators()
 }
@@ -42,7 +42,7 @@ func ValidateStruct(s interface{}) error {
 	err := validate.Struct(s)
 	if err != nil {
 		var validationErrors ValidationErrors
-		
+
 		for _, err := range err.(validator.ValidationErrors) {
 			validationErrors = append(validationErrors, ValidationError{
 				Field:   err.Field(),
@@ -51,7 +51,7 @@ func ValidateStruct(s interface{}) error {
 				Message: getErrorMessage(err),
 			})
 		}
-		
+
 		return validationErrors
 	}
 	return nil
@@ -65,7 +65,7 @@ func GetValidator() *validator.Validate {
 // Custom error message mapping
 func getErrorMessage(fe validator.FieldError) string {
 	field := strings.ToLower(fe.Field())
-	
+
 	switch fe.Tag() {
 	case "required":
 		return fmt.Sprintf("%s is required", field)
@@ -105,19 +105,19 @@ func registerCustomValidators() {
 		val := fl.Field().Float()
 		return val >= -90 && val <= 90
 	})
-	
-	// Custom longitude validator  
+
+	// Custom longitude validator
 	validate.RegisterValidation("longitude", func(fl validator.FieldLevel) bool {
 		val := fl.Field().Float()
 		return val >= -180 && val <= 180
 	})
-	
+
 	// Custom positive number validator
 	validate.RegisterValidation("positive", func(fl validator.FieldLevel) bool {
 		val := fl.Field().Float()
 		return val > 0
 	})
-	
+
 	// Custom session name validator (alphanumeric, hyphens, underscores)
 	validate.RegisterValidation("session_name", func(fl validator.FieldLevel) bool {
 		val := fl.Field().String()
@@ -126,7 +126,7 @@ func registerCustomValidators() {
 		}
 		return isValidSessionName(val)
 	})
-	
+
 	// Custom username validator (alphanumeric, hyphens, underscores)
 	validate.RegisterValidation("username", func(fl validator.FieldLevel) bool {
 		val := fl.Field().String()
@@ -142,12 +142,12 @@ func isValidSessionName(name string) bool {
 	if len(name) == 0 || len(name) > 100 {
 		return false
 	}
-	
+
 	for _, char := range name {
-		if !((char >= 'a' && char <= 'z') || 
-			 (char >= 'A' && char <= 'Z') || 
-			 (char >= '0' && char <= '9') || 
-			 char == '-' || char == '_') {
+		if !((char >= 'a' && char <= 'z') ||
+			(char >= 'A' && char <= 'Z') ||
+			(char >= '0' && char <= '9') ||
+			char == '-' || char == '_') {
 			return false
 		}
 	}
@@ -159,12 +159,12 @@ func isValidUsername(username string) bool {
 	if len(username) < 3 || len(username) > 50 {
 		return false
 	}
-	
+
 	for _, char := range username {
-		if !((char >= 'a' && char <= 'z') || 
-			 (char >= 'A' && char <= 'Z') || 
-			 (char >= '0' && char <= '9') || 
-			 char == '-' || char == '_') {
+		if !((char >= 'a' && char <= 'z') ||
+			(char >= 'A' && char <= 'Z') ||
+			(char >= '0' && char <= '9') ||
+			char == '-' || char == '_') {
 			return false
 		}
 	}

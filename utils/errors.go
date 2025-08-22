@@ -11,26 +11,26 @@ import (
 type ErrorType string
 
 const (
-	ErrorTypeValidation    ErrorType = "validation"
+	ErrorTypeValidation     ErrorType = "validation"
 	ErrorTypeAuthentication ErrorType = "authentication"
-	ErrorTypeAuthorization ErrorType = "authorization"
-	ErrorTypeNotFound      ErrorType = "not_found"
-	ErrorTypeConflict      ErrorType = "conflict"
-	ErrorTypeInternal      ErrorType = "internal"
-	ErrorTypeExternal      ErrorType = "external"
-	ErrorTypeRateLimit     ErrorType = "rate_limit"
+	ErrorTypeAuthorization  ErrorType = "authorization"
+	ErrorTypeNotFound       ErrorType = "not_found"
+	ErrorTypeConflict       ErrorType = "conflict"
+	ErrorTypeInternal       ErrorType = "internal"
+	ErrorTypeExternal       ErrorType = "external"
+	ErrorTypeRateLimit      ErrorType = "rate_limit"
 )
 
 // AppError represents a structured application error
 type AppError struct {
-	Type       ErrorType `json:"type"`
-	Code       int       `json:"code"`
-	Message    string    `json:"message"`
-	Details    string    `json:"details,omitempty"`
-	Internal   error     `json:"-"` // Internal error, not exposed to API
-	RequestID  string    `json:"request_id,omitempty"`
-	UserID     string    `json:"user_id,omitempty"`
-	Context    map[string]interface{} `json:"context,omitempty"`
+	Type      ErrorType              `json:"type"`
+	Code      int                    `json:"code"`
+	Message   string                 `json:"message"`
+	Details   string                 `json:"details,omitempty"`
+	Internal  error                  `json:"-"` // Internal error, not exposed to API
+	RequestID string                 `json:"request_id,omitempty"`
+	UserID    string                 `json:"user_id,omitempty"`
+	Context   map[string]interface{} `json:"context,omitempty"`
 }
 
 // Error implements the error interface
@@ -172,7 +172,7 @@ func WrapError(err error, errorType ErrorType, message string) *AppError {
 // LogAndWrapError logs an error and wraps it
 func LogAndWrapError(err error, errorType ErrorType, message string, userID ...string) *AppError {
 	appErr := WrapError(err, errorType, message)
-	
+
 	if len(userID) > 0 {
 		appErr.UserID = userID[0]
 	}
@@ -181,15 +181,15 @@ func LogAndWrapError(err error, errorType ErrorType, message string, userID ...s
 	logEvent := LogError(err, message).
 		Str("error_type", string(errorType)).
 		Int("status_code", appErr.Code)
-	
+
 	if appErr.UserID != "" {
 		logEvent = logEvent.Str("user_id", appErr.UserID)
 	}
-	
+
 	if appErr.Details != "" {
 		logEvent = logEvent.Str("details", appErr.Details)
 	}
-	
+
 	logEvent.Msg("Application error occurred")
 
 	return appErr

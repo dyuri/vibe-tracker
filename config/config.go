@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	
+
 	"vibe-tracker/constants"
 )
 
@@ -14,18 +14,18 @@ type AppConfig struct {
 	// Server configuration
 	Port string
 	Host string
-	
+
 	// Database configuration
 	Automigrate bool
-	
+
 	// Pagination settings
 	DefaultPage    int
 	DefaultPerPage int
 	MaxPerPage     int
-	
+
 	// Security configuration
 	Security SecurityConfig
-	
+
 	// Health check configuration
 	Health HealthConfig
 }
@@ -35,25 +35,25 @@ type SecurityConfig struct {
 	// Rate limiting
 	EnableRateLimiting bool
 	RateLimitStrict    bool // Stricter limits for production
-	
+
 	// Request security
-	MaxRequestSize     int64
-	RequestTimeout     time.Duration
-	EnableRequestLogs  bool
-	
-	// Authentication security  
+	MaxRequestSize    int64
+	RequestTimeout    time.Duration
+	EnableRequestLogs bool
+
+	// Authentication security
 	EnableBruteForceProtection bool
 	FailedLoginThreshold       int
 	AccountLockoutDuration     time.Duration
-	
+
 	// CORS configuration
 	CORSAllowedOrigins []string
 	CORSAllowAll       bool
-	
+
 	// Security headers
 	EnableSecurityHeaders bool
-	HSTSEnabled          bool
-	CSPEnabled           bool
+	HSTSEnabled           bool
+	CSPEnabled            bool
 }
 
 // HealthConfig holds health check configuration
@@ -61,12 +61,12 @@ type HealthConfig struct {
 	// Health check enablement
 	Enabled         bool
 	DetailedEnabled bool
-	
+
 	// Health check timeouts
-	DBTimeout         time.Duration
-	CacheTTL          time.Duration
-	MaxResponseTime   time.Duration
-	
+	DBTimeout       time.Duration
+	CacheTTL        time.Duration
+	MaxResponseTime time.Duration
+
 	// Access control
 	AllowedIPs []string
 }
@@ -74,7 +74,7 @@ type HealthConfig struct {
 // NewAppConfig creates a new configuration instance with values from environment variables
 func NewAppConfig() *AppConfig {
 	isProd := isProductionMode()
-	
+
 	return &AppConfig{
 		Port:           getEnvOrDefault(constants.EnvPort, constants.DefaultPort),
 		Host:           getEnvOrDefault(constants.EnvHost, constants.DefaultHost),
@@ -93,25 +93,25 @@ func newSecurityConfig(isProduction bool) SecurityConfig {
 	if originsEnv := os.Getenv("CORS_ALLOWED_ORIGINS"); originsEnv != "" {
 		corsOrigins = strings.Split(originsEnv, ",")
 	}
-	
+
 	return SecurityConfig{
 		EnableRateLimiting: getBoolEnvOrDefault("ENABLE_RATE_LIMITING", true),
 		RateLimitStrict:    isProduction,
-		
+
 		MaxRequestSize:    getInt64EnvOrDefault("MAX_REQUEST_SIZE", constants.MaxJSONRequestSize),
 		RequestTimeout:    getDurationEnvOrDefault("REQUEST_TIMEOUT", time.Duration(constants.RequestTimeout)*time.Second),
 		EnableRequestLogs: getBoolEnvOrDefault("ENABLE_REQUEST_LOGS", !isProduction),
-		
+
 		EnableBruteForceProtection: getBoolEnvOrDefault("ENABLE_BRUTE_FORCE_PROTECTION", true),
 		FailedLoginThreshold:       getIntEnvOrDefault("FAILED_LOGIN_THRESHOLD", constants.MaxFailedLoginAttempts),
 		AccountLockoutDuration:     getDurationEnvOrDefault("ACCOUNT_LOCKOUT_DURATION", constants.LoginLockoutDuration),
-		
+
 		CORSAllowedOrigins: corsOrigins,
 		CORSAllowAll:       getBoolEnvOrDefault("CORS_ALLOW_ALL", !isProduction),
-		
+
 		EnableSecurityHeaders: getBoolEnvOrDefault("ENABLE_SECURITY_HEADERS", true),
-		HSTSEnabled:          getBoolEnvOrDefault("HSTS_ENABLED", isProduction),
-		CSPEnabled:           getBoolEnvOrDefault("CSP_ENABLED", true),
+		HSTSEnabled:           getBoolEnvOrDefault("HSTS_ENABLED", isProduction),
+		CSPEnabled:            getBoolEnvOrDefault("CSP_ENABLED", true),
 	}
 }
 
@@ -121,15 +121,15 @@ func newHealthConfig(isProduction bool) HealthConfig {
 	if ipsEnv := os.Getenv(constants.EnvHealthAllowedIPs); ipsEnv != "" {
 		allowedIPs = strings.Split(ipsEnv, ",")
 	}
-	
+
 	return HealthConfig{
 		Enabled:         getBoolEnvOrDefault(constants.EnvHealthEnabled, constants.DefaultHealthEnabled),
 		DetailedEnabled: getBoolEnvOrDefault(constants.EnvHealthDetailedEnabled, !isProduction), // false in production by default
-		
+
 		DBTimeout:       getDurationEnvOrDefault(constants.EnvHealthDBTimeout, constants.DefaultHealthDBTimeout),
 		CacheTTL:        getDurationEnvOrDefault(constants.EnvHealthCacheTTL, constants.DefaultHealthCacheTTL),
 		MaxResponseTime: getDurationEnvOrDefault(constants.EnvHealthMaxResponseTime, constants.DefaultHealthMaxResponseTime),
-		
+
 		AllowedIPs: allowedIPs,
 	}
 }

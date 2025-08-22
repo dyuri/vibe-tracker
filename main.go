@@ -31,9 +31,9 @@ import (
 	"vibe-tracker/constants"
 	"vibe-tracker/container"
 	_ "vibe-tracker/docs/api"
+	_ "vibe-tracker/migrations"
 	"vibe-tracker/models"
 	"vibe-tracker/utils"
-	_ "vibe-tracker/migrations"
 )
 
 func main() {
@@ -41,7 +41,7 @@ func main() {
 
 	// Load configuration
 	cfg := config.NewAppConfig()
-	
+
 	// Initialize structured logger
 	utils.InitLogger(cfg)
 
@@ -59,7 +59,7 @@ func main() {
 		e.Router.Use(di.ErrorHandler.SecurityHeaders(cfg.Security.HSTSEnabled, cfg.Security.CSPEnabled))
 		e.Router.Use(di.ErrorHandler.CORSMiddleware(cfg.Security.CORSAllowedOrigins, cfg.Security.CORSAllowAll))
 		e.Router.Use(di.InjectMiddleware()) // Inject DI container into context
-		
+
 		// Security middleware
 		if di.SecurityMiddleware != nil {
 			e.Router.Use(di.SecurityMiddleware.RequestSizeLimit())
@@ -79,7 +79,7 @@ func main() {
 		if di.RateLimitMiddleware != nil {
 			publicMiddleware = append(publicMiddleware, di.RateLimitMiddleware.PublicEndpoints())
 		}
-		
+
 		api.GET(constants.EndpointLocation, di.PublicHandler.GetLocation, append(publicMiddleware, di.UserMiddleware.LoadUserFromPath())...)
 		api.GET(constants.EndpointPublicLocation, di.PublicHandler.GetPublicLocations, publicMiddleware...)
 		api.GET("/session/:username/:session", di.PublicHandler.GetSessionData, append(publicMiddleware, di.UserMiddleware.LoadUserFromPath())...)
@@ -89,7 +89,7 @@ func main() {
 		if di.RateLimitMiddleware != nil {
 			sessionMiddleware = append(sessionMiddleware, di.RateLimitMiddleware.SessionEndpoints())
 		}
-		
+
 		api.GET("/sessions/:username", di.SessionHandler.ListSessions, append(sessionMiddleware, di.UserMiddleware.LoadUserFromPath())...)
 		api.GET("/sessions/:username/:name", di.SessionHandler.GetSession, append(sessionMiddleware, di.UserMiddleware.LoadUserFromPath())...)
 		api.POST("/sessions", di.SessionHandler.CreateSession, append(sessionMiddleware, di.AuthMiddleware.RequireJWTAuth(), di.ValidationMiddleware.ValidateJSON(&models.CreateSessionRequest{}))...)
@@ -104,7 +104,7 @@ func main() {
 		if di.AuthSecurityMiddleware != nil {
 			authMiddleware = append(authMiddleware, di.AuthSecurityMiddleware.BruteForceProtection())
 		}
-		
+
 		api.POST(constants.EndpointLogin, di.AuthHandler.Login, append(authMiddleware, di.ValidationMiddleware.ValidateJSON(&models.LoginRequest{}))...)
 		api.POST("/auth/refresh", di.AuthHandler.RefreshToken, append(authMiddleware, di.ValidationMiddleware.ValidateJSON(&models.RefreshTokenRequest{}))...)
 		api.GET("/me", di.AuthHandler.GetMe, di.AuthMiddleware.RequireJWTAuth())
@@ -117,7 +117,7 @@ func main() {
 		if di.RateLimitMiddleware != nil {
 			trackingMiddleware = append(trackingMiddleware, di.RateLimitMiddleware.TrackingEndpoints())
 		}
-		
+
 		api.GET(constants.EndpointTrack, di.TrackingHandler.TrackLocationGET, append(trackingMiddleware, di.AuthMiddleware.RequireFlexibleAuth(), di.ValidationMiddleware.ValidateQueryParams(&models.TrackingQueryParams{}))...)
 		api.POST(constants.EndpointTrack, di.TrackingHandler.TrackLocationPOST, append(trackingMiddleware, di.AuthMiddleware.RequireFlexibleAuth(), di.ValidationMiddleware.ValidateJSON(&models.LocationRequest{}))...)
 
@@ -130,7 +130,7 @@ func main() {
 		if di.RateLimitMiddleware != nil {
 			docsMiddleware = append(docsMiddleware, di.RateLimitMiddleware.DocsEndpoints())
 		}
-		
+
 		e.Router.GET("/swagger/json", di.DocsHandler.ServeSwaggerJSON, docsMiddleware...)
 		e.Router.GET("/swagger", di.DocsHandler.ServeSwaggerUI, docsMiddleware...)
 

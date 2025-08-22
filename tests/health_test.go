@@ -215,7 +215,7 @@ func TestHealthEndpointIntegration(t *testing.T) {
 	t.Run("Health endpoint response formats", func(t *testing.T) {
 		// Test that health endpoints would return proper HTTP responses
 		// This tests the structure without requiring a full server
-		
+
 		// Simulate liveness response
 		livenessResponse := models.LivenessResponse{
 			Status:    models.HealthStatusHealthy,
@@ -303,18 +303,18 @@ func TestHealthConstants(t *testing.T) {
 	t.Run("Health endpoint constants", func(t *testing.T) {
 		// These tests verify that constants are properly defined
 		// and have expected values for endpoint paths
-		
+
 		// Note: In a real test, we would import and test the actual constants
 		// For this test, we're validating the expected format
-		
+
 		expectedHealthEndpoint := "/health"
 		expectedLivenessEndpoint := "/health/live"
 		expectedReadinessEndpoint := "/health/ready"
-		
+
 		assert.NotEmpty(t, expectedHealthEndpoint)
 		assert.NotEmpty(t, expectedLivenessEndpoint)
 		assert.NotEmpty(t, expectedReadinessEndpoint)
-		
+
 		// Verify endpoint structure
 		assert.True(t, len(expectedHealthEndpoint) > 0)
 		assert.True(t, len(expectedLivenessEndpoint) > len(expectedHealthEndpoint))

@@ -54,7 +54,7 @@ func TestSecurityMiddlewareIntegration(t *testing.T) {
 // TestRateLimitingConfiguration tests rate limiting configuration
 func TestRateLimitingConfiguration(t *testing.T) {
 	rateLimiter := middleware.NewRateLimitMiddleware()
-	
+
 	// Test that all endpoint types are configured
 	t.Run("All endpoint types configured", func(t *testing.T) {
 		middlewares := []func() func(next interface{}) interface{}{
@@ -84,7 +84,7 @@ func TestRateLimitingConfiguration(t *testing.T) {
 				}
 			},
 		}
-		
+
 		for i, mw := range middlewares {
 			assert.NotNil(t, mw(), "Rate limiter middleware %d should not be nil", i)
 		}
@@ -96,10 +96,10 @@ func TestSecurityConfiguration(t *testing.T) {
 	t.Run("Security middleware configuration", func(t *testing.T) {
 		maxSize := int64(1024 * 1024) // 1MB
 		timeout := 30 * time.Second
-		
+
 		sm := middleware.NewSecurityMiddleware(maxSize, timeout, true)
 		assert.NotNil(t, sm, "Security middleware should be created with valid config")
-		
+
 		// Test middleware functions exist
 		assert.NotNil(t, sm.RequestSizeLimit(), "Request size limit middleware should exist")
 		assert.NotNil(t, sm.RequestTimeout(), "Request timeout middleware should exist")
@@ -111,14 +111,14 @@ func TestSecurityConfiguration(t *testing.T) {
 	t.Run("Auth security configuration", func(t *testing.T) {
 		maxAttempts := 5
 		lockoutDuration := 10 * time.Minute
-		
+
 		asm := middleware.NewAuthSecurityMiddleware(maxAttempts, lockoutDuration, true)
 		defer asm.Stop()
-		
+
 		assert.NotNil(t, asm, "Auth security middleware should be created")
 		assert.NotNil(t, asm.BruteForceProtection(), "Brute force protection middleware should exist")
 		assert.NotNil(t, asm.SessionSecurity(), "Session security middleware should exist")
-		
+
 		// Test stats functionality
 		stats := asm.GetFailedAttemptsStats()
 		assert.NotNil(t, stats, "Stats should be available")
@@ -130,22 +130,22 @@ func TestSecurityConfiguration(t *testing.T) {
 // TestErrorHandlerConfiguration tests error handler configuration
 func TestErrorHandlerConfiguration(t *testing.T) {
 	eh := middleware.NewErrorHandler()
-	
+
 	t.Run("Error handler middleware functions", func(t *testing.T) {
 		assert.NotNil(t, eh.RecoveryMiddleware(), "Recovery middleware should exist")
 		assert.NotNil(t, eh.LoggingMiddleware(), "Logging middleware should exist")
-		
+
 		// Test CORS with different configurations
 		corsAll := eh.CORSMiddleware(nil, true)
 		assert.NotNil(t, corsAll, "CORS middleware with allow all should exist")
-		
+
 		corsRestricted := eh.CORSMiddleware([]string{"https://example.com"}, false)
 		assert.NotNil(t, corsRestricted, "CORS middleware with restrictions should exist")
-		
+
 		// Test security headers with different configurations
 		headersBasic := eh.SecurityHeaders(false, false)
 		assert.NotNil(t, headersBasic, "Basic security headers middleware should exist")
-		
+
 		headersAdvanced := eh.SecurityHeaders(true, true)
 		assert.NotNil(t, headersAdvanced, "Advanced security headers middleware should exist")
 	})
@@ -156,19 +156,19 @@ func TestTokenBlacklistFunctionality(t *testing.T) {
 	t.Run("Token blacklist operations", func(t *testing.T) {
 		blacklist := middleware.NewTokenBlacklist()
 		defer blacklist.Stop()
-		
+
 		// Test blacklisting a token
 		jti := "test-jwt-id"
 		expiration := time.Now().Add(time.Hour)
-		
+
 		blacklist.BlacklistToken(jti, expiration)
-		
+
 		// Test checking if token is blacklisted
 		assert.True(t, blacklist.IsBlacklisted(jti), "Token should be blacklisted")
-		
+
 		// Test with non-blacklisted token
 		assert.False(t, blacklist.IsBlacklisted("non-existent-jti"), "Non-existent token should not be blacklisted")
-		
+
 		// Test token blacklist middleware
 		middleware := blacklist.TokenSecurityMiddleware()
 		assert.NotNil(t, middleware, "Token security middleware should exist")
@@ -177,13 +177,13 @@ func TestTokenBlacklistFunctionality(t *testing.T) {
 	t.Run("Token blacklist expiration", func(t *testing.T) {
 		blacklist := middleware.NewTokenBlacklist()
 		defer blacklist.Stop()
-		
+
 		// Test with expired token
 		jti := "expired-jwt-id"
 		expiration := time.Now().Add(-time.Hour) // Already expired
-		
+
 		blacklist.BlacklistToken(jti, expiration)
-		
+
 		// Should not be blacklisted due to expiration
 		assert.False(t, blacklist.IsBlacklisted(jti), "Expired token should not be blacklisted")
 	})
@@ -221,21 +221,21 @@ func TestSecurityConstants(t *testing.T) {
 	t.Run("Default configuration values", func(t *testing.T) {
 		// Test that a default config can be created
 		cfg := &config.AppConfig{}
-		
+
 		// These should not panic
 		assert.NotPanics(t, func() {
 			middleware.NewSecurityMiddleware(1024, time.Second, false)
 		}, "Security middleware creation should not panic")
-		
+
 		assert.NotPanics(t, func() {
 			middleware.NewRateLimitMiddleware()
 		}, "Rate limiting middleware creation should not panic")
-		
+
 		assert.NotPanics(t, func() {
 			asm := middleware.NewAuthSecurityMiddleware(3, time.Minute, false)
 			asm.Stop()
 		}, "Auth security middleware creation should not panic")
-		
+
 		_ = cfg // Use cfg to avoid unused variable warning
 	})
 }
@@ -245,7 +245,7 @@ func TestSecurityLogging(t *testing.T) {
 	t.Run("Security logging functions exist", func(t *testing.T) {
 		// This test ensures security logging functions can be called without errors
 		// We're not testing the actual output, just that the functions work
-		
+
 		// These should not panic when called
 		assert.NotPanics(t, func() {
 			// Note: These are just checking the logging functions exist and can be called
@@ -257,11 +257,11 @@ func TestSecurityLogging(t *testing.T) {
 // BenchmarkSecurityMiddleware benchmarks the performance impact of security middleware
 func BenchmarkSecurityMiddleware(b *testing.B) {
 	sm := middleware.NewSecurityMiddleware(1024*1024, time.Second, false)
-	
+
 	// Create a simple request
 	req := httptest.NewRequest(http.MethodGet, "/test", strings.NewReader("test"))
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Test)")
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -274,7 +274,7 @@ func BenchmarkSecurityMiddleware(b *testing.B) {
 
 func BenchmarkRateLimitingMiddleware(b *testing.B) {
 	rl := middleware.NewRateLimitMiddleware()
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {

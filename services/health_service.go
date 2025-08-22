@@ -16,20 +16,20 @@ import (
 
 // HealthService provides health check functionality
 type HealthService struct {
-	app                *pocketbase.PocketBase
-	userRepo           repositories.UserRepository
-	sessionRepo        repositories.SessionRepository
-	locationRepo       repositories.LocationRepository
-	authService        *AuthService
-	userService        *UserService
-	sessionService     *SessionService
-	locationService    *LocationService
-	startTime          time.Time
-	healthCache        *models.SystemHealth
-	healthCacheMux     sync.RWMutex
-	lastHealthCheck    time.Time
-	cacheTTL           time.Duration
-	dbTimeout          time.Duration
+	app             *pocketbase.PocketBase
+	userRepo        repositories.UserRepository
+	sessionRepo     repositories.SessionRepository
+	locationRepo    repositories.LocationRepository
+	authService     *AuthService
+	userService     *UserService
+	sessionService  *SessionService
+	locationService *LocationService
+	startTime       time.Time
+	healthCache     *models.SystemHealth
+	healthCacheMux  sync.RWMutex
+	lastHealthCheck time.Time
+	cacheTTL        time.Duration
+	dbTimeout       time.Duration
 }
 
 // NewHealthService creates a new health service
@@ -72,21 +72,21 @@ func (s *HealthService) GetLiveness() *models.LivenessResponse {
 // GetReadiness returns readiness information
 func (s *HealthService) GetReadiness() *models.ReadinessResponse {
 	checks := make(map[string]models.HealthStatus)
-	
+
 	// Check database connectivity
 	dbHealth := s.checkDatabaseHealth()
 	checks["database"] = dbHealth.Status
-	
+
 	// Check services (basic validation)
 	if s.validateServices() {
 		checks["services"] = models.HealthStatusHealthy
 	} else {
 		checks["services"] = models.HealthStatusUnhealthy
 	}
-	
+
 	// Check configuration
 	checks["configuration"] = models.HealthStatusHealthy // Always healthy if we got this far
-	
+
 	// Determine overall status
 	overallStatus := models.HealthStatusHealthy
 	for _, status := range checks {
@@ -97,7 +97,7 @@ func (s *HealthService) GetReadiness() *models.ReadinessResponse {
 			overallStatus = models.HealthStatusWarning
 		}
 	}
-	
+
 	return &models.ReadinessResponse{
 		Status:    overallStatus,
 		Checks:    checks,
@@ -118,13 +118,13 @@ func (s *HealthService) GetDetailedHealth() *models.DetailedHealthResponse {
 
 	// Perform fresh health check
 	health := s.performFullHealthCheck()
-	
+
 	// Update cache
 	s.healthCacheMux.Lock()
 	s.healthCache = health
 	s.lastHealthCheck = time.Now()
 	s.healthCacheMux.Unlock()
-	
+
 	return s.buildDetailedResponse(health)
 }
 
@@ -133,25 +133,25 @@ func (s *HealthService) performFullHealthCheck() *models.SystemHealth {
 	health := &models.SystemHealth{
 		StartTime: s.startTime,
 	}
-	
+
 	// Database health check
 	health.Database = s.checkDatabaseHealth()
-	
+
 	// Services health check
 	health.Services = s.checkServicesHealth()
-	
+
 	// Resources health check
 	health.Resources = s.checkResourcesHealth()
-	
+
 	// Determine overall health
 	health.Overall = models.HealthStatusHealthy
-	
+
 	if health.Database.Status == models.HealthStatusUnhealthy {
 		health.Overall = models.HealthStatusUnhealthy
 	} else if health.Database.Status == models.HealthStatusWarning && health.Overall == models.HealthStatusHealthy {
 		health.Overall = models.HealthStatusWarning
 	}
-	
+
 	// Check for warning conditions in resources
 	if health.Resources != nil {
 		goroutines := runtime.NumGoroutine()
@@ -161,7 +161,7 @@ func (s *HealthService) performFullHealthCheck() *models.SystemHealth {
 			health.Overall = models.HealthStatusWarning
 		}
 	}
-	
+
 	return health
 }
 
@@ -170,11 +170,11 @@ func (s *HealthService) checkDatabaseHealth() *models.ComponentHealth {
 	start := time.Now()
 	ctx, cancel := context.WithTimeout(context.Background(), s.dbTimeout)
 	defer cancel()
-	
+
 	componentHealth := &models.ComponentHealth{
 		LastChecked: start,
 	}
-	
+
 	// Try to perform a simple database operation
 	done := make(chan error, 1)
 	go func() {
@@ -185,15 +185,15 @@ func (s *HealthService) checkDatabaseHealth() *models.ComponentHealth {
 			done <- err
 			return
 		}
-		
+
 		done <- nil
 	}()
-	
+
 	select {
 	case err := <-done:
 		duration := time.Since(start)
 		componentHealth.ResponseTime = duration.String()
-		
+
 		if err != nil {
 			componentHealth.Status = models.HealthStatusUnhealthy
 			componentHealth.Error = err.Error()
@@ -208,7 +208,7 @@ func (s *HealthService) checkDatabaseHealth() *models.ComponentHealth {
 		componentHealth.Error = "database check timeout"
 		componentHealth.ResponseTime = s.dbTimeout.String()
 	}
-	
+
 	return componentHealth
 }
 
@@ -234,12 +234,12 @@ func (s *HealthService) checkServiceHealth(serviceName string, service interface
 func (s *HealthService) checkResourcesHealth() *models.ResourceHealth {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	
+
 	// Calculate memory usage
 	memUsageMB := float64(m.Alloc) / 1024 / 1024
-	
+
 	goroutines := runtime.NumGoroutine()
-	
+
 	return &models.ResourceHealth{
 		MemoryUsage:     fmt.Sprintf("%.1fMB", memUsageMB),
 		Goroutines:      goroutines,
@@ -260,7 +260,7 @@ func (s *HealthService) validateServices() bool {
 func (s *HealthService) buildDetailedResponse(health *models.SystemHealth) *models.DetailedHealthResponse {
 	checks := make(map[string]*models.ComponentHealth)
 	checks["database"] = health.Database
-	
+
 	return &models.DetailedHealthResponse{
 		Status:    health.Overall,
 		Version:   constants.AppVersion,
