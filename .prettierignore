@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+public/dist/
+
+# Generated files
+coverage/
+*.tsbuildinfo
+
+# Go files (handled by Go formatter)
+*.go
+go.mod
+go.sum
+
+# Data and logs
+pb_data/
+*.log
+
+# OS and editor files
+.DS_Store
+.vscode/
+.idea/
+
+# Git
+.git/
+
+# Cache directories
+.cache/
+.vite/
+.npm/
