@@ -1,11 +1,31 @@
 import { generateUserColor } from './utils.js';
 
+/**
+ * @typedef {import('../src/types/index.js').User} User
+ * @typedef {import('../src/types/index.js').AuthChangeEventDetail} AuthChangeEventDetail
+ */
+
+/**
+ * Login Widget Web Component
+ * Displays user authentication status and provides login/logout functionality
+ * @extends {HTMLElement}
+ */
 export default class LoginWidget extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
+    
+    /** @type {User|null} */
     this.user = null;
+    
+    /** @type {boolean} */
     this.isAuthenticated = false;
+    
+    /** @type {HTMLElement|null} */
+    this.toggleButton = null;
+    
+    /** @type {HTMLElement|null} */
+    this.authPanel = null;
     
     this.shadowRoot.innerHTML = `
       <style>
@@ -216,6 +236,9 @@ export default class LoginWidget extends HTMLElement {
     });
   }
 
+  /**
+   * Called when the element is connected to the DOM
+   */
   connectedCallback() {
     // Initialize with current auth state
     this.initializeAuthState();
@@ -230,6 +253,10 @@ export default class LoginWidget extends HTMLElement {
     }
   }
 
+  /**
+   * Initializes the authentication state from the global auth service
+   * @private
+   */
   initializeAuthState() {
     if (window.authService) {
       this.isAuthenticated = window.authService.isAuthenticated();
@@ -241,6 +268,10 @@ export default class LoginWidget extends HTMLElement {
     }
   }
 
+  /**
+   * Sets up event listeners for UI interactions
+   * @private
+   */
   setupEventListeners() {
     this.toggleButton.addEventListener("click", () => {
       this.showPanel();
@@ -291,6 +322,10 @@ export default class LoginWidget extends HTMLElement {
     this.errorMessage.textContent = "";
   }
 
+  /**
+   * Updates the UI based on current authentication state
+   * @private
+   */
   updateUI() {
     if (this.isAuthenticated && this.user) {
       // Logged in state
@@ -413,6 +448,10 @@ export default class LoginWidget extends HTMLElement {
     }
   }
 
+  /**
+   * Shows an error message in the login form
+   * @param {string} message - The error message to display
+   */
   showError(message) {
     this.errorMessage.textContent = message;
   }

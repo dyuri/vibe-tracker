@@ -1,12 +1,17 @@
 import { generateUserColor } from './utils.js';
 
 /**
+ * @typedef {import('../src/types/index.js').LocationProperties} LocationProperties
+ * @typedef {[number, number]} LatLng - [latitude, longitude] coordinates
+ */
+
+/**
  * Creates a custom droplet-shaped marker with user avatar
- * @param {Array} latlng - [latitude, longitude] coordinates
+ * @param {LatLng} latlng - [latitude, longitude] coordinates
  * @param {string} username - Username for color generation and fallback text
  * @param {string} userId - User ID for avatar URL
- * @param {string} avatar - Avatar filename (can be empty/null)
- * @param {number} size - Marker size in pixels (default: 40)
+ * @param {string|null|undefined} avatar - Avatar filename (can be empty/null)
+ * @param {number} [size=40] - Marker size in pixels
  * @returns {L.Marker} Leaflet marker with custom icon
  */
 export function createAvatarMarker(latlng, username, userId, avatar, size = 40) {
@@ -127,9 +132,9 @@ export function createAvatarMarker(latlng, username, userId, avatar, size = 40) 
 
 /**
  * Creates a marker - either avatar marker for latest points or default marker for others
- * @param {Array} latlng - [latitude, longitude] coordinates
- * @param {Object} properties - Point properties containing optional username and avatar
- * @param {number} size - Marker size (default: 40)
+ * @param {LatLng} latlng - [latitude, longitude] coordinates
+ * @param {LocationProperties} properties - Point properties containing optional username and avatar
+ * @param {number} [size=40] - Marker size
  * @returns {L.Marker} Leaflet marker
  */
 export function createMarker(latlng, properties, size = 40) {

@@ -1,6 +1,6 @@
 /**
  * Generate a consistent color for a given username
- * @param {string} username - The username to generate color for
+ * @param {string|null|undefined} username - The username to generate color for
  * @returns {string|null} HSL color string or null if no username
  */
 export function generateUserColor(username) {

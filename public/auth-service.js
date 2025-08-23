@@ -1,4 +1,14 @@
+/**
+ * @typedef {import('../src/types/index.js').User} User
+ * @typedef {import('../src/types/index.js').LoginRequest} LoginRequest
+ * @typedef {import('../src/types/index.js').LoginResponse} LoginResponse
+ * @typedef {import('../src/types/index.js').UpdateProfileRequest} UpdateProfileRequest
+ */
+
 export default class AuthService {
+  /**
+   * @param {string} baseUrl - Base URL for API calls
+   */
   constructor(baseUrl = '') {
     this.baseUrl = baseUrl;
     this.token = localStorage.getItem('auth_token');
@@ -11,6 +21,12 @@ export default class AuthService {
     }
   }
 
+  /**
+   * Login with email and password
+   * @param {string} email - User's email
+   * @param {string} password - User's password
+   * @returns {Promise<LoginResponse>} Login response with token and user
+   */
   async login(email, password) {
     try {
       const response = await fetch(`${this.baseUrl}/api/login`, {

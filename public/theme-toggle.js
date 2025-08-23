@@ -1,7 +1,23 @@
+/**
+ * @typedef {import('../src/types/index.js').ThemeToggleElement} ThemeToggleElement
+ */
+
+/**
+ * Theme Toggle Web Component
+ * Provides a toggle switch for light/dark theme with system preference detection
+ * @extends {HTMLElement}
+ * @implements {ThemeToggleElement}
+ */
 export default class ThemeToggle extends HTMLElement {
+  /**
+   * Creates a new ThemeToggle component
+   */
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
+    
+    /** @type {HTMLButtonElement} */
+    this.toggleButton = null;
     
     this.shadowRoot.innerHTML = `
       <style>
@@ -106,6 +122,10 @@ export default class ThemeToggle extends HTMLElement {
     this.updateTooltip();
   }
 
+  /**
+   * Sets up event listeners for the toggle button and theme change events
+   * @private
+   */
   setupEventListeners() {
     this.toggleButton.addEventListener('click', () => {
       this.toggleTheme();
@@ -117,6 +137,10 @@ export default class ThemeToggle extends HTMLElement {
     });
   }
 
+  /**
+   * Initializes the theme based on localStorage or system preference
+   * @private
+   */
   initializeTheme() {
     // Check localStorage first, then system preference
     const savedTheme = localStorage.getItem('theme');
@@ -146,6 +170,9 @@ export default class ThemeToggle extends HTMLElement {
     }
   }
 
+  /**
+   * Toggles between light and dark theme
+   */
   toggleTheme() {
     const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -156,6 +183,10 @@ export default class ThemeToggle extends HTMLElement {
     localStorage.setItem('theme', newTheme);
   }
 
+  /**
+   * Applies the specified theme to the document and component
+   * @param {'light'|'dark'} theme - The theme to apply
+   */
   applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     
@@ -184,12 +215,18 @@ export default class ThemeToggle extends HTMLElement {
     this.toggleButton.setAttribute('data-tooltip', tooltipText);
   }
 
-  // Public method to get current theme
+  /**
+   * Gets the current theme
+   * @returns {'light'|'dark'} The current theme
+   */
   getCurrentTheme() {
     return document.documentElement.getAttribute('data-theme') || 'light';
   }
 
-  // Public method to set theme
+  /**
+   * Sets the theme programmatically
+   * @param {'light'|'dark'} theme - The theme to set
+   */
   setTheme(theme) {
     if (theme === 'light' || theme === 'dark') {
       this.applyTheme(theme);

@@ -1,9 +1,44 @@
 import { createMarker } from './avatar-marker.js';
 
+/**
+ * @typedef {import('../src/types/index.js').LocationResponse} LocationResponse
+ * @typedef {import('../src/types/index.js').LocationsResponse} LocationsResponse
+ * @typedef {import('../src/types/index.js').MapWidgetElement} MapWidgetElement
+ * @typedef {import('../src/types/index.js').GeolocationCoordinates} GeolocationCoordinates
+ */
+
+/**
+ * Map Widget Web Component
+ * Interactive Leaflet map for displaying location data with heart rate visualization
+ * @extends {HTMLElement}
+ * @implements {MapWidgetElement}
+ */
 export default class MapWidget extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
+    
+    /** @type {L.Map|null} */
+    this.map = null;
+    
+    /** @type {L.LayerGroup|null} */
+    this.dataLayerGroup = null;
+    
+    /** @type {L.LayerGroup|null} */
+    this.currentPositionLayerGroup = null;
+    
+    /** @type {LocationsResponse|null} */
+    this.currentFeatureCollection = null;
+    
+    /** @type {Array<Array<number>>} */
+    this.colorScale = [
+      [0, 0, 255],    // Blue
+      [0, 255, 0],    // Green
+      [255, 255, 0],  // Yellow
+      [255, 165, 0],  // Orange
+      [255, 0, 0]     // Red
+    ];
+    
     this.shadowRoot.innerHTML = `
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       <style>
@@ -77,6 +112,10 @@ export default class MapWidget extends HTMLElement {
     ];
   }
 
+  /**
+   * Called when the element is connected to the DOM
+   * Initializes the Leaflet map and sets up event listeners
+   */
   connectedCallback() {
     this.map = L.map(this.shadowRoot.getElementById('map'));
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -115,6 +154,10 @@ export default class MapWidget extends HTMLElement {
     history.replaceState(null, null, hash);
   }
 
+  /**
+   * Displays location data on the map
+   * @param {LocationResponse|LocationsResponse} data - The location data to display
+   */
   displayData(data) {
     if (data.type === 'FeatureCollection') {
       this.currentFeatureCollection = data; // Store current data
@@ -125,6 +168,10 @@ export default class MapWidget extends HTMLElement {
     }
   }
 
+  /**
+   * Appends new location data to existing data on the map
+   * @param {LocationsResponse} newData - New location data to append
+   */
   appendData(newData) {
     if (!this.currentFeatureCollection || !newData.features || newData.features.length === 0) {
       return;
@@ -312,6 +359,10 @@ export default class MapWidget extends HTMLElement {
     `;
   }
 
+  /**
+   * Shows the current position on the map with accuracy circle
+   * @param {GeolocationCoordinates} coords - Current position coordinates
+   */
   showCurrentPosition(coords) {
     this.currentPositionLayerGroup.clearLayers();
     const { latitude, longitude, accuracy } = coords;
