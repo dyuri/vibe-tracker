@@ -107,7 +107,7 @@ jobs:
     - name: Build application
       run: |
         echo "Building application..."
-        go build -v -o vibe-tracker ./...
+        go build -v -o vibe-tracker .
         echo "✅ Application built successfully"
     
     # Optional: Check for security vulnerabilities using govulncheck
