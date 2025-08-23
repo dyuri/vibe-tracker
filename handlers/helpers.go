@@ -3,48 +3,15 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"strings"
 
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
-	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/daos"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tools/security"
 
 	"vibe-tracker/utils"
 )
-
-func authenticateTrackRequest(c echo.Context, app *pocketbase.PocketBase) (*models.Record, error) {
-	// Try JWT first (Authorization: Bearer <jwt>)
-	authHeader := c.Request().Header.Get("Authorization")
-	if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
-		// Use PocketBase's built-in middleware approach
-		// Set the request header and use the APIs auth middleware
-		token := authHeader[7:]
-
-		// Try to get the auth record from the context (after middleware processing)
-		if info := c.Get(apis.ContextAuthRecordKey); info != nil {
-			if record, ok := info.(*models.Record); ok {
-				return record, nil
-			}
-		}
-
-		// If not available via context, try basic token verification
-		if record, err := getAuthRecordFromToken(app, token); err == nil {
-			return record, nil
-		}
-	}
-
-	// Fallback to custom token (query param or header)
-	customToken := c.QueryParam("token")
-	if customToken == "" && !strings.HasPrefix(authHeader, "Bearer ") {
-		customToken = authHeader
-	}
-
-	return findUserByToken(app.Dao(), customToken)
-}
 
 func getAuthRecordFromToken(app *pocketbase.PocketBase, token string) (*models.Record, error) {
 	// Parse and verify the JWT token using PocketBase's method
@@ -72,19 +39,6 @@ func getAuthRecordFromToken(app *pocketbase.PocketBase, token string) (*models.R
 	}
 
 	return record, nil
-}
-
-func findUserByToken(dao *daos.Dao, token string) (*models.Record, error) {
-	if token == "" {
-		return nil, errors.New("token is missing")
-	}
-
-	// remove the "Bearer " prefix if present
-	if len(token) > 7 && token[:7] == "Bearer " {
-		token = token[7:]
-	}
-
-	return dao.FindFirstRecordByFilter("users", "token = {:token}", dbx.Params{"token": token})
 }
 
 func findUserByUsername(dao *daos.Dao, username string) (*models.Record, error) {

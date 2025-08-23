@@ -184,9 +184,7 @@ func (m *AuthSecurityMiddleware) clearFailedAttempts(clientID string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if _, exists := m.failedAttempts[clientID]; exists {
-		delete(m.failedAttempts, clientID)
-	}
+	delete(m.failedAttempts, clientID)
 }
 
 // getAttemptCount returns the current attempt count for a client

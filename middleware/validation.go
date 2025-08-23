@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v5"
@@ -142,8 +143,8 @@ func (v *ValidationMiddleware) ValidateQueryParams(target interface{}) echo.Midd
 			// Create a new instance of the target type
 			targetValue := reflect.New(reflect.TypeOf(target).Elem()).Interface()
 
-			// Bind query parameters
-			if err := c.Bind(targetValue); err != nil {
+			// Custom binding that properly handles pointer fields for optional parameters
+			if err := v.bindQueryParams(c, targetValue); err != nil {
 				return apis.NewBadRequestError("Failed to bind query parameters", err)
 			}
 
@@ -193,4 +194,100 @@ func (v *ValidationMiddleware) sanitizeStructFields(value reflect.Value) reflect
 	}
 
 	return newValue
+}
+
+// bindQueryParams custom query parameter binding that properly handles pointer fields
+func (v *ValidationMiddleware) bindQueryParams(c echo.Context, target interface{}) error {
+	value := reflect.ValueOf(target)
+	if value.Kind() != reflect.Ptr || value.Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("target must be a pointer to struct")
+	}
+
+	elem := value.Elem()
+	elemType := elem.Type()
+
+	for i := 0; i < elem.NumField(); i++ {
+		field := elem.Field(i)
+		fieldType := elemType.Field(i)
+
+		// Get the query tag name
+		queryTag := fieldType.Tag.Get("query")
+		if queryTag == "" {
+			continue
+		}
+
+		// Handle comma-separated tags (e.g., "name,omitempty")
+		tagParts := strings.Split(queryTag, ",")
+		paramName := tagParts[0]
+
+		// Get the query parameter value
+		queryValue := c.QueryParam(paramName)
+
+		// Skip empty values for optional fields
+		if queryValue == "" {
+			continue
+		}
+
+		// Set the field value based on its type
+		if !field.CanSet() {
+			continue
+		}
+
+		if err := v.setFieldValue(field, queryValue); err != nil {
+			return fmt.Errorf("failed to set field %s: %v", fieldType.Name, err)
+		}
+	}
+
+	return nil
+}
+
+// setFieldValue sets a field value from a string, handling different types including pointers
+func (v *ValidationMiddleware) setFieldValue(field reflect.Value, value string) error {
+	switch field.Kind() {
+	case reflect.String:
+		field.SetString(value)
+
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		intVal, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return err
+		}
+		field.SetInt(intVal)
+
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		uintVal, err := strconv.ParseUint(value, 10, 64)
+		if err != nil {
+			return err
+		}
+		field.SetUint(uintVal)
+
+	case reflect.Float32, reflect.Float64:
+		floatVal, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return err
+		}
+		field.SetFloat(floatVal)
+
+	case reflect.Bool:
+		boolVal, err := strconv.ParseBool(value)
+		if err != nil {
+			return err
+		}
+		field.SetBool(boolVal)
+
+	case reflect.Ptr:
+		// Handle pointer fields
+		if field.IsNil() {
+			// Create a new instance of the pointed-to type
+			field.Set(reflect.New(field.Type().Elem()))
+		}
+
+		// Recursively set the pointed-to value
+		return v.setFieldValue(field.Elem(), value)
+
+	default:
+		return fmt.Errorf("unsupported field type: %v", field.Kind())
+	}
+
+	return nil
 }
