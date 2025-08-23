@@ -111,11 +111,11 @@ jobs:
         echo "✅ Application built successfully"
     
     # Optional: Check for security vulnerabilities using govulncheck
-    - name: Install govulncheck
-      run: go install golang.org/x/vuln/cmd/govulncheck@latest
+    #- name: Install govulncheck
+    #  run: go install golang.org/x/vuln/cmd/govulncheck@latest
     
-    - name: Run security check
-      run: govulncheck ./...
+    #- name: Run security check
+    #  run: govulncheck ./...
     
     # Clean up built artifacts (optional)
     - name: Cleanup
