@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# Pre-push hook for Vibe Tracker
+# Runs tests and build checks before pushing
+
+set -e
+
+echo "🚀 Running pre-push checks..."
+
+# Check if we're pushing anything
+remote="$1"
+url="$2"
+
+z40=0000000000000000000000000000000000000000
+
+while read local_ref local_sha remote_ref remote_sha; do
+    if [ "$local_sha" = $z40 ]; then
+        # Handle delete
+        echo "ℹ️  Deleting branch, skipping pre-push checks"
+        continue
+    else
+        if [ "$remote_sha" = $z40 ]; then
+            # New branch, examine all commits
+            range="$local_sha"
+        else
+            # Update to existing branch, examine new commits
+            range="$remote_sha..$local_sha"
+        fi
+        
+        # Check if we have any Go files in the changes
+        if git diff --name-only "$range" | grep -q '\.go$'; then
+            echo "📦 Go code changes detected, running checks..."
+            
+            # Run tests
+            echo "🧪 Running tests..."
+            go test ./... -race
+            echo "✅ Tests passed"
+            
+            # Ensure the project builds
+            echo "🏗️  Building project..."
+            go build -o /tmp/vibe-tracker-pre-push .
+            rm -f /tmp/vibe-tracker-pre-push
+            echo "✅ Build successful"
+            
+            # Run comprehensive linting if golangci-lint is available
+            if command -v golangci-lint >/dev/null 2>&1; then
+                echo "🔧 Running golangci-lint..."
+                golangci-lint run --timeout=5m
+                echo "✅ golangci-lint passed"
+            fi
+        else
+            echo "ℹ️  No Go code changes detected, skipping Go-specific checks"
+        fi
+        
+        # Check for large files being pushed
+        echo "📏 Checking for large files..."
+        LARGE_FILES=$(git diff --name-only "$range" | xargs ls -la 2>/dev/null | awk '$5 > 1048576 {print $9 " (" $5 " bytes)"}' || true)
+        if [ -n "$LARGE_FILES" ]; then
+            echo "⚠️  Warning: Large files detected (>1MB):"
+            echo "$LARGE_FILES"
+            echo "Consider using Git LFS for these files."
+        fi
+    fi
+done
+
+echo "✅ Pre-push checks passed!"

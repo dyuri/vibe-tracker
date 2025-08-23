@@ -4,6 +4,10 @@ A comprehensive location tracker web application built with Go, PocketBase, and 
 
 ![Vibe Tracker Screenshot](vibe-tracker.jpg)
 
+## !NOTE!
+
+This project is a _vibe-coding_ experiment - I was curious about the current state of agentic AI tools - and is not intended for production use. It may contain bugs, security vulnerabilities, and incomplete features. Use at your own risk.
+
 ## Features
 
 *   **User Authentication:** Secure login system with JWT tokens and refresh tokens
@@ -42,7 +46,7 @@ A comprehensive location tracker web application built with Go, PocketBase, and 
 First, login to get an access token:
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{
+curl -X POST -H "Content-Type: application/json" -H "User-Agent: VibeTracker-CLI/1.0" -d '{
   "identity": "your_email@example.com",
   "password": "your_password"
 }' http://127.0.0.1:8090/api/login
@@ -53,7 +57,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
 #### POST Request (GeoJSON format)
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" -d '{
+curl -X POST -H "Content-Type: application/json" -H "User-Agent: VibeTracker-CLI/1.0" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" -d '{
   "type": "Feature",
   "geometry": {
     "type": "Point",
@@ -71,24 +75,24 @@ curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer YOUR_
 #### GET Request (URL parameters)
 
 ```bash
-curl "http://127.0.0.1:8090/api/track?token=YOUR_USER_TOKEN&latitude=47.51&longitude=18.93&altitude=200&speed=60&heart_rate=120&session=your_session_name"
+curl -H "User-Agent: VibeTracker-CLI/1.0" "http://127.0.0.1:8090/api/track?token=YOUR_USER_TOKEN&latitude=47.51&longitude=18.93&altitude=200&speed=60&heart_rate=120&session=your_session_name"
 ```
 
 ### Session Management
 
 #### Get user's sessions
 ```bash
-curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://127.0.0.1:8090/api/sessions/username"
+curl -H "User-Agent: VibeTracker-CLI/1.0" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://127.0.0.1:8090/api/sessions/username"
 ```
 
 #### Get session data (GeoJSON LineString)
 ```bash
-curl "http://127.0.0.1:8090/api/session/username/session_name"
+curl -H "User-Agent: VibeTracker-CLI/1.0" "http://127.0.0.1:8090/api/session/username/session_name"
 ```
 
 #### Create new session
 ```bash
-curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" -d '{
+curl -X POST -H "Content-Type: application/json" -H "User-Agent: VibeTracker-CLI/1.0" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" -d '{
   "name": "session_name",
   "title": "Session Title",
   "description": "Session description",
@@ -100,7 +104,7 @@ curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer YOUR_
 
 #### Get public locations from all users
 ```bash
-curl "http://127.0.0.1:8090/api/public-locations"
+curl -H "User-Agent: VibeTracker-CLI/1.0" "http://127.0.0.1:8090/api/public-locations"
 ```
 
 ## Docker

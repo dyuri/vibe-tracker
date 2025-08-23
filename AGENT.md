@@ -10,11 +10,31 @@ Leaflet.js for the frontend.
 ## Build & Commands
 
 - Run dev server: `go run . serve`
+- Run linting: `./scripts/lint.sh`
+- Install Git hooks: `./scripts/install-hooks.sh`
 
 ### Development Environment
 
 - Admin: http://localhost:8090/_/
 - Client: http://localhost:8090/
+- API Documentation: http://localhost:8090/swagger
+
+### Development Setup
+
+For the best development experience, install Git hooks that automatically check code quality:
+
+```bash
+# Install required tools
+go install honnef.co/go/tools/cmd/staticcheck@latest
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+# Install Git hooks
+./scripts/install-hooks.sh
+```
+
+This sets up:
+- **pre-commit hook**: Automatically formats code and runs basic linting
+- **pre-push hook**: Runs full test suite and build verification
 
 ## Code Style
 
@@ -28,5 +48,7 @@ Leaflet.js for the frontend.
 ## Testing
 
 - feel free to use playwright for testing the frontend
-- test credentials for the webapp: claude@claude.ai / claude123
+- test credentials for the webapp:
+  - email: $TEST_EMAIL env variable
+  - password: $TEST_PASSWORD env variable
 - there's usually some test data under `/u/dyuri`

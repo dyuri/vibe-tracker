@@ -26,7 +26,9 @@ export default class AuthService {
         throw new Error(error.message || 'Login failed');
       }
 
-      const data = await response.json();
+      const result = await response.json();
+      // Handle standardized response format
+      const data = result.data || result;
       this.setAuthData(data.token, data.user);
       return data;
     } catch (error) {
@@ -58,7 +60,9 @@ export default class AuthService {
         throw new Error(error.message || 'Token refresh failed');
       }
 
-      const data = await response.json();
+      const result = await response.json();
+      // Handle standardized response format
+      const data = result.data || result;
       this.setAuthData(data.token, data.user);
       return data;
     } catch (error) {
@@ -85,7 +89,9 @@ export default class AuthService {
         throw new Error(error.message || 'Failed to get user info');
       }
 
-      const user = await response.json();
+      const result = await response.json();
+      // Handle standardized response format
+      const user = result.data || result;
       this.user = user;
       localStorage.setItem('user', JSON.stringify(user));
       return user;
@@ -180,7 +186,9 @@ export default class AuthService {
         throw new Error(error.message || 'Failed to update profile');
       }
 
-      const updatedUser = await response.json();
+      const result = await response.json();
+      // Handle standardized response format
+      const updatedUser = result.data || result;
       this.user = updatedUser;
       localStorage.setItem('user', JSON.stringify(updatedUser));
       this.dispatchAuthChange();
@@ -207,7 +215,9 @@ export default class AuthService {
         throw new Error(error.message || 'Failed to upload avatar');
       }
 
-      const updatedUser = await response.json();
+      const result = await response.json();
+      // Handle standardized response format
+      const updatedUser = result.data || result;
       this.user = updatedUser;
       localStorage.setItem('user', JSON.stringify(updatedUser));
       this.dispatchAuthChange();

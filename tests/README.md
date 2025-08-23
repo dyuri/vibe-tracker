@@ -76,7 +76,8 @@ The tests use a lightweight mock implementation that simulates the API behavior 
 ### Data Validation Testing
 - JSON payload validation
 - Required field validation
-- Response format validation
+- Standardized response format validation
+- Nested data structure validation (for success responses)
 
 ## Test Data
 

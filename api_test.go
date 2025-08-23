@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v5"
+	"vibe-tracker/utils"
 )
 
 // Test utility functions from main.go
@@ -30,7 +31,7 @@ func TestGenerateSessionTitle(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("Input: %s", test.input), func(t *testing.T) {
-			result := generateSessionTitle(test.input)
+			result := utils.GenerateSessionTitle(test.input)
 			if result != test.expected {
 				t.Errorf("Expected '%s', got '%s'", test.expected, result)
 			}
@@ -83,12 +84,19 @@ func setupMockRouter() *echo.Echo {
 			return echo.NewHTTPError(http.StatusNotFound, "User not found")
 		}
 
+		// Standardized paginated response format
 		return c.JSON(http.StatusOK, map[string]interface{}{
-			"sessions":   []interface{}{},
-			"page":       1,
-			"perPage":    20,
-			"totalItems": 0,
-			"totalPages": 0,
+			"status": "success",
+			"data": map[string]interface{}{
+				"data": []interface{}{},
+				"pagination": map[string]interface{}{
+					"page":       1,
+					"perPage":    20,
+					"totalItems": 0,
+					"totalPages": 0,
+				},
+			},
+			"message": "",
 		})
 	})
 
@@ -134,13 +142,18 @@ func setupMockRouter() *echo.Echo {
 			return echo.NewHTTPError(http.StatusUnauthorized, "Invalid credentials")
 		}
 
+		// Standardized success response format
 		return c.JSON(http.StatusOK, map[string]interface{}{
-			"token": "mock-jwt-token",
-			"user": map[string]interface{}{
-				"id":       "mock-user-id",
-				"username": "testuser",
-				"email":    "test@example.com",
+			"status": "success",
+			"data": map[string]interface{}{
+				"token": "mock-jwt-token",
+				"user": map[string]interface{}{
+					"id":       "mock-user-id",
+					"username": "testuser",
+					"email":    "test@example.com",
+				},
 			},
+			"message": "Login successful",
 		})
 	})
 
@@ -290,11 +303,30 @@ func TestGetUserSessions(t *testing.T) {
 			t.Fatalf("Failed to parse response: %v", err)
 		}
 
-		// Check required fields
-		fields := []string{"sessions", "page", "perPage", "totalItems", "totalPages"}
-		for _, field := range fields {
-			if _, ok := response[field]; !ok {
-				t.Errorf("Response missing %s field", field)
+		// Check standardized response structure
+		if response["status"] != "success" {
+			t.Errorf("Expected status 'success', got %v", response["status"])
+		}
+
+		data, ok := response["data"].(map[string]interface{})
+		if !ok {
+			t.Fatalf("Data field is not a map")
+		}
+
+		// Check pagination fields in nested data
+		if _, ok := data["data"]; !ok {
+			t.Error("Response missing sessions data field")
+		}
+
+		pagination, ok := data["pagination"].(map[string]interface{})
+		if !ok {
+			t.Fatalf("Pagination field is not a map")
+		}
+
+		paginationFields := []string{"page", "perPage", "totalItems", "totalPages"}
+		for _, field := range paginationFields {
+			if _, ok := pagination[field]; !ok {
+				t.Errorf("Pagination missing %s field", field)
 			}
 		}
 	})
@@ -389,13 +421,27 @@ func TestLogin(t *testing.T) {
 			t.Fatalf("Failed to parse response: %v", err)
 		}
 
-		// Check for token
-		if _, ok := response["token"]; !ok {
+		// Check standardized response structure
+		if response["status"] != "success" {
+			t.Errorf("Expected status 'success', got %v", response["status"])
+		}
+
+		if response["message"] != "Login successful" {
+			t.Errorf("Expected message 'Login successful', got %v", response["message"])
+		}
+
+		data, ok := response["data"].(map[string]interface{})
+		if !ok {
+			t.Fatalf("Data field is not a map")
+		}
+
+		// Check for token in data
+		if _, ok := data["token"]; !ok {
 			t.Error("Response missing token field")
 		}
 
-		// Check user data
-		user, ok := response["user"].(map[string]interface{})
+		// Check user data in data
+		user, ok := data["user"].(map[string]interface{})
 		if !ok {
 			t.Fatalf("User field is not a map")
 		}
@@ -535,6 +581,6 @@ func BenchmarkMakeTestRequest(b *testing.B) {
 
 func BenchmarkGenerateSessionTitle(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_ = generateSessionTitle("test_session_name")
+		_ = utils.GenerateSessionTitle("test_session_name")
 	}
 }
