@@ -3,7 +3,6 @@ vibe-tracker
 .serena
 .claude
 .npm
-.githooks
 
 # Development tools and artifacts
 coverage.out

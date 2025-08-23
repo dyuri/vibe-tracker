@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# Pre-commit hook for Vibe Tracker
+# Runs code formatting and basic linting checks
+
+set -e
+
+echo "🔍 Running pre-commit checks..."
+
+# Check if this is an initial commit
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+    against=HEAD
+else
+    # Initial commit: diff against an empty tree object
+    against=$(git hash-object -t tree /dev/null)
+fi
+
+# Get list of Go files being committed
+GO_FILES=$(git diff --cached --name-only --diff-filter=ACM $against | grep '\.go$' | grep -v vendor/ || true)
+
+if [ -n "$GO_FILES" ]; then
+    echo "📝 Checking Go files: $GO_FILES"
+    
+    # Run go fmt on staged Go files
+    echo "🎨 Running go fmt..."
+    UNFORMATTED=""
+    for file in $GO_FILES; do
+        if [ -f "$file" ]; then
+            FORMATTED=$(go fmt "$file")
+            if [ -n "$FORMATTED" ]; then
+                UNFORMATTED="$UNFORMATTED $file"
+            fi
+        fi
+    done
+    
+    if [ -n "$UNFORMATTED" ]; then
+        echo "❌ The following files were reformatted and need to be re-staged:"
+        echo "$UNFORMATTED"
+        echo "Please run 'git add' on the reformatted files and commit again."
+        exit 1
+    fi
+    echo "✅ Go formatting check passed"
+    
+    # Run go vet on package level (not individual files)
+    echo "🔎 Running go vet..."
+    go vet ./...
+    echo "✅ go vet passed"
+    
+    # Run staticcheck if available
+    if command -v staticcheck >/dev/null 2>&1; then
+        echo "🔍 Running staticcheck..."
+        staticcheck ./...
+        echo "✅ staticcheck passed"
+    else
+        echo "⚠️  staticcheck not found, skipping..."
+    fi
+else
+    echo "ℹ️  No Go files to check"
+fi
+
+# Check for frontend files (basic checks)
+FRONTEND_FILES=$(git diff --cached --name-only --diff-filter=ACM $against | grep -E '\.(js|html|css)$' || true)
+
+if [ -n "$FRONTEND_FILES" ]; then
+    echo "🌐 Checking frontend files..."
+    
+    # Basic check for syntax errors in JS files
+    for file in $FRONTEND_FILES; do
+        if [[ "$file" == *.js ]] && [ -f "$file" ]; then
+            # Basic syntax check using node if available
+            if command -v node >/dev/null 2>&1; then
+                node -c "$file" 2>/dev/null || {
+                    echo "❌ JavaScript syntax error in $file"
+                    exit 1
+                }
+            fi
+        fi
+    done
+    echo "✅ Frontend files check passed"
+fi
+
+# Check for common issues
+echo "🔍 Running additional checks..."
+
+# Check for merge conflict markers
+CONFLICT_MARKERS=$(git diff --cached --name-only | xargs grep -l "^<<<<<<< \|^======= \|^>>>>>>> " 2>/dev/null || true)
+if [ -n "$CONFLICT_MARKERS" ]; then
+    echo "❌ Merge conflict markers found in:"
+    echo "$CONFLICT_MARKERS"
+    exit 1
+fi
+
+# Check for TODO/FIXME comments being added
+TODO_ADDED=$(git diff --cached | grep "^+.*\(TODO\|FIXME\|XXX\|HACK\)" || true)
+if [ -n "$TODO_ADDED" ]; then
+    echo "⚠️  Warning: You are committing TODO/FIXME comments:"
+    echo "$TODO_ADDED"
+    echo "Please make sure this is intentional."
+fi
+
+echo "✅ Pre-commit checks passed!"
