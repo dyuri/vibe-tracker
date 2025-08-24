@@ -1,6 +1,9 @@
 import type { LocationProperties } from '../src/types/index.ts';
 import { generateUserColor } from './utils.ts';
 
+// Leaflet global (loaded via script tag)
+declare const L: typeof import('leaflet');
+
 type LatLng = [number, number]; // [latitude, longitude] coordinates
 
 /**

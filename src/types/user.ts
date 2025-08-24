@@ -8,6 +8,7 @@ export interface User {
   username: string;
   email: string;
   avatar?: string;
+  token?: string;
   created?: string;
   updated?: string;
 }
@@ -54,4 +55,18 @@ export interface AuthChangeEventDetail {
 
 export interface AuthChangeEvent extends CustomEvent<AuthChangeEventDetail> {
   type: 'auth-change';
+}
+
+// AuthService interface
+export interface AuthService {
+  token: string | null;
+  user: User | null;
+  isAuthenticated(): boolean;
+  getCurrentUser(): Promise<User>;
+  login(email: string, password: string): Promise<LoginResponse>;
+  logout(): void;
+  updateProfile(data: UpdateProfileRequest): Promise<User>;
+  uploadAvatar(file: File): Promise<User>;
+  regenerateToken(): Promise<User>;
+  dispatchAuthChange(): void;
 }

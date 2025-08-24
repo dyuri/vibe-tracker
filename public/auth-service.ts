@@ -2,8 +2,8 @@ import type { User, LoginResponse, UpdateProfileRequest } from '../src/types/ind
 
 export default class AuthService {
   private baseUrl: string;
-  private token: string | null;
-  private user: User | null;
+  public token: string | null;
+  public user: User | null;
   private refreshTimer: number | null;
 
   constructor(baseUrl: string = '') {
@@ -166,7 +166,7 @@ export default class AuthService {
           } catch (error) {
             console.error('Auto refresh failed:', error);
           }
-        }, refreshTime);
+        }, refreshTime) as unknown as number;
       }
     } catch (error) {
       console.error('Failed to parse token for auto-refresh:', error);

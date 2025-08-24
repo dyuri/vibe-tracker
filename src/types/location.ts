@@ -19,6 +19,8 @@ export interface LocationProperties {
   session?: string;
   username?: string;
   session_title?: string;
+  user_id?: string;
+  avatar?: string;
 }
 
 // GeoJSON feature for location requests/responses
@@ -34,10 +36,27 @@ export interface LocationResponse {
   properties: LocationProperties;
 }
 
+// Generic GeoJSON Feature
+export interface GeoJSONFeature {
+  type: 'Feature';
+  geometry: Geometry;
+  properties: LocationProperties;
+}
+
 // GeoJSON FeatureCollection for multiple locations
 export interface LocationsResponse {
   type: 'FeatureCollection';
   features: LocationResponse[];
+  data?: LocationsResponse; // For API wrapper compatibility
+}
+
+// Wrapped API response
+export interface ApiLocationResponse {
+  data: LocationResponse;
+}
+
+export interface ApiLocationsResponse {
+  data: LocationsResponse;
 }
 
 // Query parameters for GET tracking requests

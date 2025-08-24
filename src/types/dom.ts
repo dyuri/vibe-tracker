@@ -28,10 +28,19 @@ export interface ThemeToggleElement extends HTMLElement, CustomElementLifecycle 
 
 // Location widget
 export interface LocationWidgetElement extends HTMLElement, CustomElementLifecycle {
-  startTracking(): void;
-  stopTracking(): void;
-  updatePosition(position: GeolocationPosition): void;
+  update(detail: any): void;
 }
+
+// Login widget
+export interface LoginWidgetElement extends HTMLElement, CustomElementLifecycle {
+  showPanel(): void;
+}
+
+// Profile widget
+export interface ProfileWidgetElement extends HTMLElement, CustomElementLifecycle {}
+
+// Session management widget
+export interface SessionManagementWidgetElement extends HTMLElement, CustomElementLifecycle {}
 
 // Geolocation coordinates (extending built-in types)
 export interface GeolocationCoordinates {
@@ -55,12 +64,25 @@ declare global {
     'map-widget': MapWidgetElement;
     'theme-toggle': ThemeToggleElement;
     'location-widget': LocationWidgetElement;
+    'login-widget': LoginWidgetElement;
+    'profile-widget': ProfileWidgetElement;
+    'session-management-widget': SessionManagementWidgetElement;
   }
 
   interface WindowEventMap {
-    'auth-change': CustomEvent<import('./user.js').AuthChangeEventDetail>;
-    'location-update': CustomEvent<import('./location.js').LocationUpdateEventDetail>;
+    'auth-change': CustomEvent<import('./user.ts').AuthChangeEventDetail>;
+    'location-update': CustomEvent<import('./location.ts').LocationUpdateEventDetail>;
   }
+
+  interface Window {
+    authService: import('../types/index.ts').AuthService;
+  }
+
+  // Browser timer types (override Node.js types)
+  function setTimeout(callback: (...args: any[]) => void, ms?: number, ...args: any[]): number;
+  function clearTimeout(timeoutId: number): void;
+  function setInterval(callback: (...args: any[]) => void, ms?: number, ...args: any[]): number;
+  function clearInterval(intervalId: number): void;
 }
 
 // Leaflet map integration types (extending @types/leaflet)

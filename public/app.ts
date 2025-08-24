@@ -146,7 +146,7 @@ function fetchData(isInitialLoad: boolean = false, useDelta: boolean = false): v
       }
       return response.json();
     })
-    .then((response: LocationsResponse | LocationResponse) => {
+    .then((response: LocationsResponse | LocationResponse | any) => {
       // Handle standardized response format - extract actual data
       const data = response.data || response;
 
@@ -204,7 +204,7 @@ if (username) {
     const customEvent = e as CustomEvent<{ checked: boolean }>;
     if (customEvent.detail.checked) {
       fetchData(); // Initial fetch
-      refreshIntervalId = setInterval(fetchDeltaData, 30000); // Use delta fetching for subsequent refreshes
+      refreshIntervalId = setInterval(fetchDeltaData, 30000) as unknown as number; // Use delta fetching for subsequent refreshes
     } else {
       if (refreshIntervalId) {
         clearInterval(refreshIntervalId);
@@ -249,5 +249,8 @@ if (username) {
   fetchData(true);
 
   // Set up periodic refresh for public view (every 5 minutes)
-  refreshIntervalId = setInterval(() => fetchData(false, false), 5 * 60 * 1000);
+  refreshIntervalId = setInterval(
+    () => fetchData(false, false),
+    5 * 60 * 1000
+  ) as unknown as number;
 }

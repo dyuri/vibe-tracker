@@ -8,6 +8,9 @@ import type {
 } from '../src/types/index.ts';
 import { createMarker } from './avatar-marker.ts';
 
+// Leaflet global (loaded via script tag)
+declare const L: typeof import('leaflet');
+
 /**
  * Map Widget Web Component
  * Interactive Leaflet map for displaying location data with heart rate visualization
@@ -197,7 +200,11 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
         const [longitude, latitude, _altitude] = point.geometry.coordinates;
 
         const marker = createMarker([latitude, longitude], point.properties);
-        const popupContent = this.createPopupContent(point.properties, point.geometry.coordinates);
+        const coords: [number, number, number] =
+          point.geometry.coordinates.length === 2
+            ? ([...point.geometry.coordinates, 0] as [number, number, number])
+            : (point.geometry.coordinates as [number, number, number]);
+        const popupContent = this.createPopupContent(point.properties, coords);
         marker.bindPopup(popupContent);
         this.dataLayerGroup!.addLayer(marker);
       });
@@ -259,10 +266,11 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
         });
 
         if (closestPoint) {
-          const popupContent = this.createPopupContent(
-            closestPoint.properties,
-            closestPoint.geometry.coordinates
-          );
+          const coords: [number, number, number] =
+            closestPoint.geometry.coordinates.length === 2
+              ? ([...closestPoint.geometry.coordinates, 0] as [number, number, number])
+              : (closestPoint.geometry.coordinates as [number, number, number]);
+          const popupContent = this.createPopupContent(closestPoint.properties, coords);
           L.popup().setLatLng(e.latlng).setContent(popupContent).openOn(this.map!);
         }
       });
@@ -272,10 +280,11 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       const latestPoint = points[points.length - 1];
       const [longitude, latitude, _altitude] = latestPoint.geometry.coordinates;
       const marker = createMarker([latitude, longitude], latestPoint.properties);
-      const popupContent = this.createPopupContent(
-        latestPoint.properties,
-        latestPoint.geometry.coordinates
-      );
+      const coords: [number, number, number] =
+        latestPoint.geometry.coordinates.length === 2
+          ? ([...latestPoint.geometry.coordinates, 0] as [number, number, number])
+          : (latestPoint.geometry.coordinates as [number, number, number]);
+      const popupContent = this.createPopupContent(latestPoint.properties, coords);
       marker.bindPopup(popupContent);
       this.dataLayerGroup!.addLayer(marker);
     }
@@ -300,7 +309,11 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     if (!this.setViewFromUrlHash()) {
       this.map!.setView([latitude, longitude], 15);
     }
-    const popupContent = this.createPopupContent(data.properties, data.geometry.coordinates);
+    const coords: [number, number, number] =
+      data.geometry.coordinates.length === 2
+        ? ([...data.geometry.coordinates, 0] as [number, number, number])
+        : (data.geometry.coordinates as [number, number, number]);
+    const popupContent = this.createPopupContent(data.properties, coords);
     const marker = createMarker([latitude, longitude], data.properties)
       .bindPopup(popupContent)
       .openPopup();
