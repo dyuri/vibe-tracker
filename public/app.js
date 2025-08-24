@@ -1,3 +1,14 @@
+/**
+ * @typedef {import('../src/types/index.js').User} User
+ * @typedef {import('../src/types/index.js').AuthChangeEventDetail} AuthChangeEventDetail
+ * @typedef {import('../src/types/index.js').LocationUpdateEventDetail} LocationUpdateEventDetail
+ * @typedef {import('../src/types/index.js').LocationResponse} LocationResponse
+ * @typedef {import('../src/types/index.js').LocationsResponse} LocationsResponse
+ * @typedef {import('../src/types/index.js').MapWidgetElement} MapWidgetElement
+ * @typedef {import('../src/types/index.js').LocationWidgetElement} LocationWidgetElement
+ * @typedef {import('../src/types/index.js').LoginWidgetElement} LoginWidgetElement
+ */
+
 // Import modules
 import AuthService from './auth-service.js';
 import './login-widget.js';
@@ -18,16 +29,27 @@ setTimeout(() => {
 }, 0);
 
 // Get widget references
+/** @type {MapWidgetElement|null} */
 const mapWidget = document.querySelector('map-widget');
+/** @type {HTMLDivElement|null} */
 const errorMessage = document.getElementById('error-message');
+/** @type {LocationWidgetElement|null} */
 const locationWidget = document.querySelector('location-widget');
+/** @type {LoginWidgetElement|null} */
 const _loginWidget = document.querySelector('login-widget');
+/** @type {HTMLElement|null} */
 const pageHeader = document.getElementById('page-header');
+/** @type {HTMLElement|null} */
 const pageTitle = document.getElementById('page-title');
+/** @type {HTMLElement|null} */
 const pageSubtitle = document.getElementById('page-subtitle');
+/** @type {HTMLElement|null} */
 const _content = document.getElementById('content');
 
-let username, session;
+/** @type {string|null} */
+let username;
+/** @type {string|null} */
+let session;
 
 // Try to parse the new path-based format first
 const path = window.location.pathname;
@@ -43,9 +65,14 @@ if (match) {
   session = urlParams.get('session');
 }
 
+/** @type {number|null} Timer ID for refresh interval */
 let refreshIntervalId = null;
-let latestTimestamp = null; // Track the latest timestamp for delta fetching
+/** @type {number|null} Track the latest timestamp for delta fetching */
+let latestTimestamp = null;
 
+/**
+ * Update page header based on current username and session
+ */
 function updatePageHeader() {
   if (!username) {
     // Public locations view
@@ -69,7 +96,7 @@ function updatePageHeader() {
 }
 
 // Initialize authentication
-document.addEventListener('auth-change', e => {
+document.addEventListener('auth-change', (/** @type {CustomEvent<AuthChangeEventDetail>} */ e) => {
   console.log('Auth state changed:', e.detail);
 
   // You can add logic here to handle authentication state changes
@@ -81,6 +108,11 @@ document.addEventListener('auth-change', e => {
   }
 });
 
+/**
+ * Fetch location data from API
+ * @param {boolean} [isInitialLoad=false] - Whether this is the initial data load
+ * @param {boolean} [useDelta=false] - Whether to use delta fetching for incremental updates
+ */
 function fetchData(isInitialLoad = false, useDelta = false) {
   let apiUrl;
 
@@ -147,6 +179,9 @@ function fetchData(isInitialLoad = false, useDelta = false) {
     });
 }
 
+/**
+ * Fetch incremental location data using delta updates
+ */
 function fetchDeltaData() {
   fetchData(false, true);
 }
@@ -156,7 +191,7 @@ updatePageHeader();
 
 if (username) {
   // User-specific view - enable all features
-  locationWidget.addEventListener('refresh-change', e => {
+  locationWidget.addEventListener('refresh-change', (/** @type {CustomEvent} */ e) => {
     if (e.detail.checked) {
       fetchData(); // Initial fetch
       refreshIntervalId = setInterval(fetchDeltaData, 30000); // Use delta fetching for subsequent refreshes
@@ -168,7 +203,7 @@ if (username) {
     }
   });
 
-  locationWidget.addEventListener('show-current-position', e => {
+  locationWidget.addEventListener('show-current-position', (/** @type {CustomEvent} */ e) => {
     mapWidget.showCurrentPosition(e.detail.coords);
   });
 
@@ -176,9 +211,12 @@ if (username) {
     mapWidget.hideCurrentPosition();
   });
 
-  mapWidget.addEventListener('location-update', e => {
-    locationWidget.update(e.detail);
-  });
+  mapWidget.addEventListener(
+    'location-update',
+    (/** @type {CustomEvent<LocationUpdateEventDetail>} */ e) => {
+      locationWidget.update(e.detail);
+    }
+  );
 
   // Only do initial fetch if refresh is not already enabled (to avoid duplicate fetches)
   const savedRefresh = localStorage.getItem('refresh-enabled');

@@ -1,3 +1,10 @@
+/**
+ * @typedef {import('../src/types/index.js').User} User
+ * @typedef {import('../src/types/index.js').AuthChangeEventDetail} AuthChangeEventDetail
+ * @typedef {import('../src/types/index.js').LoginWidgetElement} LoginWidgetElement
+ * @typedef {import('../src/types/index.js').ProfileWidgetElement} ProfileWidgetElement
+ */
+
 // Import modules
 import AuthService from './auth-service.js';
 import './login-widget.js';
@@ -8,10 +15,14 @@ import './theme-toggle.js';
 window.authService = new AuthService();
 
 // Get widget references
+/** @type {LoginWidgetElement|null} */
 const loginWidget = document.getElementById('profile-login');
+/** @type {ProfileWidgetElement|null} */
 const _profileWidget = document.querySelector('profile-widget');
 
-// Configure login widget to be open by default if not authenticated
+/**
+ * Configure login widget to be open by default if not authenticated
+ */
 function checkAuthAndConfigureLogin() {
   if (!window.authService.isAuthenticated()) {
     // Show the login panel by default for non-authenticated users
@@ -22,7 +33,7 @@ function checkAuthAndConfigureLogin() {
 }
 
 // Initialize authentication state
-document.addEventListener('auth-change', e => {
+document.addEventListener('auth-change', (/** @type {CustomEvent<AuthChangeEventDetail>} */ e) => {
   console.log('Auth state changed in profile page:', e.detail);
 
   if (e.detail.isAuthenticated) {

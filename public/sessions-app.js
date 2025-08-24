@@ -1,3 +1,10 @@
+/**
+ * @typedef {import('../src/types/index.js').User} User
+ * @typedef {import('../src/types/index.js').AuthChangeEventDetail} AuthChangeEventDetail
+ * @typedef {import('../src/types/index.js').LoginWidgetElement} LoginWidgetElement
+ * @typedef {import('../src/types/index.js').SessionManagementWidgetElement} SessionManagementWidgetElement
+ */
+
 // Sessions App - Main entry point for session management page
 import AuthService from './auth-service.js';
 import './login-widget.js';
@@ -8,10 +15,14 @@ import './session-management-widget.js';
 window.authService = new AuthService();
 
 // Get widget references
+/** @type {LoginWidgetElement|null} */
 const loginWidget = document.getElementById('sessions-login');
+/** @type {SessionManagementWidgetElement|null} */
 const _sessionWidget = document.querySelector('session-management-widget');
 
-// Configure login widget to be open by default if not authenticated
+/**
+ * Configure login widget to be open by default if not authenticated
+ */
 function checkAuthAndConfigureLogin() {
   if (!window.authService.isAuthenticated()) {
     // Show the login panel by default for non-authenticated users
@@ -22,7 +33,7 @@ function checkAuthAndConfigureLogin() {
 }
 
 // Initialize authentication state
-document.addEventListener('auth-change', e => {
+document.addEventListener('auth-change', (/** @type {CustomEvent<AuthChangeEventDetail>} */ e) => {
   console.log('Auth state changed in sessions page:', e.detail);
 
   if (e.detail.isAuthenticated) {
