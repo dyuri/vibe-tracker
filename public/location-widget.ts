@@ -1,25 +1,17 @@
-/**
- * @typedef {import('../src/types/index.js').LocationWidgetElement} LocationWidgetElement
- * @typedef {import('../src/types/index.js').LocationData} LocationData
- * @typedef {import('../src/types/index.js').GeolocationCoordinates} GeolocationCoordinates
- */
+import type { LocationWidgetElement, GeoJSONFeature } from '../src/types/index.js';
 
 /**
  * Location Widget for managing geolocation tracking
- * @extends HTMLElement
- * @implements {LocationWidgetElement}
  */
-export default class LocationWidget extends HTMLElement {
+export default class LocationWidget extends HTMLElement implements LocationWidgetElement {
+  private watchId: number | null = null;
+  private wakeLockSentinel: WakeLockSentinel | null = null;
+
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
 
-    /** @type {number|null} Geolocation watch ID */
-    this.watchId = null;
-
-    /** @type {WakeLockSentinel|null} Wake lock sentinel for screen wake */
-    this.wakeLockSentinel = null;
-    this.shadowRoot.innerHTML = `
+    this.shadowRoot!.innerHTML = `
       <style>
         :host {
           font-family: sans-serif;
@@ -104,25 +96,27 @@ export default class LocationWidget extends HTMLElement {
       </div>
     `;
 
-    /** @type {HTMLInputElement} */
-    const refreshCheckbox = this.shadowRoot.getElementById('refresh-checkbox');
-    refreshCheckbox.addEventListener('change', (/** @type {Event} */ e) => {
-      localStorage.setItem('refresh-enabled', e.target.checked);
+    const refreshCheckbox = this.shadowRoot!.getElementById('refresh-checkbox') as HTMLInputElement;
+    refreshCheckbox.addEventListener('change', (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      localStorage.setItem('refresh-enabled', target.checked.toString());
       const event = new CustomEvent('refresh-change', {
-        detail: { checked: e.target.checked },
+        detail: { checked: target.checked },
         bubbles: true,
         composed: true,
       });
       this.dispatchEvent(event);
     });
 
-    /** @type {HTMLInputElement} */
-    const showPositionCheckbox = this.shadowRoot.getElementById('show-position-checkbox');
-    showPositionCheckbox.addEventListener('change', (/** @type {Event} */ e) => {
-      localStorage.setItem('show-position-enabled', e.target.checked);
-      if (e.target.checked) {
+    const showPositionCheckbox = this.shadowRoot!.getElementById(
+      'show-position-checkbox'
+    ) as HTMLInputElement;
+    showPositionCheckbox.addEventListener('change', (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      localStorage.setItem('show-position-enabled', target.checked.toString());
+      if (target.checked) {
         this.watchId = navigator.geolocation.watchPosition(
-          (/** @type {GeolocationPosition} */ position) => {
+          (position: GeolocationPosition) => {
             const event = new CustomEvent('show-current-position', {
               detail: {
                 coords: {
@@ -136,7 +130,7 @@ export default class LocationWidget extends HTMLElement {
             });
             this.dispatchEvent(event);
           },
-          (/** @type {GeolocationPositionError} */ error) => {
+          (error: GeolocationPositionError) => {
             console.error('Error getting position', error);
           },
           {
@@ -157,10 +151,12 @@ export default class LocationWidget extends HTMLElement {
     });
 
     // Dark theme toggle
-    /** @type {HTMLInputElement} */
-    const darkThemeCheckbox = this.shadowRoot.getElementById('dark-theme-checkbox');
-    darkThemeCheckbox.addEventListener('change', (/** @type {Event} */ e) => {
-      const newTheme = e.target.checked ? 'dark' : 'light';
+    const darkThemeCheckbox = this.shadowRoot!.getElementById(
+      'dark-theme-checkbox'
+    ) as HTMLInputElement;
+    darkThemeCheckbox.addEventListener('change', (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      const newTheme = target.checked ? 'dark' : 'light';
       localStorage.setItem('theme', newTheme);
 
       // Apply theme to document
@@ -206,7 +202,7 @@ export default class LocationWidget extends HTMLElement {
       const prefersDark =
         window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-      let currentTheme;
+      let currentTheme: string;
       if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
         currentTheme = savedTheme;
       } else if (documentTheme) {
@@ -223,20 +219,23 @@ export default class LocationWidget extends HTMLElement {
     setTimeout(initializeThemeCheckbox, 100);
 
     // Listen for theme changes from other sources (like theme-toggle button)
-    document.addEventListener('theme-change', (/** @type {CustomEvent} */ e) => {
-      darkThemeCheckbox.checked = e.detail.theme === 'dark';
+    document.addEventListener('theme-change', (e: Event) => {
+      const customEvent = e as CustomEvent;
+      darkThemeCheckbox.checked = customEvent.detail.theme === 'dark';
     });
 
     // Dark map toggle
-    /** @type {HTMLInputElement} */
-    const darkMapCheckbox = this.shadowRoot.getElementById('dark-map-checkbox');
-    darkMapCheckbox.addEventListener('change', (/** @type {Event} */ e) => {
-      localStorage.setItem('dark-map-enabled', e.target.checked);
+    const darkMapCheckbox = this.shadowRoot!.getElementById(
+      'dark-map-checkbox'
+    ) as HTMLInputElement;
+    darkMapCheckbox.addEventListener('change', (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      localStorage.setItem('dark-map-enabled', target.checked.toString());
 
       // Find the map widget and set/remove the attribute
       const mapWidget = document.querySelector('map-widget');
       if (mapWidget) {
-        if (e.target.checked) {
+        if (target.checked) {
           mapWidget.setAttribute('data-map-theme', 'dark');
         } else {
           mapWidget.removeAttribute('data-map-theme');
@@ -259,11 +258,13 @@ export default class LocationWidget extends HTMLElement {
       }
     }
 
-    /** @type {HTMLInputElement} */
-    const wakeLockCheckbox = this.shadowRoot.getElementById('wake-lock-checkbox');
+    const wakeLockCheckbox = this.shadowRoot!.getElementById(
+      'wake-lock-checkbox'
+    ) as HTMLInputElement;
 
-    wakeLockCheckbox.addEventListener('change', async (/** @type {Event} */ e) => {
-      if (e.target.checked) {
+    wakeLockCheckbox.addEventListener('change', async (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (target.checked) {
         try {
           this.wakeLockSentinel = await navigator.wakeLock.request('screen');
           this.wakeLockSentinel.addEventListener('release', () => {
@@ -271,7 +272,7 @@ export default class LocationWidget extends HTMLElement {
             wakeLockCheckbox.checked = false;
           });
           console.log('Wake Lock is active');
-        } catch (err) {
+        } catch (err: any) {
           console.error(`${err.name}, ${err.message}`);
           wakeLockCheckbox.checked = false;
         }
@@ -284,12 +285,9 @@ export default class LocationWidget extends HTMLElement {
       }
     });
 
-    /** @type {HTMLButtonElement} */
-    const toggleButton = this.shadowRoot.getElementById('toggle-button');
-    /** @type {HTMLDivElement} */
-    const infoPanel = this.shadowRoot.getElementById('info-panel');
-    /** @type {HTMLButtonElement} */
-    const closeButton = this.shadowRoot.getElementById('close-button');
+    const toggleButton = this.shadowRoot!.getElementById('toggle-button') as HTMLButtonElement;
+    const infoPanel = this.shadowRoot!.getElementById('info-panel') as HTMLDivElement;
+    const closeButton = this.shadowRoot!.getElementById('close-button') as HTMLSpanElement;
 
     toggleButton.addEventListener('click', () => {
       infoPanel.style.display = 'block';
@@ -313,9 +311,8 @@ export default class LocationWidget extends HTMLElement {
 
   /**
    * Cleanup when element is removed from DOM
-   * @override
    */
-  disconnectedCallback() {
+  disconnectedCallback(): void {
     if (this.wakeLockSentinel) {
       this.wakeLockSentinel.release();
       this.wakeLockSentinel = null;
@@ -325,9 +322,8 @@ export default class LocationWidget extends HTMLElement {
 
   /**
    * Update location display with GeoJSON feature data
-   * @param {import('../src/types/index.js').GeoJSONFeature} feature - Location feature data
    */
-  update(feature) {
+  update(feature: GeoJSONFeature): void {
     this.clear();
     if (feature && feature.properties) {
       const { speed, heart_rate, timestamp, session, session_title } = feature.properties;
@@ -347,11 +343,9 @@ export default class LocationWidget extends HTMLElement {
 
   /**
    * Display a property in the widget content
-   * @param {string} label - Property label
-   * @param {string} value - Property value
    */
-  showProperty(label, value) {
-    const content = this.shadowRoot.getElementById('widget-content');
+  showProperty(label: string, value: string): void {
+    const content = this.shadowRoot!.getElementById('widget-content')!;
     const property = document.createElement('div');
     property.classList.add('property');
     property.innerHTML = `<span class="label">${label}:</span> <span class="value">${value}</span>`;
@@ -361,8 +355,9 @@ export default class LocationWidget extends HTMLElement {
   /**
    * Clear all displayed location data
    */
-  clear() {
-    this.shadowRoot.getElementById('widget-content').innerHTML = '';
+  clear(): void {
+    this.shadowRoot!.getElementById('widget-content')!.innerHTML = '';
   }
 }
+
 customElements.define('location-widget', LocationWidget);

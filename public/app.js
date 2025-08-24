@@ -11,9 +11,9 @@
 
 // Import modules
 import AuthService from './auth-service.ts';
-import './login-widget.js';
-import './location-widget.js';
-import './map-widget.js';
+import './login-widget.ts';
+import './location-widget.ts';
+import './map-widget.ts';
 import './theme-init.js';
 
 // Initialize global auth service

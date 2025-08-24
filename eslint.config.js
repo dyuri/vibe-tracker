@@ -159,49 +159,14 @@ export default [
       parserOptions: {
         ecmaVersion: 2022,
         sourceType: 'module',
+        project: './tsconfig.json',
       },
       globals: {
-        // Browser globals for TypeScript files
-        window: 'readonly',
-        document: 'readonly',
-        console: 'readonly',
-        localStorage: 'readonly',
-        history: 'readonly',
-        fetch: 'readonly',
-        FormData: 'readonly',
-        CustomEvent: 'readonly',
-        HTMLElement: 'readonly',
-        HTMLButtonElement: 'readonly',
-        Element: 'readonly',
-        Node: 'readonly',
-        Event: 'readonly',
-        MouseEvent: 'readonly',
-        KeyboardEvent: 'readonly',
-        MediaQueryListEvent: 'readonly',
-        MediaQueryList: 'readonly',
-        clearTimeout: 'readonly',
-        setTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        atob: 'readonly',
-        btoa: 'readonly',
-        alert: 'readonly',
-        confirm: 'readonly',
-        prompt: 'readonly',
-        navigator: 'readonly',
-        MutationObserver: 'readonly',
-        URLSearchParams: 'readonly',
+        // Only custom globals that aren't part of standard browser/DOM APIs
         // Leaflet global
         L: 'readonly',
-        // Custom Element globals
-        customElements: 'readonly',
-        ShadowRoot: 'readonly',
         // Custom globals (from our app)
         authService: 'readonly',
-        // Web API types
-        File: 'readonly',
-        RequestInit: 'readonly',
-        Response: 'readonly',
       },
     },
     plugins: {
@@ -212,7 +177,8 @@ export default [
       'no-console': 'off',
       // Be more lenient with any types in JSDoc
       '@typescript-eslint/no-explicit-any': 'off',
-      'no-undef': 'error',
+      // Disable no-undef for TypeScript files since TypeScript handles this
+      'no-undef': 'off',
     },
   },
   {

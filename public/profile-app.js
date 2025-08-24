@@ -7,7 +7,7 @@
 
 // Import modules
 import AuthService from './auth-service.ts';
-import './login-widget.js';
+import './login-widget.ts';
 import './profile-widget.js';
 import './theme-toggle.ts';
 

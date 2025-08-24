@@ -1,33 +1,32 @@
+import type { User, LoginWidgetElement } from '../src/types/index.js';
 import { generateUserColor } from './utils.ts';
-
-/**
- * @typedef {import('../src/types/index.js').User} User
- * @typedef {import('../src/types/index.js').AuthChangeEventDetail} AuthChangeEventDetail
- */
 
 /**
  * Login Widget Web Component
  * Displays user authentication status and provides login/logout functionality
- * @extends {HTMLElement}
  */
-export default class LoginWidget extends HTMLElement {
+export default class LoginWidget extends HTMLElement implements LoginWidgetElement {
+  private user: User | null = null;
+  private isAuthenticated: boolean = false;
+  private toggleButton!: HTMLElement;
+  private authPanel!: HTMLElement;
+  private closeButton!: HTMLElement;
+  private loginForm!: HTMLElement;
+  private userMenu!: HTMLElement;
+  private emailInput!: HTMLInputElement;
+  private passwordInput!: HTMLInputElement;
+  private loginButton!: HTMLButtonElement;
+  private logoutButton!: HTMLButtonElement;
+  private errorMessage!: HTMLElement;
+  private userName!: HTMLElement;
+  private userEmail!: HTMLElement;
+  private initialText!: HTMLElement;
+
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
 
-    /** @type {User|null} */
-    this.user = null;
-
-    /** @type {boolean} */
-    this.isAuthenticated = false;
-
-    /** @type {HTMLElement|null} */
-    this.toggleButton = null;
-
-    /** @type {HTMLElement|null} */
-    this.authPanel = null;
-
-    this.shadowRoot.innerHTML = `
+    this.shadowRoot!.innerHTML = `
       <style>
         :host {
           font-family: var(--font-family-base, sans-serif);
@@ -211,27 +210,28 @@ export default class LoginWidget extends HTMLElement {
     `;
 
     // Get DOM elements
-    this.toggleButton = this.shadowRoot.getElementById('toggle-button');
-    this.authPanel = this.shadowRoot.getElementById('auth-panel');
-    this.closeButton = this.shadowRoot.getElementById('close-button');
-    this.loginForm = this.shadowRoot.getElementById('login-form');
-    this.userMenu = this.shadowRoot.getElementById('user-menu');
-    this.emailInput = this.shadowRoot.getElementById('email');
-    this.passwordInput = this.shadowRoot.getElementById('password');
-    this.loginButton = this.shadowRoot.getElementById('login-button');
-    this.logoutButton = this.shadowRoot.getElementById('logout-button');
-    this.errorMessage = this.shadowRoot.getElementById('error-message');
-    this.userName = this.shadowRoot.getElementById('user-name');
-    this.userEmail = this.shadowRoot.getElementById('user-email');
-    this.initialText = this.shadowRoot.querySelector('.initial-text');
+    this.toggleButton = this.shadowRoot!.getElementById('toggle-button')!;
+    this.authPanel = this.shadowRoot!.getElementById('auth-panel')!;
+    this.closeButton = this.shadowRoot!.getElementById('close-button')!;
+    this.loginForm = this.shadowRoot!.getElementById('login-form')!;
+    this.userMenu = this.shadowRoot!.getElementById('user-menu')!;
+    this.emailInput = this.shadowRoot!.getElementById('email')! as HTMLInputElement;
+    this.passwordInput = this.shadowRoot!.getElementById('password')! as HTMLInputElement;
+    this.loginButton = this.shadowRoot!.getElementById('login-button')! as HTMLButtonElement;
+    this.logoutButton = this.shadowRoot!.getElementById('logout-button')! as HTMLButtonElement;
+    this.errorMessage = this.shadowRoot!.getElementById('error-message')!;
+    this.userName = this.shadowRoot!.getElementById('user-name')!;
+    this.userEmail = this.shadowRoot!.getElementById('user-email')!;
+    this.initialText = this.shadowRoot!.querySelector('.initial-text')!;
 
     this.setupEventListeners();
     this.updateUI();
 
     // Listen for auth changes
-    document.addEventListener('auth-change', e => {
-      this.isAuthenticated = e.detail.isAuthenticated;
-      this.user = e.detail.user;
+    document.addEventListener('auth-change', (e: Event) => {
+      const customEvent = e as CustomEvent;
+      this.isAuthenticated = customEvent.detail.isAuthenticated;
+      this.user = customEvent.detail.user;
       this.updateUI();
     });
   }
@@ -239,7 +239,7 @@ export default class LoginWidget extends HTMLElement {
   /**
    * Called when the element is connected to the DOM
    */
-  connectedCallback() {
+  connectedCallback(): void {
     // Initialize with current auth state
     this.initializeAuthState();
 
@@ -255,9 +255,8 @@ export default class LoginWidget extends HTMLElement {
 
   /**
    * Initializes the authentication state from the global auth service
-   * @private
    */
-  initializeAuthState() {
+  private initializeAuthState(): void {
     if (window.authService) {
       this.isAuthenticated = window.authService.isAuthenticated();
       this.user = window.authService.user;
@@ -270,9 +269,8 @@ export default class LoginWidget extends HTMLElement {
 
   /**
    * Sets up event listeners for UI interactions
-   * @private
    */
-  setupEventListeners() {
+  private setupEventListeners(): void {
     this.toggleButton.addEventListener('click', () => {
       this.showPanel();
     });
@@ -281,7 +279,7 @@ export default class LoginWidget extends HTMLElement {
       this.hidePanel();
     });
 
-    this.loginButton.addEventListener('click', e => {
+    this.loginButton.addEventListener('click', (e: Event) => {
       e.preventDefault();
       this.handleLogin();
     });
@@ -292,7 +290,7 @@ export default class LoginWidget extends HTMLElement {
 
     // Allow Enter key to submit login form
     [this.emailInput, this.passwordInput].forEach(input => {
-      input.addEventListener('keypress', e => {
+      input.addEventListener('keypress', (e: KeyboardEvent) => {
         if (e.key === 'Enter') {
           e.preventDefault();
           this.handleLogin();
@@ -301,7 +299,7 @@ export default class LoginWidget extends HTMLElement {
     });
   }
 
-  showPanel() {
+  showPanel(): void {
     this.authPanel.style.display = 'block';
     this.toggleButton.style.display = 'none';
 
@@ -310,13 +308,13 @@ export default class LoginWidget extends HTMLElement {
     }
   }
 
-  hidePanel() {
+  hidePanel(): void {
     this.authPanel.style.display = 'none';
     this.toggleButton.style.display = 'flex';
     this.clearForm();
   }
 
-  clearForm() {
+  clearForm(): void {
     this.emailInput.value = '';
     this.passwordInput.value = '';
     this.errorMessage.textContent = '';
@@ -324,9 +322,8 @@ export default class LoginWidget extends HTMLElement {
 
   /**
    * Updates the UI based on current authentication state
-   * @private
    */
-  updateUI() {
+  private updateUI(): void {
     if (this.isAuthenticated && this.user) {
       // Logged in state
       this.toggleButton.classList.remove('logged-out');
@@ -354,7 +351,7 @@ export default class LoginWidget extends HTMLElement {
       this.userEmail.textContent = this.user.email || '';
 
       // Update navigation links
-      const navMyMap = this.shadowRoot.getElementById('nav-my-map');
+      const navMyMap = this.shadowRoot!.getElementById('nav-my-map') as HTMLAnchorElement;
       if (navMyMap && this.user.username) {
         navMyMap.href = `/u/${this.user.username}`;
       }
@@ -373,7 +370,7 @@ export default class LoginWidget extends HTMLElement {
     }
   }
 
-  async handleLogin() {
+  async handleLogin(): Promise<void> {
     const email = this.emailInput.value.trim();
     const password = this.passwordInput.value;
 
@@ -389,7 +386,7 @@ export default class LoginWidget extends HTMLElement {
     try {
       await window.authService.login(email, password);
       this.hidePanel();
-    } catch (error) {
+    } catch (error: any) {
       this.showError(error.message || 'Login failed');
     } finally {
       this.loginButton.disabled = false;
@@ -397,11 +394,11 @@ export default class LoginWidget extends HTMLElement {
     }
   }
 
-  async handleLogout() {
+  async handleLogout(): Promise<void> {
     try {
       await window.authService.logout();
       this.hidePanel();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Logout error:', error);
       // Force logout even if there's an error
       window.authService.logout();
@@ -409,7 +406,7 @@ export default class LoginWidget extends HTMLElement {
     }
   }
 
-  clearButtonContent() {
+  clearButtonContent(): void {
     // Remove any existing avatar images
     const existingAvatar = this.toggleButton.querySelector('.avatar-image');
     if (existingAvatar) {
@@ -422,9 +419,9 @@ export default class LoginWidget extends HTMLElement {
     }
   }
 
-  showAvatarImage(avatarFilename) {
+  showAvatarImage(avatarFilename: string): void {
     // Construct PocketBase file URL: /api/files/{collection}/{record_id}/{filename}
-    const avatarUrl = `/api/files/users/${this.user.id}/${avatarFilename}`;
+    const avatarUrl = `/api/files/users/${this.user!.id}/${avatarFilename}`;
 
     const img = document.createElement('img');
     img.className = 'avatar-image';
@@ -434,14 +431,14 @@ export default class LoginWidget extends HTMLElement {
     // Handle image loading errors - fallback to initials
     img.onerror = () => {
       img.remove();
-      const fallbackText = this.user.username ? this.user.username.charAt(0).toUpperCase() : 'U';
+      const fallbackText = this.user!.username ? this.user!.username.charAt(0).toUpperCase() : 'U';
       this.showInitialText(fallbackText);
     };
 
     this.toggleButton.appendChild(img);
   }
 
-  showInitialText(text) {
+  showInitialText(text: string): void {
     if (this.initialText) {
       this.initialText.textContent = text;
       this.initialText.style.display = 'block';
@@ -450,9 +447,8 @@ export default class LoginWidget extends HTMLElement {
 
   /**
    * Shows an error message in the login form
-   * @param {string} message - The error message to display
    */
-  showError(message) {
+  showError(message: string): void {
     this.errorMessage.textContent = message;
   }
 }

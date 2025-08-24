@@ -7,7 +7,7 @@
 
 // Sessions App - Main entry point for session management page
 import AuthService from './auth-service.ts';
-import './login-widget.js';
+import './login-widget.ts';
 import './theme-toggle.ts';
 import './session-management-widget.js';
 
