@@ -152,6 +152,70 @@ export default [
     },
   },
   {
+    // Specific rules for public/ directory (TypeScript files)
+    files: ['public/**/*.ts'],
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: 'module',
+      },
+      globals: {
+        // Browser globals for TypeScript files
+        window: 'readonly',
+        document: 'readonly',
+        console: 'readonly',
+        localStorage: 'readonly',
+        history: 'readonly',
+        fetch: 'readonly',
+        FormData: 'readonly',
+        CustomEvent: 'readonly',
+        HTMLElement: 'readonly',
+        HTMLButtonElement: 'readonly',
+        Element: 'readonly',
+        Node: 'readonly',
+        Event: 'readonly',
+        MouseEvent: 'readonly',
+        KeyboardEvent: 'readonly',
+        MediaQueryListEvent: 'readonly',
+        MediaQueryList: 'readonly',
+        clearTimeout: 'readonly',
+        setTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        atob: 'readonly',
+        btoa: 'readonly',
+        alert: 'readonly',
+        confirm: 'readonly',
+        prompt: 'readonly',
+        navigator: 'readonly',
+        MutationObserver: 'readonly',
+        URLSearchParams: 'readonly',
+        // Leaflet global
+        L: 'readonly',
+        // Custom Element globals
+        customElements: 'readonly',
+        ShadowRoot: 'readonly',
+        // Custom globals (from our app)
+        authService: 'readonly',
+        // Web API types
+        File: 'readonly',
+        RequestInit: 'readonly',
+        Response: 'readonly',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': typescriptEslint,
+    },
+    rules: {
+      // Allow console.log in development files
+      'no-console': 'off',
+      // Be more lenient with any types in JSDoc
+      '@typescript-eslint/no-explicit-any': 'off',
+      'no-undef': 'error',
+    },
+  },
+  {
     // Configuration files
     files: ['*.config.{js,ts}', 'eslint.config.js'],
     languageOptions: {

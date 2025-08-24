@@ -6,10 +6,10 @@
  */
 
 // Import modules
-import AuthService from './auth-service.js';
+import AuthService from './auth-service.ts';
 import './login-widget.js';
 import './profile-widget.js';
-import './theme-toggle.js';
+import './theme-toggle.ts';
 
 // Initialize global auth service
 window.authService = new AuthService();

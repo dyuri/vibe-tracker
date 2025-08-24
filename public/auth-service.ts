@@ -1,15 +1,12 @@
-/**
- * @typedef {import('../src/types/index.js').User} User
- * @typedef {import('../src/types/index.js').LoginRequest} LoginRequest
- * @typedef {import('../src/types/index.js').LoginResponse} LoginResponse
- * @typedef {import('../src/types/index.js').UpdateProfileRequest} UpdateProfileRequest
- */
+import type { User, LoginResponse, UpdateProfileRequest } from '../src/types/index.js';
 
 export default class AuthService {
-  /**
-   * @param {string} baseUrl - Base URL for API calls
-   */
-  constructor(baseUrl = '') {
+  private baseUrl: string;
+  private token: string | null;
+  private user: User | null;
+  private refreshTimer: number | null;
+
+  constructor(baseUrl: string = '') {
     this.baseUrl = baseUrl;
     this.token = localStorage.getItem('auth_token');
     this.user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -23,11 +20,8 @@ export default class AuthService {
 
   /**
    * Login with email and password
-   * @param {string} email - User's email
-   * @param {string} password - User's password
-   * @returns {Promise<LoginResponse>} Login response with token and user
    */
-  async login(email, password) {
+  async login(email: string, password: string): Promise<LoginResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/api/login`, {
         method: 'POST',
@@ -53,12 +47,12 @@ export default class AuthService {
     }
   }
 
-  async logout() {
+  async logout(): Promise<void> {
     this.clearAuthData();
     this.dispatchAuthChange();
   }
 
-  async refreshToken() {
+  async refreshToken(): Promise<LoginResponse> {
     if (!this.token) {
       throw new Error('No token to refresh');
     }
@@ -88,7 +82,7 @@ export default class AuthService {
     }
   }
 
-  async getCurrentUser() {
+  async getCurrentUser(): Promise<User> {
     if (!this.token) {
       throw new Error('No token available');
     }
@@ -117,15 +111,15 @@ export default class AuthService {
     }
   }
 
-  isAuthenticated() {
+  isAuthenticated(): boolean {
     return !!this.token && !!this.user;
   }
 
-  getAuthHeaders() {
+  getAuthHeaders(): Record<string, string> {
     return this.token ? { Authorization: `Bearer ${this.token}` } : {};
   }
 
-  setAuthData(token, user) {
+  setAuthData(token: string, user: User): void {
     this.token = token;
     this.user = user;
     localStorage.setItem('auth_token', token);
@@ -134,7 +128,7 @@ export default class AuthService {
     this.dispatchAuthChange();
   }
 
-  clearAuthData() {
+  clearAuthData(): void {
     this.token = null;
     this.user = null;
     localStorage.removeItem('auth_token');
@@ -145,7 +139,7 @@ export default class AuthService {
     }
   }
 
-  setupAutoRefresh() {
+  setupAutoRefresh(): void {
     if (!this.token) {
       return;
     }
@@ -179,7 +173,7 @@ export default class AuthService {
     }
   }
 
-  dispatchAuthChange() {
+  dispatchAuthChange(): void {
     // Dispatch custom event for components to listen to
     const event = new CustomEvent('auth-change', {
       detail: {
@@ -192,7 +186,7 @@ export default class AuthService {
   }
 
   // Profile management methods
-  async updateProfile(data) {
+  async updateProfile(data: UpdateProfileRequest): Promise<User> {
     try {
       const response = await this.fetch('/api/profile', {
         method: 'PUT',
@@ -217,7 +211,7 @@ export default class AuthService {
     }
   }
 
-  async uploadAvatar(file) {
+  async uploadAvatar(file: File): Promise<User> {
     try {
       const formData = new FormData();
       formData.append('avatar', file);
@@ -246,7 +240,7 @@ export default class AuthService {
     }
   }
 
-  async regenerateToken() {
+  async regenerateToken(): Promise<User> {
     try {
       const response = await this.fetch('/api/profile/regenerate-token', {
         method: 'PUT',
@@ -269,7 +263,7 @@ export default class AuthService {
   }
 
   // Helper method for making authenticated API calls
-  async fetch(url, options = {}) {
+  async fetch(url: string, options: RequestInit = {}): Promise<Response> {
     const headers = {
       ...this.getAuthHeaders(),
       'Content-Type': 'application/json',

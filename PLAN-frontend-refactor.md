@@ -39,6 +39,7 @@ This refined plan adopts an **evolutionary approach** that preserves the existin
   - 🎯 Zero breaking changes to existing codebase
   - 🎯 Production builds optimized and working
 
+- ⏳ **Phase 2.5: JSDoc to TypeScript Migration** - **IN PROGRESS**
 - ✅ **Phase 3: Modern Development Tools & Quality** - **COMPLETED**
 - ⏳ **Phase 4: Advanced Features & PWA** - **PENDING**
 
@@ -425,6 +426,47 @@ jobs:
   2.  **Performance monitoring** (Web Vitals)
   3.  **Enhanced state management** (lightweight, event-driven)
   4.  **Component communication improvements** (typed events)
+
+---
+
+### **Phase 2.5: JSDoc to TypeScript Migration** ⏳ **IN PROGRESS**
+
+**Goal:** Migrate JSDoc-enhanced JavaScript files to actual TypeScript (.ts) files for compile-time type checking and advanced TypeScript features.
+
+**Why This Migration:**
+
+- ✅ **Foundation Ready**: Our type system and development environment are proven
+- ✅ **Low Risk**: Vite already handles TypeScript seamlessly
+- ✅ **High Value**: Gain compile-time type checking and modern TS features
+- ✅ **Natural Evolution**: Logical progression from successful JSDoc approach
+
+**Migration Strategy:**
+
+1. **Incremental Approach**:
+   - Convert one file at a time with testing after each
+   - Start with simple widgets, progress to complex ones
+   - Maintain same API and functionality
+   - Update import statements from `.js` to `.ts`
+
+2. **Conversion Order**:
+   - ⏳ Simple widgets: theme-toggle.js, avatar-marker.js
+   - ⏳ Service files: auth-service.js, utils.js
+   - ⏳ Complex widgets: login-widget.js, map-widget.js, location-widget.js
+   - ⏳ Main apps: profile-app.js, sessions-app.js, app.js
+
+3. **Benefits Gained**:
+   - **Compile-time type checking**: Real TypeScript compiler errors
+   - **Advanced TypeScript features**: Interfaces, enums, generics
+   - **Better IDE support**: More reliable refactoring and navigation
+   - **Industry standard**: Modern TypeScript practices
+   - **Future-proofing**: Foundation for advanced TS features
+
+4. **Technical Implementation**:
+   - Convert JSDoc comments to TypeScript syntax
+   - Update import/export statements
+   - Ensure Vite build process handles all .ts files
+   - Verify ESLint rules work with .ts files
+   - Test HMR and development workflow
 
 ---
 

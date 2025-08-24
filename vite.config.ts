@@ -29,6 +29,7 @@ export default defineConfig({
       allow: ['..'],
     },
   },
+  appType: 'mpa', // Multi-page application
   resolve: {
     alias: {
       '@': '/src',

@@ -1,26 +1,24 @@
-import { generateUserColor } from './utils.js';
+import type { LocationProperties } from '../src/types/index.js';
+import { generateUserColor } from './utils.ts';
 
-/**
- * @typedef {import('../src/types/index.js').LocationProperties} LocationProperties
- * @typedef {[number, number]} LatLng - [latitude, longitude] coordinates
- */
+type LatLng = [number, number]; // [latitude, longitude] coordinates
 
 /**
  * Creates a custom droplet-shaped marker with user avatar
- * @param {LatLng} latlng - [latitude, longitude] coordinates
- * @param {string} username - Username for color generation and fallback text
- * @param {string} userId - User ID for avatar URL
- * @param {string|null|undefined} avatar - Avatar filename (can be empty/null)
- * @param {number} [size=40] - Marker size in pixels
- * @returns {L.Marker} Leaflet marker with custom icon
  */
-export function createAvatarMarker(latlng, username, userId, avatar, size = 40) {
+export function createAvatarMarker(
+  latlng: LatLng,
+  username: string,
+  userId: string,
+  avatar: string | null | undefined,
+  size: number = 40
+): L.Marker {
   const userColor = generateUserColor(username) || '#007cff';
   const avatarSize = Math.round(size * 0.6); // Avatar is 60% of marker size
   const _padding = Math.round(size * 0.05); // 5% padding
 
   // Create avatar content - either image or initials
-  let avatarContent;
+  let avatarContent: string;
   if (avatar && avatar.trim()) {
     // Use avatar image
     avatarContent = `
@@ -132,12 +130,12 @@ export function createAvatarMarker(latlng, username, userId, avatar, size = 40) 
 
 /**
  * Creates a marker - either avatar marker for latest points or default marker for others
- * @param {LatLng} latlng - [latitude, longitude] coordinates
- * @param {LocationProperties} properties - Point properties containing optional username and avatar
- * @param {number} [size=40] - Marker size
- * @returns {L.Marker} Leaflet marker
  */
-export function createMarker(latlng, properties, size = 40) {
+export function createMarker(
+  latlng: LatLng,
+  properties: LocationProperties,
+  size: number = 40
+): L.Marker {
   // Check if this point has username and avatar (indicates it's a latest point)
   if (properties.username && properties.user_id && properties.avatar !== undefined) {
     return createAvatarMarker(

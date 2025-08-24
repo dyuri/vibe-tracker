@@ -1,4 +1,4 @@
-import { createMarker } from './avatar-marker.js';
+import { createMarker } from './avatar-marker.ts';
 
 /**
  * @typedef {import('../src/types/index.js').LocationResponse} LocationResponse

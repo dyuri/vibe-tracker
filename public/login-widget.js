@@ -1,4 +1,4 @@
-import { generateUserColor } from './utils.js';
+import { generateUserColor } from './utils.ts';
 
 /**
  * @typedef {import('../src/types/index.js').User} User
