@@ -1,29 +1,26 @@
-/**
- * @typedef {import('../src/types/index.js').User} User
- * @typedef {import('../src/types/index.js').AuthChangeEventDetail} AuthChangeEventDetail
- * @typedef {import('../src/types/index.js').LoginWidgetElement} LoginWidgetElement
- * @typedef {import('../src/types/index.js').SessionManagementWidgetElement} SessionManagementWidgetElement
- */
-
-// Sessions App - Main entry point for session management page
+import type {
+  AuthChangeEventDetail,
+  LoginWidgetElement,
+  SessionManagementWidgetElement,
+} from '../src/types/index.ts';
 import AuthService from './auth-service.ts';
 import './login-widget.ts';
 import './theme-toggle.ts';
-import './session-management-widget.js';
+import './session-management-widget.ts';
 
 // Initialize global auth service
 window.authService = new AuthService();
 
 // Get widget references
-/** @type {LoginWidgetElement|null} */
-const loginWidget = document.getElementById('sessions-login');
-/** @type {SessionManagementWidgetElement|null} */
-const _sessionWidget = document.querySelector('session-management-widget');
+const loginWidget = document.getElementById('sessions-login') as LoginWidgetElement | null;
+const _sessionWidget = document.querySelector(
+  'session-management-widget'
+) as SessionManagementWidgetElement | null;
 
 /**
  * Configure login widget to be open by default if not authenticated
  */
-function checkAuthAndConfigureLogin() {
+function checkAuthAndConfigureLogin(): void {
   if (!window.authService.isAuthenticated()) {
     // Show the login panel by default for non-authenticated users
     if (loginWidget && loginWidget.showPanel) {
@@ -33,11 +30,12 @@ function checkAuthAndConfigureLogin() {
 }
 
 // Initialize authentication state
-document.addEventListener('auth-change', (/** @type {CustomEvent<AuthChangeEventDetail>} */ e) => {
-  console.log('Auth state changed in sessions page:', e.detail);
+document.addEventListener('auth-change', (e: Event) => {
+  const customEvent = e as CustomEvent<AuthChangeEventDetail>;
+  console.log('Auth state changed in sessions page:', customEvent.detail);
 
-  if (e.detail.isAuthenticated) {
-    console.log('User logged in:', e.detail.user);
+  if (customEvent.detail.isAuthenticated) {
+    console.log('User logged in:', customEvent.detail.user);
   } else {
     console.log('User logged out');
     // Show login panel again if user logs out

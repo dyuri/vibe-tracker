@@ -2,13 +2,15 @@
 // This applies the saved theme from localStorage and respects system preferences
 // without showing a theme toggle button
 
-function initializeTheme() {
+type Theme = 'light' | 'dark';
+
+function initializeTheme(): void {
   // Check localStorage first, then system preference
   const savedTheme = localStorage.getItem('theme');
-  let theme;
+  let theme: Theme;
 
   if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
-    theme = savedTheme;
+    theme = savedTheme as Theme;
   } else {
     // Check system preference
     const prefersDark =
@@ -22,11 +24,11 @@ function initializeTheme() {
   // Listen for system theme changes
   if (window.matchMedia) {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    mediaQuery.addEventListener('change', e => {
+    mediaQuery.addEventListener('change', (e: MediaQueryListEvent) => {
       // Only auto-switch if user hasn't manually set a preference
       const userPreference = localStorage.getItem('theme');
       if (!userPreference) {
-        const newTheme = e.matches ? 'dark' : 'light';
+        const newTheme: Theme = e.matches ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', newTheme);
       }
     });

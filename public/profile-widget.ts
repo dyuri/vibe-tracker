@@ -1,11 +1,45 @@
-export default class ProfileWidget extends HTMLElement {
+import type { User, ProfileWidgetElement } from '../src/types/index.ts';
+
+export default class ProfileWidget extends HTMLElement implements ProfileWidgetElement {
+  private user: User | null = null;
+  private isAuthenticated: boolean = false;
+
+  // Auth state elements
+  private notAuthenticated!: HTMLElement;
+  private profileContent!: HTMLElement;
+
+  // Basic info elements
+  private currentUsername!: HTMLElement;
+  private currentEmail!: HTMLElement;
+  private usernameInput!: HTMLInputElement;
+  private emailInput!: HTMLInputElement;
+  private updateBasicBtn!: HTMLButtonElement;
+  private basicMessage!: HTMLElement;
+
+  // Avatar elements
+  private currentAvatar!: HTMLElement;
+  private avatarPlaceholder!: HTMLElement;
+  private avatarFileInput!: HTMLInputElement;
+  private uploadAvatarBtn!: HTMLButtonElement;
+  private avatarMessage!: HTMLElement;
+
+  // Password elements
+  private oldPasswordInput!: HTMLInputElement;
+  private newPasswordInput!: HTMLInputElement;
+  private confirmPasswordInput!: HTMLInputElement;
+  private changePasswordBtn!: HTMLButtonElement;
+  private passwordMessage!: HTMLElement;
+
+  // Token elements
+  private tokenDisplay!: HTMLElement;
+  private regenerateTokenBtn!: HTMLButtonElement;
+  private tokenMessage!: HTMLElement;
+
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
-    this.user = null;
-    this.isAuthenticated = false;
 
-    this.shadowRoot.innerHTML = `
+    this.shadowRoot!.innerHTML = `
       <style>
         :host {
           font-family: var(--font-family-base, sans-serif);
@@ -282,47 +316,54 @@ export default class ProfileWidget extends HTMLElement {
     this.updateUI();
 
     // Listen for auth changes
-    document.addEventListener('auth-change', e => {
-      this.isAuthenticated = e.detail.isAuthenticated;
-      this.user = e.detail.user;
+    document.addEventListener('auth-change', (e: Event) => {
+      const customEvent = e as CustomEvent;
+      this.isAuthenticated = customEvent.detail.isAuthenticated;
+      this.user = customEvent.detail.user;
       this.updateUI();
     });
   }
 
-  setupElements() {
+  setupElements(): void {
     // Auth state elements
-    this.notAuthenticated = this.shadowRoot.getElementById('not-authenticated');
-    this.profileContent = this.shadowRoot.getElementById('profile-content');
+    this.notAuthenticated = this.shadowRoot!.getElementById('not-authenticated')!;
+    this.profileContent = this.shadowRoot!.getElementById('profile-content')!;
 
     // Basic info elements
-    this.currentUsername = this.shadowRoot.getElementById('current-username');
-    this.currentEmail = this.shadowRoot.getElementById('current-email');
-    this.usernameInput = this.shadowRoot.getElementById('username');
-    this.emailInput = this.shadowRoot.getElementById('email');
-    this.updateBasicBtn = this.shadowRoot.getElementById('update-basic');
-    this.basicMessage = this.shadowRoot.getElementById('basic-message');
+    this.currentUsername = this.shadowRoot!.getElementById('current-username')!;
+    this.currentEmail = this.shadowRoot!.getElementById('current-email')!;
+    this.usernameInput = this.shadowRoot!.getElementById('username')! as HTMLInputElement;
+    this.emailInput = this.shadowRoot!.getElementById('email')! as HTMLInputElement;
+    this.updateBasicBtn = this.shadowRoot!.getElementById('update-basic')! as HTMLButtonElement;
+    this.basicMessage = this.shadowRoot!.getElementById('basic-message')!;
 
     // Avatar elements
-    this.currentAvatar = this.shadowRoot.getElementById('current-avatar');
-    this.avatarPlaceholder = this.shadowRoot.getElementById('avatar-placeholder');
-    this.avatarFileInput = this.shadowRoot.getElementById('avatar-file');
-    this.uploadAvatarBtn = this.shadowRoot.getElementById('upload-avatar');
-    this.avatarMessage = this.shadowRoot.getElementById('avatar-message');
+    this.currentAvatar = this.shadowRoot!.getElementById('current-avatar')!;
+    this.avatarPlaceholder = this.shadowRoot!.getElementById('avatar-placeholder')!;
+    this.avatarFileInput = this.shadowRoot!.getElementById('avatar-file')! as HTMLInputElement;
+    this.uploadAvatarBtn = this.shadowRoot!.getElementById('upload-avatar')! as HTMLButtonElement;
+    this.avatarMessage = this.shadowRoot!.getElementById('avatar-message')!;
 
     // Password elements
-    this.oldPasswordInput = this.shadowRoot.getElementById('old-password');
-    this.newPasswordInput = this.shadowRoot.getElementById('new-password');
-    this.confirmPasswordInput = this.shadowRoot.getElementById('confirm-password');
-    this.changePasswordBtn = this.shadowRoot.getElementById('change-password');
-    this.passwordMessage = this.shadowRoot.getElementById('password-message');
+    this.oldPasswordInput = this.shadowRoot!.getElementById('old-password')! as HTMLInputElement;
+    this.newPasswordInput = this.shadowRoot!.getElementById('new-password')! as HTMLInputElement;
+    this.confirmPasswordInput = this.shadowRoot!.getElementById(
+      'confirm-password'
+    )! as HTMLInputElement;
+    this.changePasswordBtn = this.shadowRoot!.getElementById(
+      'change-password'
+    )! as HTMLButtonElement;
+    this.passwordMessage = this.shadowRoot!.getElementById('password-message')!;
 
     // Token elements
-    this.tokenDisplay = this.shadowRoot.getElementById('token-display');
-    this.regenerateTokenBtn = this.shadowRoot.getElementById('regenerate-token');
-    this.tokenMessage = this.shadowRoot.getElementById('token-message');
+    this.tokenDisplay = this.shadowRoot!.getElementById('token-display')!;
+    this.regenerateTokenBtn = this.shadowRoot!.getElementById(
+      'regenerate-token'
+    )! as HTMLButtonElement;
+    this.tokenMessage = this.shadowRoot!.getElementById('token-message')!;
   }
 
-  setupEventListeners() {
+  setupEventListeners(): void {
     this.updateBasicBtn.addEventListener('click', () => this.handleUpdateBasicInfo());
     this.uploadAvatarBtn.addEventListener('click', () => this.handleUploadAvatar());
     this.changePasswordBtn.addEventListener('click', () => this.handleChangePassword());
@@ -330,7 +371,7 @@ export default class ProfileWidget extends HTMLElement {
 
     // Enable enter key for password fields
     [this.oldPasswordInput, this.newPasswordInput, this.confirmPasswordInput].forEach(input => {
-      input.addEventListener('keypress', e => {
+      input.addEventListener('keypress', (e: KeyboardEvent) => {
         if (e.key === 'Enter') {
           e.preventDefault();
           this.handleChangePassword();
@@ -339,12 +380,12 @@ export default class ProfileWidget extends HTMLElement {
     });
   }
 
-  connectedCallback() {
+  connectedCallback(): void {
     // Initialize with current auth state
     this.initializeAuthState();
   }
 
-  initializeAuthState() {
+  initializeAuthState(): void {
     if (window.authService) {
       this.isAuthenticated = window.authService.isAuthenticated();
       this.user = window.authService.user;
@@ -355,7 +396,7 @@ export default class ProfileWidget extends HTMLElement {
     }
   }
 
-  updateUI() {
+  updateUI(): void {
     if (this.isAuthenticated && this.user) {
       this.notAuthenticated.style.display = 'none';
       this.profileContent.classList.add('show');
@@ -366,7 +407,7 @@ export default class ProfileWidget extends HTMLElement {
     }
   }
 
-  populateUserInfo() {
+  populateUserInfo(): void {
     if (!this.user) {
       return;
     }
@@ -387,30 +428,30 @@ export default class ProfileWidget extends HTMLElement {
     this.clearPasswordFields();
   }
 
-  updateAvatarDisplay() {
+  updateAvatarDisplay(): void {
     // Clear existing content
     this.currentAvatar.innerHTML = '<span id="avatar-placeholder">?</span>';
-    this.avatarPlaceholder = this.shadowRoot.getElementById('avatar-placeholder');
+    this.avatarPlaceholder = this.shadowRoot!.getElementById('avatar-placeholder')!;
 
-    if (this.user.avatar) {
+    if (this.user!.avatar) {
       const img = document.createElement('img');
-      img.src = `/api/files/users/${this.user.id}/${this.user.avatar}`;
+      img.src = `/api/files/users/${this.user!.id}/${this.user!.avatar}`;
       img.alt = 'User avatar';
       img.onerror = () => {
-        this.avatarPlaceholder.textContent = this.user.username
-          ? this.user.username.charAt(0).toUpperCase()
+        this.avatarPlaceholder.textContent = this.user!.username
+          ? this.user!.username.charAt(0).toUpperCase()
           : '?';
       };
       this.currentAvatar.appendChild(img);
       this.avatarPlaceholder.style.display = 'none';
     } else {
-      this.avatarPlaceholder.textContent = this.user.username
-        ? this.user.username.charAt(0).toUpperCase()
+      this.avatarPlaceholder.textContent = this.user!.username
+        ? this.user!.username.charAt(0).toUpperCase()
         : '?';
     }
   }
 
-  async handleUpdateBasicInfo() {
+  async handleUpdateBasicInfo(): Promise<void> {
     const username = this.usernameInput.value.trim();
     const email = this.emailInput.value.trim();
 
@@ -427,7 +468,7 @@ export default class ProfileWidget extends HTMLElement {
       this.user = updatedUser;
       this.populateUserInfo();
       this.showMessage(this.basicMessage, 'Basic information updated successfully!', 'success');
-    } catch (error) {
+    } catch (error: any) {
       this.showMessage(this.basicMessage, error.message || 'Failed to update profile', 'error');
     } finally {
       this.updateBasicBtn.disabled = false;
@@ -435,8 +476,8 @@ export default class ProfileWidget extends HTMLElement {
     }
   }
 
-  async handleUploadAvatar() {
-    const file = this.avatarFileInput.files[0];
+  async handleUploadAvatar(): Promise<void> {
+    const file = this.avatarFileInput.files?.[0];
     if (!file) {
       this.showMessage(this.avatarMessage, 'Please select an image file', 'error');
       return;
@@ -457,7 +498,7 @@ export default class ProfileWidget extends HTMLElement {
       this.updateAvatarDisplay();
       this.avatarFileInput.value = '';
       this.showMessage(this.avatarMessage, 'Avatar uploaded successfully!', 'success');
-    } catch (error) {
+    } catch (error: any) {
       this.showMessage(this.avatarMessage, error.message || 'Failed to upload avatar', 'error');
     } finally {
       this.uploadAvatarBtn.disabled = false;
@@ -465,7 +506,7 @@ export default class ProfileWidget extends HTMLElement {
     }
   }
 
-  async handleChangePassword() {
+  async handleChangePassword(): Promise<void> {
     const oldPassword = this.oldPasswordInput.value;
     const newPassword = this.newPasswordInput.value;
     const confirmPassword = this.confirmPasswordInput.value;
@@ -499,7 +540,7 @@ export default class ProfileWidget extends HTMLElement {
       });
       this.clearPasswordFields();
       this.showMessage(this.passwordMessage, 'Password changed successfully!', 'success');
-    } catch (error) {
+    } catch (error: any) {
       this.showMessage(this.passwordMessage, error.message || 'Failed to change password', 'error');
     } finally {
       this.changePasswordBtn.disabled = false;
@@ -507,7 +548,7 @@ export default class ProfileWidget extends HTMLElement {
     }
   }
 
-  async handleRegenerateToken() {
+  async handleRegenerateToken(): Promise<void> {
     if (
       !confirm(
         'Are you sure you want to regenerate your API token? This will invalidate the current token.'
@@ -524,7 +565,7 @@ export default class ProfileWidget extends HTMLElement {
       this.user = updatedUser;
       this.tokenDisplay.textContent = updatedUser.token;
       this.showMessage(this.tokenMessage, 'API token regenerated successfully!', 'success');
-    } catch (error) {
+    } catch (error: any) {
       this.showMessage(this.tokenMessage, error.message || 'Failed to regenerate token', 'error');
     } finally {
       this.regenerateTokenBtn.disabled = false;
@@ -532,13 +573,13 @@ export default class ProfileWidget extends HTMLElement {
     }
   }
 
-  clearPasswordFields() {
+  clearPasswordFields(): void {
     this.oldPasswordInput.value = '';
     this.newPasswordInput.value = '';
     this.confirmPasswordInput.value = '';
   }
 
-  showMessage(element, message, type) {
+  showMessage(element: HTMLElement, message: string, type: string): void {
     element.textContent = message;
     element.className = type;
 

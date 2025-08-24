@@ -1,4 +1,4 @@
-import type { User, LoginWidgetElement } from '../src/types/index.js';
+import type { User, LoginWidgetElement } from '../src/types/index.ts';
 import { generateUserColor } from './utils.ts';
 
 /**

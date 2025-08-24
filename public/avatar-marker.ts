@@ -1,4 +1,4 @@
-import type { LocationProperties } from '../src/types/index.js';
+import type { LocationProperties } from '../src/types/index.ts';
 import { generateUserColor } from './utils.ts';
 
 type LatLng = [number, number]; // [latitude, longitude] coordinates

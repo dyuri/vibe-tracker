@@ -1,4 +1,4 @@
-import type { User, LoginResponse, UpdateProfileRequest } from '../src/types/index.js';
+import type { User, LoginResponse, UpdateProfileRequest } from '../src/types/index.ts';
 
 export default class AuthService {
   private baseUrl: string;

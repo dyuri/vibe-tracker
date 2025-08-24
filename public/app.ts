@@ -1,20 +1,18 @@
-/**
- * @typedef {import('../src/types/index.js').User} User
- * @typedef {import('../src/types/index.js').AuthChangeEventDetail} AuthChangeEventDetail
- * @typedef {import('../src/types/index.js').LocationUpdateEventDetail} LocationUpdateEventDetail
- * @typedef {import('../src/types/index.js').LocationResponse} LocationResponse
- * @typedef {import('../src/types/index.js').LocationsResponse} LocationsResponse
- * @typedef {import('../src/types/index.js').MapWidgetElement} MapWidgetElement
- * @typedef {import('../src/types/index.js').LocationWidgetElement} LocationWidgetElement
- * @typedef {import('../src/types/index.js').LoginWidgetElement} LoginWidgetElement
- */
+import type {
+  AuthChangeEventDetail,
+  LocationUpdateEventDetail,
+  LocationResponse,
+  LocationsResponse,
+  MapWidgetElement,
+  LocationWidgetElement,
+} from '../src/types/index.ts';
 
 // Import modules
 import AuthService from './auth-service.ts';
 import './login-widget.ts';
 import './location-widget.ts';
 import './map-widget.ts';
-import './theme-init.js';
+import './theme-init.ts';
 
 // Initialize global auth service
 window.authService = new AuthService();
@@ -29,27 +27,15 @@ setTimeout(() => {
 }, 0);
 
 // Get widget references
-/** @type {MapWidgetElement|null} */
-const mapWidget = document.querySelector('map-widget');
-/** @type {HTMLDivElement|null} */
-const errorMessage = document.getElementById('error-message');
-/** @type {LocationWidgetElement|null} */
-const locationWidget = document.querySelector('location-widget');
-/** @type {LoginWidgetElement|null} */
-const _loginWidget = document.querySelector('login-widget');
-/** @type {HTMLElement|null} */
-const pageHeader = document.getElementById('page-header');
-/** @type {HTMLElement|null} */
-const pageTitle = document.getElementById('page-title');
-/** @type {HTMLElement|null} */
-const pageSubtitle = document.getElementById('page-subtitle');
-/** @type {HTMLElement|null} */
-const _content = document.getElementById('content');
+const mapWidget = document.querySelector('map-widget') as MapWidgetElement | null;
+const errorMessage = document.getElementById('error-message') as HTMLDivElement | null;
+const locationWidget = document.querySelector('location-widget') as LocationWidgetElement | null;
+const pageHeader = document.getElementById('page-header') as HTMLElement | null;
+const pageTitle = document.getElementById('page-title') as HTMLElement | null;
+const pageSubtitle = document.getElementById('page-subtitle') as HTMLElement | null;
 
-/** @type {string|null} */
-let username;
-/** @type {string|null} */
-let session;
+let username: string | null;
+let session: string | null;
 
 // Try to parse the new path-based format first
 const path = window.location.pathname;
@@ -65,44 +51,63 @@ if (match) {
   session = urlParams.get('session');
 }
 
-/** @type {number|null} Timer ID for refresh interval */
-let refreshIntervalId = null;
-/** @type {number|null} Track the latest timestamp for delta fetching */
-let latestTimestamp = null;
+/** Timer ID for refresh interval */
+let refreshIntervalId: number | null = null;
+/** Track the latest timestamp for delta fetching */
+let latestTimestamp: number | null = null;
 
 /**
  * Update page header based on current username and session
  */
-function updatePageHeader() {
+function updatePageHeader(): void {
   if (!username) {
     // Public locations view
     document.title = 'Vibe Tracker - Public Locations';
-    pageTitle.textContent = 'Public Locations';
-    pageSubtitle.textContent = 'Latest locations from users with public sessions';
-    pageHeader.style.display = 'block';
+    if (pageTitle) {
+      pageTitle.textContent = 'Public Locations';
+    }
+    if (pageSubtitle) {
+      pageSubtitle.textContent = 'Latest locations from users with public sessions';
+    }
+    if (pageHeader) {
+      pageHeader.style.display = 'block';
+    }
   } else if (session && session !== '_latest') {
     // Specific session view
     document.title = `Vibe Tracker - ${username}/${session}`;
-    pageTitle.textContent = `${username} - ${session}`;
-    pageSubtitle.textContent = 'Session tracking data';
-    pageHeader.style.display = 'block';
+    if (pageTitle) {
+      pageTitle.textContent = `${username} - ${session}`;
+    }
+    if (pageSubtitle) {
+      pageSubtitle.textContent = 'Session tracking data';
+    }
+    if (pageHeader) {
+      pageHeader.style.display = 'block';
+    }
   } else {
     // User's latest session view
     document.title = `Vibe Tracker - ${username}`;
-    pageTitle.textContent = username;
-    pageSubtitle.textContent = 'Latest session tracking';
-    pageHeader.style.display = 'block';
+    if (pageTitle) {
+      pageTitle.textContent = username;
+    }
+    if (pageSubtitle) {
+      pageSubtitle.textContent = 'Latest session tracking';
+    }
+    if (pageHeader) {
+      pageHeader.style.display = 'block';
+    }
   }
 }
 
 // Initialize authentication
-document.addEventListener('auth-change', (/** @type {CustomEvent<AuthChangeEventDetail>} */ e) => {
-  console.log('Auth state changed:', e.detail);
+document.addEventListener('auth-change', (e: Event) => {
+  const customEvent = e as CustomEvent<AuthChangeEventDetail>;
+  console.log('Auth state changed:', customEvent.detail);
 
   // You can add logic here to handle authentication state changes
   // For example, showing/hiding certain features based on login status
-  if (e.detail.isAuthenticated) {
-    console.log('User logged in:', e.detail.user);
+  if (customEvent.detail.isAuthenticated) {
+    console.log('User logged in:', customEvent.detail.user);
   } else {
     console.log('User logged out');
   }
@@ -110,11 +115,11 @@ document.addEventListener('auth-change', (/** @type {CustomEvent<AuthChangeEvent
 
 /**
  * Fetch location data from API
- * @param {boolean} [isInitialLoad=false] - Whether this is the initial data load
- * @param {boolean} [useDelta=false] - Whether to use delta fetching for incremental updates
+ * @param isInitialLoad - Whether this is the initial data load
+ * @param useDelta - Whether to use delta fetching for incremental updates
  */
-function fetchData(isInitialLoad = false, useDelta = false) {
-  let apiUrl;
+function fetchData(isInitialLoad: boolean = false, useDelta: boolean = false): void {
+  let apiUrl: string;
 
   if (!username) {
     // No username provided - fetch public locations
@@ -141,7 +146,7 @@ function fetchData(isInitialLoad = false, useDelta = false) {
       }
       return response.json();
     })
-    .then(response => {
+    .then((response: LocationsResponse | LocationResponse) => {
       // Handle standardized response format - extract actual data
       const data = response.data || response;
 
@@ -152,13 +157,17 @@ function fetchData(isInitialLoad = false, useDelta = false) {
 
       if (username && useDelta && data.features && data.features.length > 0) {
         // Append new data to existing track
-        mapWidget.appendData(data);
+        if (mapWidget) {
+          mapWidget.appendData(data);
+        }
         // Update latest timestamp
         const timestamps = data.features.map(f => f.properties.timestamp);
         latestTimestamp = Math.max(...timestamps);
       } else {
         // Initial load or full refresh - display all data
-        mapWidget.displayData(data);
+        if (mapWidget) {
+          mapWidget.displayData(data);
+        }
         // Extract and store the latest timestamp (only for user-specific views)
         if (username && data.features && data.features.length > 0) {
           const timestamps = data.features.map(f => f.properties.timestamp);
@@ -169,9 +178,9 @@ function fetchData(isInitialLoad = false, useDelta = false) {
         }
       }
     })
-    .catch(error => {
+    .catch((error: Error) => {
       console.error(error);
-      if (isInitialLoad) {
+      if (isInitialLoad && mapWidget && errorMessage) {
         mapWidget.style.display = 'none';
         errorMessage.style.display = 'block';
         errorMessage.textContent = error.message;
@@ -182,7 +191,7 @@ function fetchData(isInitialLoad = false, useDelta = false) {
 /**
  * Fetch incremental location data using delta updates
  */
-function fetchDeltaData() {
+function fetchDeltaData(): void {
   fetchData(false, true);
 }
 
@@ -191,8 +200,9 @@ updatePageHeader();
 
 if (username) {
   // User-specific view - enable all features
-  locationWidget.addEventListener('refresh-change', (/** @type {CustomEvent} */ e) => {
-    if (e.detail.checked) {
+  locationWidget?.addEventListener('refresh-change', (e: Event) => {
+    const customEvent = e as CustomEvent<{ checked: boolean }>;
+    if (customEvent.detail.checked) {
       fetchData(); // Initial fetch
       refreshIntervalId = setInterval(fetchDeltaData, 30000); // Use delta fetching for subsequent refreshes
     } else {
@@ -203,20 +213,25 @@ if (username) {
     }
   });
 
-  locationWidget.addEventListener('show-current-position', (/** @type {CustomEvent} */ e) => {
-    mapWidget.showCurrentPosition(e.detail.coords);
-  });
-
-  locationWidget.addEventListener('hide-current-position', _e => {
-    mapWidget.hideCurrentPosition();
-  });
-
-  mapWidget.addEventListener(
-    'location-update',
-    (/** @type {CustomEvent<LocationUpdateEventDetail>} */ e) => {
-      locationWidget.update(e.detail);
+  locationWidget?.addEventListener('show-current-position', (e: Event) => {
+    const customEvent = e as CustomEvent<{ coords: GeolocationCoordinates }>;
+    if (mapWidget) {
+      mapWidget.showCurrentPosition(customEvent.detail.coords);
     }
-  );
+  });
+
+  locationWidget?.addEventListener('hide-current-position', (_e: Event) => {
+    if (mapWidget) {
+      mapWidget.hideCurrentPosition();
+    }
+  });
+
+  mapWidget?.addEventListener('location-update', (e: Event) => {
+    const customEvent = e as CustomEvent<LocationUpdateEventDetail>;
+    if (locationWidget) {
+      locationWidget.update(customEvent.detail);
+    }
+  });
 
   // Only do initial fetch if refresh is not already enabled (to avoid duplicate fetches)
   const savedRefresh = localStorage.getItem('refresh-enabled');
@@ -226,7 +241,9 @@ if (username) {
 } else {
   // Public locations view - limited features
   // Hide location widget controls since we're not tracking a specific user
-  locationWidget.style.display = 'none';
+  if (locationWidget) {
+    locationWidget.style.display = 'none';
+  }
 
   // Do initial fetch of public locations
   fetchData(true);

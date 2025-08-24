@@ -1,29 +1,24 @@
-/**
- * @typedef {import('../src/types/index.js').User} User
- * @typedef {import('../src/types/index.js').AuthChangeEventDetail} AuthChangeEventDetail
- * @typedef {import('../src/types/index.js').LoginWidgetElement} LoginWidgetElement
- * @typedef {import('../src/types/index.js').ProfileWidgetElement} ProfileWidgetElement
- */
-
-// Import modules
+import type {
+  AuthChangeEventDetail,
+  LoginWidgetElement,
+  ProfileWidgetElement,
+} from '../src/types/index.ts';
 import AuthService from './auth-service.ts';
 import './login-widget.ts';
-import './profile-widget.js';
+import './profile-widget.ts';
 import './theme-toggle.ts';
 
 // Initialize global auth service
 window.authService = new AuthService();
 
 // Get widget references
-/** @type {LoginWidgetElement|null} */
-const loginWidget = document.getElementById('profile-login');
-/** @type {ProfileWidgetElement|null} */
-const _profileWidget = document.querySelector('profile-widget');
+const loginWidget = document.getElementById('profile-login') as LoginWidgetElement | null;
+const _profileWidget = document.querySelector('profile-widget') as ProfileWidgetElement | null;
 
 /**
  * Configure login widget to be open by default if not authenticated
  */
-function checkAuthAndConfigureLogin() {
+function checkAuthAndConfigureLogin(): void {
   if (!window.authService.isAuthenticated()) {
     // Show the login panel by default for non-authenticated users
     if (loginWidget && loginWidget.showPanel) {
@@ -33,11 +28,12 @@ function checkAuthAndConfigureLogin() {
 }
 
 // Initialize authentication state
-document.addEventListener('auth-change', (/** @type {CustomEvent<AuthChangeEventDetail>} */ e) => {
-  console.log('Auth state changed in profile page:', e.detail);
+document.addEventListener('auth-change', (e: Event) => {
+  const customEvent = e as CustomEvent<AuthChangeEventDetail>;
+  console.log('Auth state changed in profile page:', customEvent.detail);
 
-  if (e.detail.isAuthenticated) {
-    console.log('User logged in:', e.detail.user);
+  if (customEvent.detail.isAuthenticated) {
+    console.log('User logged in:', customEvent.detail.user);
   } else {
     console.log('User logged out');
     // Show login panel again if user logs out

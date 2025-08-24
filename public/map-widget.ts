@@ -5,7 +5,7 @@ import type {
   GeolocationCoordinates,
   GeoJSONFeature,
   LocationProperties,
-} from '../src/types/index.js';
+} from '../src/types/index.ts';
 import { createMarker } from './avatar-marker.ts';
 
 /**
