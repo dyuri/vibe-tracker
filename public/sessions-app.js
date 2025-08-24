@@ -1,15 +1,15 @@
 // Sessions App - Main entry point for session management page
 import AuthService from './auth-service.js';
-import "./login-widget.js";
-import "./theme-toggle.js";
-import "./session-management-widget.js";
+import './login-widget.js';
+import './theme-toggle.js';
+import './session-management-widget.js';
 
 // Initialize global auth service
 window.authService = new AuthService();
 
 // Get widget references
-const loginWidget = document.getElementById("sessions-login");
-const sessionWidget = document.querySelector("session-management-widget");
+const loginWidget = document.getElementById('sessions-login');
+const _sessionWidget = document.querySelector('session-management-widget');
 
 // Configure login widget to be open by default if not authenticated
 function checkAuthAndConfigureLogin() {
@@ -22,9 +22,9 @@ function checkAuthAndConfigureLogin() {
 }
 
 // Initialize authentication state
-document.addEventListener('auth-change', (e) => {
+document.addEventListener('auth-change', e => {
   console.log('Auth state changed in sessions page:', e.detail);
-  
+
   if (e.detail.isAuthenticated) {
     console.log('User logged in:', e.detail.user);
   } else {
@@ -39,7 +39,7 @@ document.addEventListener('auth-change', (e) => {
 });
 
 // Initialize the app
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   // Set up theme
   const themeToggle = document.getElementById('sessions-theme-toggle');
   if (themeToggle) {

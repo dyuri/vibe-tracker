@@ -6,7 +6,7 @@
 // API and common response types
 export * from './api.js';
 
-// User and authentication types  
+// User and authentication types
 export * from './user.js';
 
 // Location and session types

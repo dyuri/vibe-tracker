@@ -14,7 +14,7 @@ export default class AuthService {
     this.token = localStorage.getItem('auth_token');
     this.user = JSON.parse(localStorage.getItem('user') || 'null');
     this.refreshTimer = null;
-    
+
     // Setup auto-refresh if we have a token
     if (this.token) {
       this.setupAutoRefresh();
@@ -67,7 +67,7 @@ export default class AuthService {
       const response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.token}`,
+          Authorization: `Bearer ${this.token}`,
         },
       });
 
@@ -96,7 +96,7 @@ export default class AuthService {
     try {
       const response = await fetch(`${this.baseUrl}/api/me`, {
         headers: {
-          'Authorization': `Bearer ${this.token}`,
+          Authorization: `Bearer ${this.token}`,
         },
       });
 
@@ -122,7 +122,7 @@ export default class AuthService {
   }
 
   getAuthHeaders() {
-    return this.token ? { 'Authorization': `Bearer ${this.token}` } : {};
+    return this.token ? { Authorization: `Bearer ${this.token}` } : {};
   }
 
   setAuthData(token, user) {
@@ -146,7 +146,9 @@ export default class AuthService {
   }
 
   setupAutoRefresh() {
-    if (!this.token) return;
+    if (!this.token) {
+      return;
+    }
 
     // Clear existing timer
     if (this.refreshTimer) {
@@ -159,10 +161,10 @@ export default class AuthService {
       const expTime = payload.exp * 1000; // Convert to milliseconds
       const now = Date.now();
       const timeUntilExpiry = expTime - now;
-      
+
       // Refresh 5 minutes (300000ms) before expiry
       const refreshTime = Math.max(0, timeUntilExpiry - 300000);
-      
+
       if (refreshTime > 0) {
         this.refreshTimer = setTimeout(async () => {
           try {

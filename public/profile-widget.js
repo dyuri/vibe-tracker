@@ -1,10 +1,10 @@
 export default class ProfileWidget extends HTMLElement {
   constructor() {
     super();
-    this.attachShadow({ mode: "open" });
+    this.attachShadow({ mode: 'open' });
     this.user = null;
     this.isAuthenticated = false;
-    
+
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -282,7 +282,7 @@ export default class ProfileWidget extends HTMLElement {
     this.updateUI();
 
     // Listen for auth changes
-    document.addEventListener('auth-change', (e) => {
+    document.addEventListener('auth-change', e => {
       this.isAuthenticated = e.detail.isAuthenticated;
       this.user = e.detail.user;
       this.updateUI();
@@ -291,47 +291,47 @@ export default class ProfileWidget extends HTMLElement {
 
   setupElements() {
     // Auth state elements
-    this.notAuthenticated = this.shadowRoot.getElementById("not-authenticated");
-    this.profileContent = this.shadowRoot.getElementById("profile-content");
-    
+    this.notAuthenticated = this.shadowRoot.getElementById('not-authenticated');
+    this.profileContent = this.shadowRoot.getElementById('profile-content');
+
     // Basic info elements
-    this.currentUsername = this.shadowRoot.getElementById("current-username");
-    this.currentEmail = this.shadowRoot.getElementById("current-email");
-    this.usernameInput = this.shadowRoot.getElementById("username");
-    this.emailInput = this.shadowRoot.getElementById("email");
-    this.updateBasicBtn = this.shadowRoot.getElementById("update-basic");
-    this.basicMessage = this.shadowRoot.getElementById("basic-message");
-    
+    this.currentUsername = this.shadowRoot.getElementById('current-username');
+    this.currentEmail = this.shadowRoot.getElementById('current-email');
+    this.usernameInput = this.shadowRoot.getElementById('username');
+    this.emailInput = this.shadowRoot.getElementById('email');
+    this.updateBasicBtn = this.shadowRoot.getElementById('update-basic');
+    this.basicMessage = this.shadowRoot.getElementById('basic-message');
+
     // Avatar elements
-    this.currentAvatar = this.shadowRoot.getElementById("current-avatar");
-    this.avatarPlaceholder = this.shadowRoot.getElementById("avatar-placeholder");
-    this.avatarFileInput = this.shadowRoot.getElementById("avatar-file");
-    this.uploadAvatarBtn = this.shadowRoot.getElementById("upload-avatar");
-    this.avatarMessage = this.shadowRoot.getElementById("avatar-message");
-    
+    this.currentAvatar = this.shadowRoot.getElementById('current-avatar');
+    this.avatarPlaceholder = this.shadowRoot.getElementById('avatar-placeholder');
+    this.avatarFileInput = this.shadowRoot.getElementById('avatar-file');
+    this.uploadAvatarBtn = this.shadowRoot.getElementById('upload-avatar');
+    this.avatarMessage = this.shadowRoot.getElementById('avatar-message');
+
     // Password elements
-    this.oldPasswordInput = this.shadowRoot.getElementById("old-password");
-    this.newPasswordInput = this.shadowRoot.getElementById("new-password");
-    this.confirmPasswordInput = this.shadowRoot.getElementById("confirm-password");
-    this.changePasswordBtn = this.shadowRoot.getElementById("change-password");
-    this.passwordMessage = this.shadowRoot.getElementById("password-message");
-    
+    this.oldPasswordInput = this.shadowRoot.getElementById('old-password');
+    this.newPasswordInput = this.shadowRoot.getElementById('new-password');
+    this.confirmPasswordInput = this.shadowRoot.getElementById('confirm-password');
+    this.changePasswordBtn = this.shadowRoot.getElementById('change-password');
+    this.passwordMessage = this.shadowRoot.getElementById('password-message');
+
     // Token elements
-    this.tokenDisplay = this.shadowRoot.getElementById("token-display");
-    this.regenerateTokenBtn = this.shadowRoot.getElementById("regenerate-token");
-    this.tokenMessage = this.shadowRoot.getElementById("token-message");
+    this.tokenDisplay = this.shadowRoot.getElementById('token-display');
+    this.regenerateTokenBtn = this.shadowRoot.getElementById('regenerate-token');
+    this.tokenMessage = this.shadowRoot.getElementById('token-message');
   }
 
   setupEventListeners() {
-    this.updateBasicBtn.addEventListener("click", () => this.handleUpdateBasicInfo());
-    this.uploadAvatarBtn.addEventListener("click", () => this.handleUploadAvatar());
-    this.changePasswordBtn.addEventListener("click", () => this.handleChangePassword());
-    this.regenerateTokenBtn.addEventListener("click", () => this.handleRegenerateToken());
-    
+    this.updateBasicBtn.addEventListener('click', () => this.handleUpdateBasicInfo());
+    this.uploadAvatarBtn.addEventListener('click', () => this.handleUploadAvatar());
+    this.changePasswordBtn.addEventListener('click', () => this.handleChangePassword());
+    this.regenerateTokenBtn.addEventListener('click', () => this.handleRegenerateToken());
+
     // Enable enter key for password fields
     [this.oldPasswordInput, this.newPasswordInput, this.confirmPasswordInput].forEach(input => {
-      input.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
+      input.addEventListener('keypress', e => {
+        if (e.key === 'Enter') {
           e.preventDefault();
           this.handleChangePassword();
         }
@@ -357,105 +357,111 @@ export default class ProfileWidget extends HTMLElement {
 
   updateUI() {
     if (this.isAuthenticated && this.user) {
-      this.notAuthenticated.style.display = "none";
-      this.profileContent.classList.add("show");
+      this.notAuthenticated.style.display = 'none';
+      this.profileContent.classList.add('show');
       this.populateUserInfo();
     } else {
-      this.notAuthenticated.style.display = "block";
-      this.profileContent.classList.remove("show");
+      this.notAuthenticated.style.display = 'block';
+      this.profileContent.classList.remove('show');
     }
   }
 
   populateUserInfo() {
-    if (!this.user) return;
-    
+    if (!this.user) {
+      return;
+    }
+
     // Update current info displays
     this.currentUsername.textContent = `Current: ${this.user.username || 'Not set'}`;
     this.currentEmail.textContent = `Current: ${this.user.email || 'Not set'}`;
-    
+
     // Update avatar
     this.updateAvatarDisplay();
-    
+
     // Update token display
     this.tokenDisplay.textContent = this.user.token || 'No token available';
-    
+
     // Clear input fields
-    this.usernameInput.value = "";
-    this.emailInput.value = "";
+    this.usernameInput.value = '';
+    this.emailInput.value = '';
     this.clearPasswordFields();
   }
 
   updateAvatarDisplay() {
     // Clear existing content
     this.currentAvatar.innerHTML = '<span id="avatar-placeholder">?</span>';
-    this.avatarPlaceholder = this.shadowRoot.getElementById("avatar-placeholder");
-    
+    this.avatarPlaceholder = this.shadowRoot.getElementById('avatar-placeholder');
+
     if (this.user.avatar) {
       const img = document.createElement('img');
       img.src = `/api/files/users/${this.user.id}/${this.user.avatar}`;
       img.alt = 'User avatar';
       img.onerror = () => {
-        this.avatarPlaceholder.textContent = this.user.username ? this.user.username.charAt(0).toUpperCase() : "?";
+        this.avatarPlaceholder.textContent = this.user.username
+          ? this.user.username.charAt(0).toUpperCase()
+          : '?';
       };
       this.currentAvatar.appendChild(img);
       this.avatarPlaceholder.style.display = 'none';
     } else {
-      this.avatarPlaceholder.textContent = this.user.username ? this.user.username.charAt(0).toUpperCase() : "?";
+      this.avatarPlaceholder.textContent = this.user.username
+        ? this.user.username.charAt(0).toUpperCase()
+        : '?';
     }
   }
 
   async handleUpdateBasicInfo() {
     const username = this.usernameInput.value.trim();
     const email = this.emailInput.value.trim();
-    
+
     if (!username && !email) {
-      this.showMessage(this.basicMessage, "Please enter a username or email to update", "error");
+      this.showMessage(this.basicMessage, 'Please enter a username or email to update', 'error');
       return;
     }
-    
+
     this.updateBasicBtn.disabled = true;
-    this.updateBasicBtn.textContent = "Updating...";
-    
+    this.updateBasicBtn.textContent = 'Updating...';
+
     try {
       const updatedUser = await window.authService.updateProfile({ username, email });
       this.user = updatedUser;
       this.populateUserInfo();
-      this.showMessage(this.basicMessage, "Basic information updated successfully!", "success");
+      this.showMessage(this.basicMessage, 'Basic information updated successfully!', 'success');
     } catch (error) {
-      this.showMessage(this.basicMessage, error.message || "Failed to update profile", "error");
+      this.showMessage(this.basicMessage, error.message || 'Failed to update profile', 'error');
     } finally {
       this.updateBasicBtn.disabled = false;
-      this.updateBasicBtn.textContent = "Update Basic Info";
+      this.updateBasicBtn.textContent = 'Update Basic Info';
     }
   }
 
   async handleUploadAvatar() {
     const file = this.avatarFileInput.files[0];
     if (!file) {
-      this.showMessage(this.avatarMessage, "Please select an image file", "error");
+      this.showMessage(this.avatarMessage, 'Please select an image file', 'error');
       return;
     }
-    
+
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      this.showMessage(this.avatarMessage, "Please select a valid image file", "error");
+      this.showMessage(this.avatarMessage, 'Please select a valid image file', 'error');
       return;
     }
-    
+
     this.uploadAvatarBtn.disabled = true;
-    this.uploadAvatarBtn.textContent = "Uploading...";
-    
+    this.uploadAvatarBtn.textContent = 'Uploading...';
+
     try {
       const updatedUser = await window.authService.uploadAvatar(file);
       this.user = updatedUser;
       this.updateAvatarDisplay();
-      this.avatarFileInput.value = "";
-      this.showMessage(this.avatarMessage, "Avatar uploaded successfully!", "success");
+      this.avatarFileInput.value = '';
+      this.showMessage(this.avatarMessage, 'Avatar uploaded successfully!', 'success');
     } catch (error) {
-      this.showMessage(this.avatarMessage, error.message || "Failed to upload avatar", "error");
+      this.showMessage(this.avatarMessage, error.message || 'Failed to upload avatar', 'error');
     } finally {
       this.uploadAvatarBtn.disabled = false;
-      this.uploadAvatarBtn.textContent = "Upload Avatar";
+      this.uploadAvatarBtn.textContent = 'Upload Avatar';
     }
   }
 
@@ -463,77 +469,85 @@ export default class ProfileWidget extends HTMLElement {
     const oldPassword = this.oldPasswordInput.value;
     const newPassword = this.newPasswordInput.value;
     const confirmPassword = this.confirmPasswordInput.value;
-    
+
     if (!oldPassword || !newPassword || !confirmPassword) {
-      this.showMessage(this.passwordMessage, "Please fill in all password fields", "error");
+      this.showMessage(this.passwordMessage, 'Please fill in all password fields', 'error');
       return;
     }
-    
+
     if (newPassword !== confirmPassword) {
-      this.showMessage(this.passwordMessage, "New passwords do not match", "error");
+      this.showMessage(this.passwordMessage, 'New passwords do not match', 'error');
       return;
     }
-    
+
     if (newPassword.length < 6) {
-      this.showMessage(this.passwordMessage, "New password must be at least 6 characters long", "error");
+      this.showMessage(
+        this.passwordMessage,
+        'New password must be at least 6 characters long',
+        'error'
+      );
       return;
     }
-    
+
     this.changePasswordBtn.disabled = true;
-    this.changePasswordBtn.textContent = "Changing...";
-    
+    this.changePasswordBtn.textContent = 'Changing...';
+
     try {
-      await window.authService.updateProfile({ 
-        password: newPassword, 
-        oldPassword: oldPassword 
+      await window.authService.updateProfile({
+        password: newPassword,
+        oldPassword: oldPassword,
       });
       this.clearPasswordFields();
-      this.showMessage(this.passwordMessage, "Password changed successfully!", "success");
+      this.showMessage(this.passwordMessage, 'Password changed successfully!', 'success');
     } catch (error) {
-      this.showMessage(this.passwordMessage, error.message || "Failed to change password", "error");
+      this.showMessage(this.passwordMessage, error.message || 'Failed to change password', 'error');
     } finally {
       this.changePasswordBtn.disabled = false;
-      this.changePasswordBtn.textContent = "Change Password";
+      this.changePasswordBtn.textContent = 'Change Password';
     }
   }
 
   async handleRegenerateToken() {
-    if (!confirm("Are you sure you want to regenerate your API token? This will invalidate the current token.")) {
+    if (
+      !confirm(
+        'Are you sure you want to regenerate your API token? This will invalidate the current token.'
+      )
+    ) {
       return;
     }
-    
+
     this.regenerateTokenBtn.disabled = true;
-    this.regenerateTokenBtn.textContent = "Regenerating...";
-    
+    this.regenerateTokenBtn.textContent = 'Regenerating...';
+
     try {
       const updatedUser = await window.authService.regenerateToken();
       this.user = updatedUser;
       this.tokenDisplay.textContent = updatedUser.token;
-      this.showMessage(this.tokenMessage, "API token regenerated successfully!", "success");
+      this.showMessage(this.tokenMessage, 'API token regenerated successfully!', 'success');
     } catch (error) {
-      this.showMessage(this.tokenMessage, error.message || "Failed to regenerate token", "error");
+      this.showMessage(this.tokenMessage, error.message || 'Failed to regenerate token', 'error');
     } finally {
       this.regenerateTokenBtn.disabled = false;
-      this.regenerateTokenBtn.textContent = "Regenerate Token";
+      this.regenerateTokenBtn.textContent = 'Regenerate Token';
     }
   }
 
   clearPasswordFields() {
-    this.oldPasswordInput.value = "";
-    this.newPasswordInput.value = "";
-    this.confirmPasswordInput.value = "";
+    this.oldPasswordInput.value = '';
+    this.newPasswordInput.value = '';
+    this.confirmPasswordInput.value = '';
   }
 
   showMessage(element, message, type) {
     element.textContent = message;
     element.className = type;
-    
+
     // Clear message after 5 seconds
     setTimeout(() => {
-      element.textContent = "";
-      element.className = "";
+      element.textContent = '';
+      element.className = '';
     }, 5000);
   }
 }
 
-customElements.define("profile-widget", ProfileWidget);
+customElements.define('profile-widget', ProfileWidget);

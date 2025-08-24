@@ -11,7 +11,8 @@ function initializeTheme() {
     theme = savedTheme;
   } else {
     // Check system preference
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const prefersDark =
+      window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     theme = prefersDark ? 'dark' : 'light';
   }
 
@@ -21,7 +22,7 @@ function initializeTheme() {
   // Listen for system theme changes
   if (window.matchMedia) {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    mediaQuery.addEventListener('change', (e) => {
+    mediaQuery.addEventListener('change', e => {
       // Only auto-switch if user hasn't manually set a preference
       const userPreference = localStorage.getItem('theme');
       if (!userPreference) {

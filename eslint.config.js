@@ -5,8 +5,10 @@ import typescriptParser from '@typescript-eslint/parser';
 export default [
   js.configs.recommended,
   {
+    ignores: ['dist/**', 'node_modules/**', 'pb_data/**', '**/*.min.js', 'build/**', 'coverage/**'],
+  },
+  {
     files: ['**/*.{js,ts}'],
-    ignores: ['dist/**', 'node_modules/**', 'pb_data/**', '**/*.min.js'],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
@@ -40,11 +42,13 @@ export default [
         alert: 'readonly',
         confirm: 'readonly',
         prompt: 'readonly',
+        navigator: 'readonly',
+        MutationObserver: 'readonly',
+        URLSearchParams: 'readonly',
         // Leaflet global
         L: 'readonly',
         // Custom Element globals
         customElements: 'readonly',
-        HTMLElement: 'readonly',
         ShadowRoot: 'readonly',
         // Custom globals (from our app)
         authService: 'readonly',
@@ -56,35 +60,77 @@ export default [
     rules: {
       // Basic JavaScript rules
       'no-unused-vars': 'off', // Turn off base rule
-      '@typescript-eslint/no-unused-vars': ['error', { 
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_' 
-      }],
-      
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+
       // Code style
       'prefer-const': 'error',
       'no-var': 'error',
-      'eqeqeq': ['error', 'always'],
-      'curly': ['error', 'all'],
-      
+      eqeqeq: ['error', 'always'],
+      curly: ['error', 'all'],
+
       // Best practices
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
       'no-alert': 'warn',
-      
+
       // TypeScript-specific (works with JSDoc too) - relaxed for hybrid approach
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/prefer-nullish-coalescing': 'off', // Too strict for hybrid approach
-      '@typescript-eslint/prefer-optional-chain': 'warn', // Warn instead of error
-      
+      // Disable rules that require type information for our hybrid approach
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
+      '@typescript-eslint/prefer-optional-chain': 'off',
+
       // Custom Element specific
       'no-undef': 'error',
-      
-      // Import/Export
-      'import/extensions': 'off', // We use .js extensions for TS compatibility
+    },
+  },
+  {
+    // Test files configuration
+    files: ['tests/**/*.{js,ts}', '**/*.test.{js,ts}', '**/*.spec.{js,ts}'],
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: 'module',
+      },
+      globals: {
+        // Node.js globals for test environment
+        global: 'writable',
+        process: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        // Vitest globals
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        vi: 'readonly',
+        // Browser globals still needed for mocking
+        window: 'readonly',
+        document: 'readonly',
+        localStorage: 'readonly',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': typescriptEslint,
+    },
+    rules: {
+      // More relaxed rules for test files
+      '@typescript-eslint/no-explicit-any': 'off',
+      'no-undef': 'error',
     },
   },
   {

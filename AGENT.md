@@ -15,7 +15,7 @@ Leaflet.js for the frontend.
 
 ### Development Environment
 
-- Admin: http://localhost:8090/_/
+- Admin: http://localhost:8090/\_/
 - Client: http://localhost:8090/
 - API Documentation: http://localhost:8090/swagger
 
@@ -33,6 +33,7 @@ go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 ```
 
 This sets up:
+
 - **pre-commit hook**: Automatically formats code and runs basic linting
 - **pre-push hook**: Runs full test suite and build verification
 

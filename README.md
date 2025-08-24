@@ -10,29 +10,31 @@ This project is a _vibe-coding_ experiment - I was curious about the current sta
 
 ## Features
 
-*   **User Authentication:** Secure login system with JWT tokens and refresh tokens
-*   **Session-based Tracking:** Organize location data into named sessions for different trips or activities
-*   **Location Tracking:** Track location data (latitude, longitude, altitude, speed, heart rate) via API
-*   **Public Sharing:** Share your location data publicly with customizable privacy settings
-*   **Profile Management:** User profiles with avatar upload and token regeneration
-*   **Multiple Interfaces:** 
-    *   Real-time map view for tracking
-    *   Profile management interface
-    *   Session management dashboard
-*   **Comprehensive API:** 16+ endpoints for location tracking, session management, and user operations
-*   **PocketBase Backend:** Uses PocketBase as a self-contained backend with automatic migrations
+- **User Authentication:** Secure login system with JWT tokens and refresh tokens
+- **Session-based Tracking:** Organize location data into named sessions for different trips or activities
+- **Location Tracking:** Track location data (latitude, longitude, altitude, speed, heart rate) via API
+- **Public Sharing:** Share your location data publicly with customizable privacy settings
+- **Profile Management:** User profiles with avatar upload and token regeneration
+- **Multiple Interfaces:**
+  - Real-time map view for tracking
+  - Profile management interface
+  - Session management dashboard
+- **Comprehensive API:** 16+ endpoints for location tracking, session management, and user operations
+- **PocketBase Backend:** Uses PocketBase as a self-contained backend with automatic migrations
 
 ## Getting Started
 
 1.  **Prerequisites:**
-    *   Go (1.23+)
+    - Go (1.23+)
 
 2.  **Installation:**
+
     ```bash
     go mod tidy
     ```
 
 3.  **Running the application:**
+
     ```bash
     go run . serve
     ```
@@ -81,16 +83,19 @@ curl -H "User-Agent: VibeTracker-CLI/1.0" "http://127.0.0.1:8090/api/track?token
 ### Session Management
 
 #### Get user's sessions
+
 ```bash
 curl -H "User-Agent: VibeTracker-CLI/1.0" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://127.0.0.1:8090/api/sessions/username"
 ```
 
 #### Get session data (GeoJSON LineString)
+
 ```bash
 curl -H "User-Agent: VibeTracker-CLI/1.0" "http://127.0.0.1:8090/api/session/username/session_name"
 ```
 
 #### Create new session
+
 ```bash
 curl -X POST -H "Content-Type: application/json" -H "User-Agent: VibeTracker-CLI/1.0" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" -d '{
   "name": "session_name",
@@ -103,6 +108,7 @@ curl -X POST -H "Content-Type: application/json" -H "User-Agent: VibeTracker-CLI
 ### Public Data
 
 #### Get public locations from all users
+
 ```bash
 curl -H "User-Agent: VibeTracker-CLI/1.0" "http://127.0.0.1:8090/api/public-locations"
 ```

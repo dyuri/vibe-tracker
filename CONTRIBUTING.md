@@ -24,17 +24,20 @@ Welcome to the Vibe Tracker project! This document provides guidelines for contr
 ### Development Setup
 
 1. **Clone the repository:**
+
    ```bash
    git clone <repository-url>
    cd vibe-tracker-gemini
    ```
 
 2. **Install Go dependencies:**
+
    ```bash
    go mod download
    ```
 
 3. **Install development tools:**
+
    ```bash
    # Install static analysis tools
    go install honnef.co/go/tools/cmd/staticcheck@latest
@@ -43,20 +46,22 @@ Welcome to the Vibe Tracker project! This document provides guidelines for contr
    ```
 
 4. **Set up Git hooks (recommended):**
+
    ```bash
    # Run the installation script
    ./scripts/install-hooks.sh
-   
+
    # Or manually configure Git to use our hooks
    git config core.hooksPath .githooks
    ```
 
 5. **Start the development server:**
+
    ```bash
    go run . serve
    ```
 
-   - Admin UI: http://localhost:8090/_/
+   - Admin UI: http://localhost:8090/\_/
    - Client: http://localhost:8090/
    - API: http://localhost:8090/api/
    - API Documentation: http://localhost:8090/swagger
@@ -112,6 +117,7 @@ type(scope): description
 ```
 
 Types:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -121,6 +127,7 @@ Types:
 - `chore`: Maintenance tasks
 
 Examples:
+
 ```
 feat(auth): add JWT token refresh endpoint
 
@@ -137,6 +144,7 @@ We use Git hooks to enforce code quality:
 - **pre-push**: Runs full test suite and build checks
 
 To bypass hooks in emergency situations (use sparingly):
+
 ```bash
 git commit --no-verify
 git push --no-verify
@@ -161,6 +169,7 @@ go tool cover -html=coverage.out
 ### Test Credentials
 
 For integration testing:
+
 - Username: `claude@claude.ai`
 - Password: `claude123`
 - Test data usually available under `/u/dyuri`

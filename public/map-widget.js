@@ -17,28 +17,28 @@ export default class MapWidget extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
-    
+
     /** @type {L.Map|null} */
     this.map = null;
-    
+
     /** @type {L.LayerGroup|null} */
     this.dataLayerGroup = null;
-    
+
     /** @type {L.LayerGroup|null} */
     this.currentPositionLayerGroup = null;
-    
+
     /** @type {LocationsResponse|null} */
     this.currentFeatureCollection = null;
-    
+
     /** @type {Array<Array<number>>} */
     this.colorScale = [
-      [0, 0, 255],    // Blue
-      [0, 255, 0],    // Green
-      [255, 255, 0],  // Yellow
-      [255, 165, 0],  // Orange
-      [255, 0, 0]     // Red
+      [0, 0, 255], // Blue
+      [0, 255, 0], // Green
+      [255, 255, 0], // Yellow
+      [255, 165, 0], // Orange
+      [255, 0, 0], // Red
     ];
-    
+
     this.shadowRoot.innerHTML = `
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       <style>
@@ -104,11 +104,11 @@ export default class MapWidget extends HTMLElement {
     this.currentPositionLayerGroup = null;
     this.currentFeatureCollection = null; // Store current data for appending
     this.colorScale = [
-      [0, 0, 255],    // Blue
-      [0, 255, 0],    // Green
-      [255, 255, 0],  // Yellow
-      [255, 165, 0],  // Orange
-      [255, 0, 0]     // Red
+      [0, 0, 255], // Blue
+      [0, 255, 0], // Green
+      [255, 255, 0], // Yellow
+      [255, 165, 0], // Orange
+      [255, 0, 0], // Red
     ];
   }
 
@@ -119,7 +119,8 @@ export default class MapWidget extends HTMLElement {
   connectedCallback() {
     this.map = L.map(this.shadowRoot.getElementById('map'));
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.map);
     this.dataLayerGroup = L.layerGroup().addTo(this.map);
     this.currentPositionLayerGroup = L.layerGroup().addTo(this.map);
@@ -181,9 +182,7 @@ export default class MapWidget extends HTMLElement {
     const existingFeatures = this.currentFeatureCollection.features;
     let latestExistingTimestamp = 0;
     if (existingFeatures.length > 0) {
-      latestExistingTimestamp = Math.max(
-        ...existingFeatures.map(f => f.properties.timestamp)
-      );
+      latestExistingTimestamp = Math.max(...existingFeatures.map(f => f.properties.timestamp));
     }
 
     // Filter new features to only include truly new ones (timestamp > latest existing)
@@ -198,7 +197,7 @@ export default class MapWidget extends HTMLElement {
 
     // Merge truly new features with existing ones
     this.currentFeatureCollection.features.push(...trulyNewFeatures);
-    
+
     // Re-render with the combined data
     this.displayFeatureCollection(this.currentFeatureCollection);
   }
@@ -218,9 +217,16 @@ export default class MapWidget extends HTMLElement {
     if (isMultiUser) {
       // Multi-user mode: display individual markers for each user's location
       points.forEach(point => {
-        const [longitude, latitude, altitude] = point.geometry.coordinates;
-        const { speed, heart_rate, timestamp, session, session_title, username } = point.properties;
-        
+        const [longitude, latitude, _altitude] = point.geometry.coordinates;
+        const {
+          speed: _speed,
+          heart_rate: _heart_rate,
+          timestamp: _timestamp,
+          session: _session,
+          session_title: _session_title,
+          username: _username,
+        } = point.properties;
+
         const marker = createMarker([latitude, longitude], point.properties);
         const popupContent = this.createPopupContent(point.properties, point.geometry.coordinates);
         marker.bindPopup(popupContent);
@@ -229,31 +235,48 @@ export default class MapWidget extends HTMLElement {
     } else {
       // Single-user track mode: display connected lines with heart rate coloring
       // Find min and max heart rate for color scaling
-      const heartRates = points.map((p) => p.properties.heart_rate).filter(hr => hr !== null && hr !== undefined);
+      const heartRates = points
+        .map(p => p.properties.heart_rate)
+        .filter(hr => hr !== null && hr !== undefined);
       const minHeartRate = Math.min(...heartRates);
       const maxHeartRate = Math.max(...heartRates);
 
       // Create black outlines first
       for (let i = 0; i < points.length - 1; i++) {
         const startPoint = points[i];
-        const endPoint = points[i+1];
-        const outline = L.polyline([[startPoint.geometry.coordinates[1], startPoint.geometry.coordinates[0]], [endPoint.geometry.coordinates[1], endPoint.geometry.coordinates[0]]], { color: 'black', weight: 7 });
+        const endPoint = points[i + 1];
+        const outline = L.polyline(
+          [
+            [startPoint.geometry.coordinates[1], startPoint.geometry.coordinates[0]],
+            [endPoint.geometry.coordinates[1], endPoint.geometry.coordinates[0]],
+          ],
+          { color: 'black', weight: 7 }
+        );
         this.dataLayerGroup.addLayer(outline);
       }
 
       // Create colored lines on top
       for (let i = 0; i < points.length - 1; i++) {
         const startPoint = points[i];
-        const endPoint = points[i+1];
+        const endPoint = points[i + 1];
         const heartRate = startPoint.properties.heart_rate;
         const color = this.getHeartRateColor(heartRate, minHeartRate, maxHeartRate);
-        const line = L.polyline([[startPoint.geometry.coordinates[1], startPoint.geometry.coordinates[0]], [endPoint.geometry.coordinates[1], endPoint.geometry.coordinates[0]]], { color: color, weight: 5 });
+        const line = L.polyline(
+          [
+            [startPoint.geometry.coordinates[1], startPoint.geometry.coordinates[0]],
+            [endPoint.geometry.coordinates[1], endPoint.geometry.coordinates[0]],
+          ],
+          { color: color, weight: 5 }
+        );
         this.dataLayerGroup.addLayer(line);
       }
 
       // Create a transparent, clickable line
-      const clickableLine = L.polyline(points.map(p => [p.geometry.coordinates[1], p.geometry.coordinates[0]]), { opacity: 0, weight: 10 });
-      clickableLine.on('click', (e) => {
+      const clickableLine = L.polyline(
+        points.map(p => [p.geometry.coordinates[1], p.geometry.coordinates[0]]),
+        { opacity: 0, weight: 10 }
+      );
+      clickableLine.on('click', e => {
         let closestPoint = null;
         let minDistance = Infinity;
 
@@ -267,20 +290,23 @@ export default class MapWidget extends HTMLElement {
         });
 
         if (closestPoint) {
-          const popupContent = this.createPopupContent(closestPoint.properties, closestPoint.geometry.coordinates);
-          L.popup()
-            .setLatLng(e.latlng)
-            .setContent(popupContent)
-            .openOn(this.map);
+          const popupContent = this.createPopupContent(
+            closestPoint.properties,
+            closestPoint.geometry.coordinates
+          );
+          L.popup().setLatLng(e.latlng).setContent(popupContent).openOn(this.map);
         }
       });
       this.dataLayerGroup.addLayer(clickableLine);
 
       // Add only the latest point as a marker
       const latestPoint = points[points.length - 1];
-      const [longitude, latitude, altitude] = latestPoint.geometry.coordinates;
+      const [longitude, latitude, _altitude] = latestPoint.geometry.coordinates;
       const marker = createMarker([latitude, longitude], latestPoint.properties);
-      const popupContent = this.createPopupContent(latestPoint.properties, latestPoint.geometry.coordinates);
+      const popupContent = this.createPopupContent(
+        latestPoint.properties,
+        latestPoint.geometry.coordinates
+      );
       marker.bindPopup(popupContent);
       this.dataLayerGroup.addLayer(marker);
     }
@@ -292,14 +318,23 @@ export default class MapWidget extends HTMLElement {
     // For single-user mode, dispatch location update for the latest point
     if (!isMultiUser && points.length > 0) {
       const latestPoint = points[points.length - 1];
-      this.dispatchEvent(new CustomEvent('location-update', { detail: latestPoint, bubbles: true, composed: true }));
+      this.dispatchEvent(
+        new CustomEvent('location-update', { detail: latestPoint, bubbles: true, composed: true })
+      );
     }
   }
 
   displayPoint(data) {
     this.dataLayerGroup.clearLayers();
-    const [longitude, latitude, altitude] = data.geometry.coordinates;
-    const { speed, heart_rate, timestamp, session, session_title, username } = data.properties;
+    const [longitude, latitude, _altitude] = data.geometry.coordinates;
+    const {
+      speed: _speed,
+      heart_rate: _heart_rate,
+      timestamp: _timestamp,
+      session: _session,
+      session_title: _session_title,
+      username: _username,
+    } = data.properties;
 
     if (!this.setViewFromUrlHash()) {
       this.map.setView([latitude, longitude], 15);
@@ -310,12 +345,14 @@ export default class MapWidget extends HTMLElement {
       .openPopup();
     this.dataLayerGroup.addLayer(marker);
 
-    this.dispatchEvent(new CustomEvent('location-update', { detail: data, bubbles: true, composed: true }));
+    this.dispatchEvent(
+      new CustomEvent('location-update', { detail: data, bubbles: true, composed: true })
+    );
   }
 
   getHeartRateColor(heartRate, min, max) {
-    if (heartRate === null || heartRate === undefined || max == min) {
-      return "#808080"; // Grey for no data
+    if (heartRate === null || heartRate === undefined || max === min) {
+      return '#808080'; // Grey for no data
     }
     const ratio = (heartRate - min) / (max - min);
     const rgb = this.interpolateColor(ratio, this.colorScale);
@@ -324,8 +361,12 @@ export default class MapWidget extends HTMLElement {
 
   interpolateColor(ratio, colorStops) {
     const numStops = colorStops.length;
-    if (ratio <= 0) return colorStops[0];
-    if (ratio >= 1) return colorStops[numStops - 1];
+    if (ratio <= 0) {
+      return colorStops[0];
+    }
+    if (ratio >= 1) {
+      return colorStops[numStops - 1];
+    }
 
     const segment = 1 / (numStops - 1);
     const segmentIndex = Math.floor(ratio / segment);
@@ -344,12 +385,20 @@ export default class MapWidget extends HTMLElement {
   createPopupContent(properties, coordinates) {
     const { speed, heart_rate, timestamp, session, session_title, username } = properties;
     const altitude = coordinates[2];
-    
-    const sessionDisplay = session_title && session_title !== session ? `${session_title} (${session})` : (session || "N/A");
-    const sessionLink = session && username ? `<a href="/u/${username}/s/${session}" style="color: var(--color-primary); text-decoration: none;">${sessionDisplay}</a>` : sessionDisplay;
-    
-    const userLine = username ? `<b>User:</b> <a href="/u/${username}" style="color: var(--color-primary); text-decoration: none;">${username}</a><br>` : '';
-    
+
+    const sessionDisplay =
+      session_title && session_title !== session
+        ? `${session_title} (${session})`
+        : session || 'N/A';
+    const sessionLink =
+      session && username
+        ? `<a href="/u/${username}/s/${session}" style="color: var(--color-primary); text-decoration: none;">${sessionDisplay}</a>`
+        : sessionDisplay;
+
+    const userLine = username
+      ? `<b>User:</b> <a href="/u/${username}" style="color: var(--color-primary); text-decoration: none;">${username}</a><br>`
+      : '';
+
     return `
       ${userLine}<b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>
       <b>Session:</b> ${sessionLink}<br>
@@ -369,8 +418,8 @@ export default class MapWidget extends HTMLElement {
     const marker = L.marker([latitude, longitude]);
     const circle = L.circle([latitude, longitude], {
       radius: accuracy,
-      color: "#ff901e",
-      fillColor: "#ff901e",
+      color: '#ff901e',
+      fillColor: '#ff901e',
       fillOpacity: 0.2,
     });
     this.currentPositionLayerGroup.addLayer(marker);

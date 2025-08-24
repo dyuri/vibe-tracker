@@ -17,8 +17,8 @@ import { generateUserColor } from './utils.js';
 export function createAvatarMarker(latlng, username, userId, avatar, size = 40) {
   const userColor = generateUserColor(username) || '#007cff';
   const avatarSize = Math.round(size * 0.6); // Avatar is 60% of marker size
-  const padding = Math.round(size * 0.05); // 5% padding
-  
+  const _padding = Math.round(size * 0.05); // 5% padding
+
   // Create avatar content - either image or initials
   let avatarContent;
   if (avatar && avatar.trim()) {
@@ -80,7 +80,7 @@ export function createAvatarMarker(latlng, username, userId, avatar, size = 40) 
   const totalHeight = circleRadius * 2 + triangleHeight;
   const centerX = size / 2;
   const centerY = circleRadius; // Circle center
-  
+
   // Create the droplet-shaped marker SVG
   const markerHtml = `
     <div style="
@@ -94,7 +94,7 @@ export function createAvatarMarker(latlng, username, userId, avatar, size = 40) 
       <!-- Main droplet shape -->
       <svg width="${size}" height="${totalHeight}" style="position: absolute; z-index: 2;">
         <!-- Triangle pointing down -->
-        <polygon points="${centerX-triangleWidth},${centerY+circleRadius*0.6} ${centerX+triangleWidth},${centerY+circleRadius*0.6} ${centerX},${totalHeight-4}" 
+        <polygon points="${centerX - triangleWidth},${centerY + circleRadius * 0.6} ${centerX + triangleWidth},${centerY + circleRadius * 0.6} ${centerX},${totalHeight - 4}" 
                  fill="${userColor}" 
                  stroke="white" 
                  stroke-width="1" 
@@ -104,7 +104,7 @@ export function createAvatarMarker(latlng, username, userId, avatar, size = 40) 
       <!-- Avatar container positioned in the circle -->
       <div style="
         position: absolute;
-        top: ${centerY - avatarSize/2}px;
+        top: ${centerY - avatarSize / 2}px;
         left: 50%;
         transform: translateX(-50%);
         z-index: 3;
@@ -122,8 +122,8 @@ export function createAvatarMarker(latlng, username, userId, avatar, size = 40) 
     html: markerHtml,
     className: 'avatar-marker',
     iconSize: [size, totalHeight],
-    iconAnchor: [centerX, totalHeight-2], // Point to the bottom tip of the triangle
-    popupAnchor: [0, -(totalHeight-10)] // Popup appears above the marker
+    iconAnchor: [centerX, totalHeight - 2], // Point to the bottom tip of the triangle
+    popupAnchor: [0, -(totalHeight - 10)], // Popup appears above the marker
   });
 
   // Create and return the marker
@@ -140,7 +140,13 @@ export function createAvatarMarker(latlng, username, userId, avatar, size = 40) 
 export function createMarker(latlng, properties, size = 40) {
   // Check if this point has username and avatar (indicates it's a latest point)
   if (properties.username && properties.user_id && properties.avatar !== undefined) {
-    return createAvatarMarker(latlng, properties.username, properties.user_id, properties.avatar, size);
+    return createAvatarMarker(
+      latlng,
+      properties.username,
+      properties.user_id,
+      properties.avatar,
+      size
+    );
   } else {
     // Use default Leaflet marker for historical points
     return L.marker(latlng);

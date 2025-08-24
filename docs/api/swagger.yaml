@@ -15,7 +15,7 @@ definitions:
         maxLength: 200
         type: string
     required:
-    - name
+      - name
     type: object
   models.ErrorResponse:
     properties:
@@ -36,11 +36,11 @@ definitions:
         type: array
       type:
         enum:
-        - Point
+          - Point
         type: string
     required:
-    - coordinates
-    - type
+      - coordinates
+      - type
     type: object
   models.LocationProperties:
     properties:
@@ -62,7 +62,7 @@ definitions:
       username:
         type: string
     required:
-    - timestamp
+      - timestamp
     type: object
   models.LocationRequest:
     properties:
@@ -72,12 +72,12 @@ definitions:
         $ref: '#/definitions/models.LocationProperties'
       type:
         enum:
-        - Feature
+          - Feature
         type: string
     required:
-    - geometry
-    - properties
-    - type
+      - geometry
+      - properties
+      - type
     type: object
   models.LoginRequest:
     properties:
@@ -88,15 +88,15 @@ definitions:
         minLength: 6
         type: string
     required:
-    - email
-    - password
+      - email
+      - password
     type: object
   models.RefreshTokenRequest:
     properties:
       refreshToken:
         type: string
     required:
-    - refreshToken
+      - refreshToken
     type: object
   models.SuccessResponse:
     properties:
@@ -141,530 +141,530 @@ info:
   license:
     name: MIT
   title: Vibe Tracker API
-  version: "1.0"
+  version: '1.0'
 paths:
   /auth/refresh:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Refresh an expired JWT token using refresh token
       parameters:
-      - description: Refresh token request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/models.RefreshTokenRequest'
+        - description: Refresh token request
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: '#/definitions/models.RefreshTokenRequest'
       produces:
-      - application/json
+        - application/json
       responses:
-        "200":
+        '200':
           description: Token refreshed successfully
           schema:
             $ref: '#/definitions/models.SuccessResponse'
-        "400":
+        '400':
           description: Invalid request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-        "401":
+        '401':
           description: Invalid refresh token
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       summary: Refresh JWT token
       tags:
-      - Authentication
+        - Authentication
   /location/{username}:
     get:
       description: Returns the latest location data for the specified user
       parameters:
-      - description: Username
-        in: path
-        name: username
-        required: true
-        type: string
-      - description: Session name filter
-        in: query
-        name: session
-        type: string
-      - description: 'Number of locations to return (default: 50)'
-        in: query
-        name: limit
-        type: integer
-      - description: ISO timestamp to filter locations since
-        in: query
-        name: since
-        type: string
+        - description: Username
+          in: path
+          name: username
+          required: true
+          type: string
+        - description: Session name filter
+          in: query
+          name: session
+          type: string
+        - description: 'Number of locations to return (default: 50)'
+          in: query
+          name: limit
+          type: integer
+        - description: ISO timestamp to filter locations since
+          in: query
+          name: since
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
-        "200":
+        '200':
           description: Location data retrieved successfully
           schema:
             $ref: '#/definitions/models.SuccessResponse'
-        "404":
+        '404':
           description: User not found
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       summary: Get user location
       tags:
-      - Public
+        - Public
   /login:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Authenticate user with email and password
       parameters:
-      - description: Login credentials
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/models.LoginRequest'
+        - description: Login credentials
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: '#/definitions/models.LoginRequest'
       produces:
-      - application/json
+        - application/json
       responses:
-        "200":
+        '200':
           description: Login successful
           schema:
             $ref: '#/definitions/models.SuccessResponse'
-        "400":
+        '400':
           description: Invalid request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-        "401":
+        '401':
           description: Invalid credentials
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       summary: User login
       tags:
-      - Authentication
+        - Authentication
   /me:
     get:
       description: Returns the authenticated user's profile information
       produces:
-      - application/json
+        - application/json
       responses:
-        "200":
+        '200':
           description: User profile retrieved successfully
           schema:
             $ref: '#/definitions/models.SuccessResponse'
-        "401":
+        '401':
           description: Authentication required
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: Get current user profile
       tags:
-      - Authentication
+        - Authentication
   /profile:
     put:
       consumes:
-      - application/json
+        - application/json
       description: Updates the authenticated user's profile information
       parameters:
-      - description: Profile update data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/models.UpdateProfileRequest'
+        - description: Profile update data
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: '#/definitions/models.UpdateProfileRequest'
       produces:
-      - application/json
+        - application/json
       responses:
-        "200":
+        '200':
           description: Profile updated successfully
           schema:
             $ref: '#/definitions/models.SuccessResponse'
-        "400":
+        '400':
           description: Invalid request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-        "401":
+        '401':
           description: Authentication required
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: Update user profile
       tags:
-      - Authentication
+        - Authentication
   /profile/avatar:
     post:
       consumes:
-      - multipart/form-data
+        - multipart/form-data
       description: Uploads a new avatar image for the authenticated user
       parameters:
-      - description: Avatar image file
-        in: formData
-        name: avatar
-        required: true
-        type: file
+        - description: Avatar image file
+          in: formData
+          name: avatar
+          required: true
+          type: file
       produces:
-      - application/json
+        - application/json
       responses:
-        "200":
+        '200':
           description: Avatar uploaded successfully
           schema:
             $ref: '#/definitions/models.SuccessResponse'
-        "400":
+        '400':
           description: Invalid file or request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-        "401":
+        '401':
           description: Authentication required
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: Upload user avatar
       tags:
-      - Authentication
+        - Authentication
   /profile/regenerate-token:
     put:
       description: Generates a new custom token for location tracking
       produces:
-      - application/json
+        - application/json
       responses:
-        "200":
+        '200':
           description: Token regenerated successfully
           schema:
             $ref: '#/definitions/models.SuccessResponse'
-        "401":
+        '401':
           description: Authentication required
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-        "500":
+        '500':
           description: Internal server error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: Regenerate custom token
       tags:
-      - Authentication
+        - Authentication
   /public-location:
     get:
       description: Returns public location data from all users in GeoJSON format
       parameters:
-      - description: 'Number of locations to return (default: 1000)'
-        in: query
-        name: limit
-        type: integer
-      - description: ISO timestamp to filter locations since
-        in: query
-        name: since
-        type: string
+        - description: 'Number of locations to return (default: 1000)'
+          in: query
+          name: limit
+          type: integer
+        - description: ISO timestamp to filter locations since
+          in: query
+          name: since
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
-        "200":
+        '200':
           description: Public locations retrieved successfully
           schema:
             $ref: '#/definitions/models.SuccessResponse'
       summary: Get public locations
       tags:
-      - Public
+        - Public
   /session/{username}/{session}:
     get:
       description: Returns location data for a specific user session in GeoJSON format
       parameters:
-      - description: Username
-        in: path
-        name: username
-        required: true
-        type: string
-      - description: Session name
-        in: path
-        name: session
-        required: true
-        type: string
+        - description: Username
+          in: path
+          name: username
+          required: true
+          type: string
+        - description: Session name
+          in: path
+          name: session
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
-        "200":
+        '200':
           description: Session data retrieved successfully
           schema:
             $ref: '#/definitions/models.SuccessResponse'
-        "404":
+        '404':
           description: User or session not found
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       summary: Get session data
       tags:
-      - Public
+        - Public
   /sessions:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Creates a new tracking session for the authenticated user
       parameters:
-      - description: Session data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/models.CreateSessionRequest'
+        - description: Session data
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: '#/definitions/models.CreateSessionRequest'
       produces:
-      - application/json
+        - application/json
       responses:
-        "201":
+        '201':
           description: Session created successfully
           schema:
             $ref: '#/definitions/models.SuccessResponse'
-        "400":
+        '400':
           description: Invalid request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-        "401":
+        '401':
           description: Authentication required
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-        "409":
+        '409':
           description: Session already exists
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: Create session
       tags:
-      - Sessions
+        - Sessions
   /sessions/{username}:
     get:
       description: Returns a paginated list of sessions for the specified user
       parameters:
-      - description: Username
-        in: path
-        name: username
-        required: true
-        type: string
-      - description: 'Page number (default: 1)'
-        in: query
-        name: page
-        type: integer
-      - description: 'Items per page (default: 20, max: 100)'
-        in: query
-        name: per_page
-        type: integer
+        - description: Username
+          in: path
+          name: username
+          required: true
+          type: string
+        - description: 'Page number (default: 1)'
+          in: query
+          name: page
+          type: integer
+        - description: 'Items per page (default: 20, max: 100)'
+          in: query
+          name: per_page
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
-        "200":
+        '200':
           description: Sessions retrieved successfully
           schema:
             $ref: '#/definitions/models.SuccessResponse'
-        "404":
+        '404':
           description: User not found
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       summary: List user sessions
       tags:
-      - Sessions
+        - Sessions
   /sessions/{username}/{name}:
     delete:
       description: Deletes an existing session for the authenticated user
       parameters:
-      - description: Username
-        in: path
-        name: username
-        required: true
-        type: string
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
+        - description: Username
+          in: path
+          name: username
+          required: true
+          type: string
+        - description: Session name
+          in: path
+          name: name
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
-        "200":
+        '200':
           description: Session deleted successfully
           schema:
             $ref: '#/definitions/models.SuccessResponse'
-        "401":
+        '401':
           description: Authentication required
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-        "403":
+        '403':
           description: Forbidden
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-        "404":
+        '404':
           description: Session not found
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: Delete session
       tags:
-      - Sessions
+        - Sessions
     get:
       description: Returns a specific session by username and session name
       parameters:
-      - description: Username
-        in: path
-        name: username
-        required: true
-        type: string
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
+        - description: Username
+          in: path
+          name: username
+          required: true
+          type: string
+        - description: Session name
+          in: path
+          name: name
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
-        "200":
+        '200':
           description: Session retrieved successfully
           schema:
             $ref: '#/definitions/models.SuccessResponse'
-        "404":
+        '404':
           description: Session not found
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       summary: Get user session
       tags:
-      - Sessions
+        - Sessions
     put:
       consumes:
-      - application/json
+        - application/json
       description: Updates an existing session for the authenticated user
       parameters:
-      - description: Username
-        in: path
-        name: username
-        required: true
-        type: string
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Updated session data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/models.UpdateSessionRequest'
+        - description: Username
+          in: path
+          name: username
+          required: true
+          type: string
+        - description: Session name
+          in: path
+          name: name
+          required: true
+          type: string
+        - description: Updated session data
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: '#/definitions/models.UpdateSessionRequest'
       produces:
-      - application/json
+        - application/json
       responses:
-        "200":
+        '200':
           description: Session updated successfully
           schema:
             $ref: '#/definitions/models.SuccessResponse'
-        "400":
+        '400':
           description: Invalid request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-        "401":
+        '401':
           description: Authentication required
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-        "403":
+        '403':
           description: Forbidden
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-        "404":
+        '404':
           description: Session not found
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: Update session
       tags:
-      - Sessions
+        - Sessions
   /track:
     get:
       description: Tracks user location using GET request with query parameters
       parameters:
-      - description: Latitude (-90 to 90)
-        format: float64
-        in: query
-        name: lat
-        required: true
-        type: number
-      - description: Longitude (-180 to 180)
-        format: float64
-        in: query
-        name: lon
-        required: true
-        type: number
-      - description: Altitude in meters
-        format: float64
-        in: query
-        name: alt
-        type: number
-      - description: Speed in m/s
-        format: float64
-        in: query
-        name: speed
-        type: number
-      - description: Unix timestamp
-        format: int64
-        in: query
-        name: timestamp
-        type: integer
-      - description: Session name
-        in: query
-        name: session
-        type: string
+        - description: Latitude (-90 to 90)
+          format: float64
+          in: query
+          name: lat
+          required: true
+          type: number
+        - description: Longitude (-180 to 180)
+          format: float64
+          in: query
+          name: lon
+          required: true
+          type: number
+        - description: Altitude in meters
+          format: float64
+          in: query
+          name: alt
+          type: number
+        - description: Speed in m/s
+          format: float64
+          in: query
+          name: speed
+          type: number
+        - description: Unix timestamp
+          format: int64
+          in: query
+          name: timestamp
+          type: integer
+        - description: Session name
+          in: query
+          name: session
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
-        "200":
+        '200':
           description: Location tracked successfully
           schema:
             $ref: '#/definitions/models.SuccessResponse'
-        "400":
+        '400':
           description: Invalid request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-        "401":
+        '401':
           description: Authentication required
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
-      - BearerAuth: []
-      - TokenAuth: []
+        - BearerAuth: []
+        - TokenAuth: []
       summary: Track location (GET)
       tags:
-      - Tracking
+        - Tracking
     post:
       consumes:
-      - application/json
+        - application/json
       description: Tracks user location using POST request with JSON payload
       parameters:
-      - description: Location data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/models.LocationRequest'
+        - description: Location data
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: '#/definitions/models.LocationRequest'
       produces:
-      - application/json
+        - application/json
       responses:
-        "200":
+        '200':
           description: Location tracked successfully
           schema:
             $ref: '#/definitions/models.SuccessResponse'
-        "400":
+        '400':
           description: Invalid request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-        "401":
+        '401':
           description: Authentication required
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
-      - BearerAuth: []
-      - TokenAuth: []
+        - BearerAuth: []
+        - TokenAuth: []
       summary: Track location (POST)
       tags:
-      - Tracking
+        - Tracking
 schemes:
-- http
-- https
+  - http
+  - https
 securityDefinitions:
   BearerAuth:
     description: 'JWT Authorization header using the Bearer scheme. Example: "Authorization:
@@ -677,4 +677,4 @@ securityDefinitions:
     in: query
     name: token
     type: apiKey
-swagger: "2.0"
+swagger: '2.0'

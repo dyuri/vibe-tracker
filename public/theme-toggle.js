@@ -14,11 +14,11 @@ export default class ThemeToggle extends HTMLElement {
    */
   constructor() {
     super();
-    this.attachShadow({ mode: "open" });
-    
+    this.attachShadow({ mode: 'open' });
+
     /** @type {HTMLButtonElement} */
     this.toggleButton = null;
-    
+
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -132,7 +132,7 @@ export default class ThemeToggle extends HTMLElement {
     });
 
     // Listen for theme changes from other sources
-    document.addEventListener('theme-change', (e) => {
+    document.addEventListener('theme-change', _e => {
       this.updateTooltip();
     });
   }
@@ -150,7 +150,8 @@ export default class ThemeToggle extends HTMLElement {
       theme = savedTheme;
     } else {
       // Check system preference
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const prefersDark =
+        window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
       theme = prefersDark ? 'dark' : 'light';
     }
 
@@ -159,7 +160,7 @@ export default class ThemeToggle extends HTMLElement {
     // Listen for system theme changes
     if (window.matchMedia) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      mediaQuery.addEventListener('change', (e) => {
+      mediaQuery.addEventListener('change', e => {
         // Only auto-switch if user hasn't manually set a preference
         const userPreference = localStorage.getItem('theme');
         if (!userPreference) {
@@ -176,9 +177,9 @@ export default class ThemeToggle extends HTMLElement {
   toggleTheme() {
     const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    
+
     this.applyTheme(newTheme);
-    
+
     // Save user preference
     localStorage.setItem('theme', newTheme);
   }
@@ -189,22 +190,22 @@ export default class ThemeToggle extends HTMLElement {
    */
   applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    
+
     // Update component class for shadow DOM styling
     if (theme === 'dark') {
       this.classList.add('dark');
     } else {
       this.classList.remove('dark');
     }
-    
+
     // Update tooltip
     this.updateTooltip();
-    
+
     // Dispatch theme change event for other components
     const event = new CustomEvent('theme-change', {
       detail: { theme },
       bubbles: true,
-      composed: true
+      composed: true,
     });
     document.dispatchEvent(event);
   }
@@ -235,4 +236,4 @@ export default class ThemeToggle extends HTMLElement {
   }
 }
 
-customElements.define("theme-toggle", ThemeToggle);
+customElements.define('theme-toggle', ThemeToggle);

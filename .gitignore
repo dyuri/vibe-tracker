@@ -3,6 +3,7 @@ vibe-tracker
 .serena
 .claude
 .npm
+.envrc
 
 # Development tools and artifacts
 coverage.out

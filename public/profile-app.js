@@ -8,8 +8,8 @@ import './theme-toggle.js';
 window.authService = new AuthService();
 
 // Get widget references
-const loginWidget = document.getElementById("profile-login");
-const profileWidget = document.querySelector("profile-widget");
+const loginWidget = document.getElementById('profile-login');
+const _profileWidget = document.querySelector('profile-widget');
 
 // Configure login widget to be open by default if not authenticated
 function checkAuthAndConfigureLogin() {
@@ -22,9 +22,9 @@ function checkAuthAndConfigureLogin() {
 }
 
 // Initialize authentication state
-document.addEventListener('auth-change', (e) => {
+document.addEventListener('auth-change', e => {
   console.log('Auth state changed in profile page:', e.detail);
-  
+
   if (e.detail.isAuthenticated) {
     console.log('User logged in:', e.detail.user);
   } else {

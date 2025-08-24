@@ -1,7 +1,7 @@
 export default class SessionManagementWidget extends HTMLElement {
   constructor() {
     super();
-    this.attachShadow({ mode: "open" });
+    this.attachShadow({ mode: 'open' });
     this.user = null;
     this.isAuthenticated = false;
     this.sessions = [];
@@ -9,7 +9,7 @@ export default class SessionManagementWidget extends HTMLElement {
     this.perPage = 20;
     this.totalPages = 1;
     this.editingSession = null;
-    
+
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -275,7 +275,7 @@ export default class SessionManagementWidget extends HTMLElement {
     this.updateUI();
 
     // Listen for auth changes
-    document.addEventListener('auth-change', (e) => {
+    document.addEventListener('auth-change', e => {
       this.isAuthenticated = e.detail.isAuthenticated;
       this.user = e.detail.user;
       this.updateUI();
@@ -287,38 +287,38 @@ export default class SessionManagementWidget extends HTMLElement {
 
   setupElements() {
     // Auth state elements
-    this.notAuthenticated = this.shadowRoot.getElementById("not-authenticated");
-    this.sessionContent = this.shadowRoot.getElementById("session-content");
-    
+    this.notAuthenticated = this.shadowRoot.getElementById('not-authenticated');
+    this.sessionContent = this.shadowRoot.getElementById('session-content');
+
     // Form elements
-    this.formTitle = this.shadowRoot.getElementById("form-title");
-    this.sessionForm = this.shadowRoot.getElementById("session-form");
-    this.sessionNameInput = this.shadowRoot.getElementById("session-name");
-    this.sessionTitleInput = this.shadowRoot.getElementById("session-title");
-    this.sessionDescriptionInput = this.shadowRoot.getElementById("session-description");
-    this.sessionPublicInput = this.shadowRoot.getElementById("session-public");
-    this.submitBtn = this.shadowRoot.getElementById("submit-btn");
-    this.cancelBtn = this.shadowRoot.getElementById("cancel-btn");
-    this.formMessage = this.shadowRoot.getElementById("form-message");
-    
+    this.formTitle = this.shadowRoot.getElementById('form-title');
+    this.sessionForm = this.shadowRoot.getElementById('session-form');
+    this.sessionNameInput = this.shadowRoot.getElementById('session-name');
+    this.sessionTitleInput = this.shadowRoot.getElementById('session-title');
+    this.sessionDescriptionInput = this.shadowRoot.getElementById('session-description');
+    this.sessionPublicInput = this.shadowRoot.getElementById('session-public');
+    this.submitBtn = this.shadowRoot.getElementById('submit-btn');
+    this.cancelBtn = this.shadowRoot.getElementById('cancel-btn');
+    this.formMessage = this.shadowRoot.getElementById('form-message');
+
     // List elements
-    this.loading = this.shadowRoot.getElementById("loading");
-    this.emptyState = this.shadowRoot.getElementById("empty-state");
-    this.sessionList = this.shadowRoot.getElementById("session-list");
-    this.pagination = this.shadowRoot.getElementById("pagination");
-    this.paginationInfo = this.shadowRoot.getElementById("pagination-info");
-    this.prevBtn = this.shadowRoot.getElementById("prev-btn");
-    this.nextBtn = this.shadowRoot.getElementById("next-btn");
+    this.loading = this.shadowRoot.getElementById('loading');
+    this.emptyState = this.shadowRoot.getElementById('empty-state');
+    this.sessionList = this.shadowRoot.getElementById('session-list');
+    this.pagination = this.shadowRoot.getElementById('pagination');
+    this.paginationInfo = this.shadowRoot.getElementById('pagination-info');
+    this.prevBtn = this.shadowRoot.getElementById('prev-btn');
+    this.nextBtn = this.shadowRoot.getElementById('next-btn');
   }
 
   setupEventListeners() {
-    this.sessionForm.addEventListener("submit", (e) => this.handleSubmit(e));
-    this.cancelBtn.addEventListener("click", () => this.cancelEdit());
-    this.prevBtn.addEventListener("click", () => this.previousPage());
-    this.nextBtn.addEventListener("click", () => this.nextPage());
-    
+    this.sessionForm.addEventListener('submit', e => this.handleSubmit(e));
+    this.cancelBtn.addEventListener('click', () => this.cancelEdit());
+    this.prevBtn.addEventListener('click', () => this.previousPage());
+    this.nextBtn.addEventListener('click', () => this.nextPage());
+
     // Auto-generate title from name
-    this.sessionNameInput.addEventListener("input", () => {
+    this.sessionNameInput.addEventListener('input', () => {
       if (!this.editingSession && this.sessionNameInput.value && !this.sessionTitleInput.value) {
         this.sessionTitleInput.value = this.generateTitle(this.sessionNameInput.value);
       }
@@ -344,83 +344,89 @@ export default class SessionManagementWidget extends HTMLElement {
 
   updateUI() {
     if (this.isAuthenticated && this.user) {
-      this.notAuthenticated.style.display = "none";
-      this.sessionContent.classList.add("show");
+      this.notAuthenticated.style.display = 'none';
+      this.sessionContent.classList.add('show');
     } else {
-      this.notAuthenticated.style.display = "block";
-      this.sessionContent.classList.remove("show");
+      this.notAuthenticated.style.display = 'block';
+      this.sessionContent.classList.remove('show');
     }
   }
 
   generateTitle(sessionName) {
-    if (!sessionName) return "";
-    
+    if (!sessionName) {
+      return '';
+    }
+
     // Convert snake_case and kebab-case to Title Case
     const words = sessionName.split(/[_-]+/);
-    return words.map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    ).join(" ");
+    return words.map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
   }
 
   async loadSessions() {
-    if (!this.isAuthenticated || !this.user) return;
-    
-    this.loading.style.display = "block";
-    this.emptyState.style.display = "none";
-    this.sessionList.innerHTML = "";
-    this.pagination.style.display = "none";
-    
+    if (!this.isAuthenticated || !this.user) {
+      return;
+    }
+
+    this.loading.style.display = 'block';
+    this.emptyState.style.display = 'none';
+    this.sessionList.innerHTML = '';
+    this.pagination.style.display = 'none';
+
     try {
-      const response = await fetch(`/api/sessions/${this.user.username}?page=${this.currentPage}&perPage=${this.perPage}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      const response = await fetch(
+        `/api/sessions/${this.user.username}?page=${this.currentPage}&perPage=${this.perPage}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+          },
         }
-      });
-      
+      );
+
       if (!response.ok) {
         throw new Error(`Failed to load sessions: ${response.statusText}`);
       }
-      
+
       const result = await response.json();
       // Handle standardized response format
       const data = result.data || result;
-      
+
       // Handle paginated response format
       if (data.data && data.pagination) {
         // New standardized paginated format
         this.sessions = data.data;
         this.totalPages = data.pagination.totalPages;
-        
+
         this.renderSessions();
         this.updatePagination({
           page: data.pagination.page,
           totalPages: data.pagination.totalPages,
-          totalItems: data.pagination.totalItems
+          totalItems: data.pagination.totalItems,
         });
       } else {
         // Old direct format (fallback)
         this.sessions = data.sessions || data;
         this.totalPages = data.totalPages || 1;
-        
+
         this.renderSessions();
         this.updatePagination(data);
       }
-      
     } catch (error) {
       console.error('Error loading sessions:', error);
-      this.showMessage(this.formMessage, error.message || "Failed to load sessions", "error");
+      this.showMessage(this.formMessage, error.message || 'Failed to load sessions', 'error');
     } finally {
-      this.loading.style.display = "none";
+      this.loading.style.display = 'none';
     }
   }
 
   renderSessions() {
     if (this.sessions.length === 0) {
-      this.emptyState.style.display = "block";
+      this.emptyState.style.display = 'block';
       return;
     }
-    
-    this.sessionList.innerHTML = this.sessions.map(session => `
+
+    this.sessionList.innerHTML = this.sessions
+      .map(
+        session => `
       <div class="session-item">
         <div class="session-info">
           <div class="session-name">${this.escapeHtml(session.name)}</div>
@@ -438,16 +444,18 @@ export default class SessionManagementWidget extends HTMLElement {
           <button class="btn-danger" onclick="this.getRootNode().host.deleteSession('${session.name}')">Delete</button>
         </div>
       </div>
-    `).join('');
+    `
+      )
+      .join('');
   }
 
   updatePagination(data) {
     if (data.totalPages <= 1) {
-      this.pagination.style.display = "none";
+      this.pagination.style.display = 'none';
       return;
     }
-    
-    this.pagination.style.display = "block";
+
+    this.pagination.style.display = 'block';
     this.paginationInfo.textContent = `Page ${data.page} of ${data.totalPages} (${data.totalItems} sessions)`;
     this.prevBtn.disabled = data.page <= 1;
     this.nextBtn.disabled = data.page >= data.totalPages;
@@ -469,44 +477,49 @@ export default class SessionManagementWidget extends HTMLElement {
 
   async handleSubmit(e) {
     e.preventDefault();
-    
+
     const name = this.sessionNameInput.value.trim();
     const title = this.sessionTitleInput.value.trim();
     const description = this.sessionDescriptionInput.value.trim();
     const isPublic = this.sessionPublicInput.checked;
-    
+
     if (!name) {
-      this.showMessage(this.formMessage, "Session name is required", "error");
+      this.showMessage(this.formMessage, 'Session name is required', 'error');
       return;
     }
-    
+
     // Validate session name format
     if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
-      this.showMessage(this.formMessage, "Session name can only contain letters, numbers, hyphens, and underscores", "error");
+      this.showMessage(
+        this.formMessage,
+        'Session name can only contain letters, numbers, hyphens, and underscores',
+        'error'
+      );
       return;
     }
-    
+
     this.submitBtn.disabled = true;
-    this.submitBtn.textContent = this.editingSession ? "Updating..." : "Creating...";
-    
+    this.submitBtn.textContent = this.editingSession ? 'Updating...' : 'Creating...';
+
     try {
       if (this.editingSession) {
         await this.updateSession(name, { title, description, public: isPublic });
       } else {
         await this.createSession({ name, title, description, public: isPublic });
       }
-      
+
       this.resetForm();
       this.loadSessions();
-      this.showMessage(this.formMessage, 
-        this.editingSession ? "Session updated successfully!" : "Session created successfully!", 
-        "success");
-        
+      this.showMessage(
+        this.formMessage,
+        this.editingSession ? 'Session updated successfully!' : 'Session created successfully!',
+        'success'
+      );
     } catch (error) {
-      this.showMessage(this.formMessage, error.message || "Failed to save session", "error");
+      this.showMessage(this.formMessage, error.message || 'Failed to save session', 'error');
     } finally {
       this.submitBtn.disabled = false;
-      this.submitBtn.textContent = this.editingSession ? "Update Session" : "Create Session";
+      this.submitBtn.textContent = this.editingSession ? 'Update Session' : 'Create Session';
     }
   }
 
@@ -515,16 +528,16 @@ export default class SessionManagementWidget extends HTMLElement {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
       },
-      body: JSON.stringify(sessionData)
+      body: JSON.stringify(sessionData),
     });
-    
+
     if (!response.ok) {
       const error = await response.text();
       throw new Error(error || 'Failed to create session');
     }
-    
+
     const result = await response.json();
     // Handle standardized response format
     return result.data || result;
@@ -535,63 +548,68 @@ export default class SessionManagementWidget extends HTMLElement {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
       },
-      body: JSON.stringify(sessionData)
+      body: JSON.stringify(sessionData),
     });
-    
+
     if (!response.ok) {
       const error = await response.text();
       throw new Error(error || 'Failed to update session');
     }
-    
+
     const result = await response.json();
     // Handle standardized response format
     return result.data || result;
   }
 
   async deleteSession(sessionName) {
-    if (!confirm(`Are you sure you want to delete the session "${sessionName}"? This action cannot be undone.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete the session "${sessionName}"? This action cannot be undone.`
+      )
+    ) {
       return;
     }
-    
+
     try {
       const response = await fetch(`/api/sessions/${this.user.username}/${sessionName}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+        },
       });
-      
+
       if (!response.ok) {
         const error = await response.text();
         throw new Error(error || 'Failed to delete session');
       }
-      
+
       this.loadSessions();
-      this.showMessage(this.formMessage, "Session deleted successfully!", "success");
-      
+      this.showMessage(this.formMessage, 'Session deleted successfully!', 'success');
     } catch (error) {
-      this.showMessage(this.formMessage, error.message || "Failed to delete session", "error");
+      this.showMessage(this.formMessage, error.message || 'Failed to delete session', 'error');
     }
   }
 
   editSession(sessionName) {
     const session = this.sessions.find(s => s.name === sessionName);
-    if (!session) return;
-    
+    if (!session) {
+      return;
+    }
+
     this.editingSession = session;
-    this.formTitle.textContent = "Edit Session";
-    this.submitBtn.textContent = "Update Session";
-    this.cancelBtn.style.display = "inline-block";
-    
+    this.formTitle.textContent = 'Edit Session';
+    this.submitBtn.textContent = 'Update Session';
+    this.cancelBtn.style.display = 'inline-block';
+
     // Populate form with session data
     this.sessionNameInput.value = session.name;
     this.sessionNameInput.disabled = true; // Don't allow changing the name
-    this.sessionTitleInput.value = session.title || "";
-    this.sessionDescriptionInput.value = session.description || "";
+    this.sessionTitleInput.value = session.title || '';
+    this.sessionDescriptionInput.value = session.description || '';
     this.sessionPublicInput.checked = session.public || false;
-    
+
     // Scroll to form
     this.sessionForm.scrollIntoView({ behavior: 'smooth' });
   }
@@ -602,24 +620,24 @@ export default class SessionManagementWidget extends HTMLElement {
 
   resetForm() {
     this.editingSession = null;
-    this.formTitle.textContent = "Create New Session";
-    this.submitBtn.textContent = "Create Session";
-    this.cancelBtn.style.display = "none";
-    
+    this.formTitle.textContent = 'Create New Session';
+    this.submitBtn.textContent = 'Create Session';
+    this.cancelBtn.style.display = 'none';
+
     this.sessionNameInput.disabled = false;
     this.sessionForm.reset();
-    this.formMessage.textContent = "";
-    this.formMessage.className = "";
+    this.formMessage.textContent = '';
+    this.formMessage.className = '';
   }
 
   showMessage(element, message, type) {
     element.textContent = message;
     element.className = type;
-    
+
     // Clear message after 5 seconds
     setTimeout(() => {
-      element.textContent = "";
-      element.className = "";
+      element.textContent = '';
+      element.className = '';
     }, 5000);
   }
 
@@ -630,4 +648,4 @@ export default class SessionManagementWidget extends HTMLElement {
   }
 }
 
-customElements.define("session-management-widget", SessionManagementWidget);
+customElements.define('session-management-widget', SessionManagementWidget);

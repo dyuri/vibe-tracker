@@ -26,7 +26,7 @@ export interface MapWidgetElement extends HTMLElement, CustomElementLifecycle {
 // Theme toggle widget
 export interface ThemeToggleElement extends HTMLElement, CustomElementLifecycle {}
 
-// Location widget  
+// Location widget
 export interface LocationWidgetElement extends HTMLElement, CustomElementLifecycle {
   startTracking(): void;
   stopTracking(): void;
