@@ -1,4 +1,4 @@
-import type { User, SessionManagementWidgetElement } from '../src/types/index.ts';
+import type { User, SessionManagementWidgetElement } from '../../types/index';
 
 interface Session {
   name: string;

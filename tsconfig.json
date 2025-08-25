@@ -17,6 +17,7 @@
     "allowSyntheticDefaultImports": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
+    "downlevelIteration": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "types": ["leaflet", "vite/client"],
     "skipDefaultLibCheck": true

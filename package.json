@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && cp dist/public/*.html dist/ && rm -rf dist/public",
     "preview": "vite preview",
     "test": "vitest",
     "test:e2e": "playwright test",
@@ -56,7 +56,7 @@
       "eslint --fix"
     ],
     "*.ts": [
-      "tsc --noEmit --skipLibCheck"
+      "bash -c 'npx tsc --noEmit --skipLibCheck'"
     ],
     "*.{json,html,css,md}": [
       "prettier --write"

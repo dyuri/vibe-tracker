@@ -1,4 +1,4 @@
-import type { LocationWidgetElement, GeoJSONFeature } from '../src/types/index.ts';
+import type { LocationWidgetElement, GeoJSONFeature } from '../../types/index';
 
 /**
  * Location Widget for managing geolocation tracking

@@ -2,13 +2,13 @@ import { defineConfig } from 'vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig({
-  root: 'public', // Serve from existing public/ directory
+  root: '.', // Serve from project root
   build: {
-    outDir: '../dist', // Build to separate dist/ directory initially
+    outDir: 'dist', // Build to dist/ directory
     emptyOutDir: true, // Clean dist directory on build
     rollupOptions: {
       input: {
-        main: 'public/index.html',
+        main: 'index.html', // Development entry point
         profile: 'public/profile.html',
         sessions: 'public/sessions.html',
       },
@@ -25,8 +25,8 @@ export default defineConfig({
       '^/u/[^/]+/s/[^/]+$': 'http://localhost:8090',
     },
     fs: {
-      // Allow serving files from outside root for src/types
-      allow: ['..'],
+      // Allow serving files from src/ directory
+      allow: ['.'],
     },
   },
   appType: 'mpa', // Multi-page application

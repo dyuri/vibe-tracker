@@ -28,11 +28,26 @@ export default [
         FormData: 'readonly',
         CustomEvent: 'readonly',
         HTMLElement: 'readonly',
+        HTMLDivElement: 'readonly',
+        HTMLInputElement: 'readonly',
+        HTMLButtonElement: 'readonly',
+        HTMLFormElement: 'readonly',
+        HTMLTextAreaElement: 'readonly',
+        HTMLAnchorElement: 'readonly',
+        HTMLSpanElement: 'readonly',
         Element: 'readonly',
         Node: 'readonly',
         Event: 'readonly',
         MouseEvent: 'readonly',
         KeyboardEvent: 'readonly',
+        MediaQueryListEvent: 'readonly',
+        GeolocationCoordinates: 'readonly',
+        GeolocationPosition: 'readonly',
+        GeolocationPositionError: 'readonly',
+        WakeLockSentinel: 'readonly',
+        File: 'readonly',
+        RequestInit: 'readonly',
+        Response: 'readonly',
         clearTimeout: 'readonly',
         setTimeout: 'readonly',
         setInterval: 'readonly',
@@ -152,8 +167,8 @@ export default [
     },
   },
   {
-    // Specific rules for public/ directory (TypeScript files)
-    files: ['public/**/*.ts'],
+    // Specific rules for src/ directory (TypeScript files)
+    files: ['src/**/*.ts'],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
@@ -175,8 +190,8 @@ export default [
     rules: {
       // Allow console.log in development files
       'no-console': 'off',
-      // Be more lenient with any types in JSDoc
-      '@typescript-eslint/no-explicit-any': 'off',
+      // Be more lenient with any types
+      '@typescript-eslint/no-explicit-any': 'warn',
       // Disable no-undef for TypeScript files since TypeScript handles this
       'no-undef': 'off',
     },

@@ -1,4 +1,4 @@
-import type { ThemeToggleElement } from '../src/types/index.ts';
+import type { ThemeToggleElement } from '../../types/index';
 
 type Theme = 'light' | 'dark';
 

@@ -173,20 +173,20 @@ func setupHealthRoutes(router *echo.Echo, di *container.Container, cfg *config.A
 // setupStaticRoutes configures frontend static file serving
 func setupStaticRoutes(router *echo.Echo) {
 	router.GET("/u/:username", func(c echo.Context) error {
-		return c.File("public/index.html")
+		return c.File("dist/index.html")
 	})
 
 	router.GET("/u/:username/s/:session", func(c echo.Context) error {
-		return c.File("public/index.html")
+		return c.File("dist/index.html")
 	})
 
 	router.GET("/profile", func(c echo.Context) error {
-		return c.File("public/profile.html")
+		return c.File("dist/profile.html")
 	})
 
 	router.GET("/profile/sessions", func(c echo.Context) error {
-		return c.File("public/sessions.html")
+		return c.File("dist/sessions.html")
 	})
 
-	router.Static("/", "public")
+	router.Static("/", "dist")
 }

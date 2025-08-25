@@ -5,14 +5,14 @@ import type {
   LocationsResponse,
   MapWidgetElement,
   LocationWidgetElement,
-} from '../src/types/index.ts';
+} from '../types/index';
 
 // Import modules
-import AuthService from './auth-service.ts';
-import './login-widget.ts';
-import './location-widget.ts';
-import './map-widget.ts';
-import './theme-init.ts';
+import AuthService from '../services/auth-service';
+import '../components/widgets/login-widget';
+import '../components/widgets/location-widget';
+import '../components/widgets/map-widget';
+import './theme-init';
 
 // Initialize global auth service
 window.authService = new AuthService();

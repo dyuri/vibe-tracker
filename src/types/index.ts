@@ -4,13 +4,13 @@
  */
 
 // API and common response types
-export * from './api.ts';
+export * from './api';
 
 // User and authentication types
-export * from './user.ts';
+export * from './user';
 
 // Location and session types
-export * from './location.ts';
+export * from './location';
 
 // DOM and custom element types
-export * from './dom.ts';
+export * from './dom';

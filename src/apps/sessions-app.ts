@@ -2,11 +2,11 @@ import type {
   AuthChangeEventDetail,
   LoginWidgetElement,
   SessionManagementWidgetElement,
-} from '../src/types/index.ts';
-import AuthService from './auth-service.ts';
-import './login-widget.ts';
-import './theme-toggle.ts';
-import './session-management-widget.ts';
+} from '../types/index';
+import AuthService from '../services/auth-service';
+import '../components/widgets/login-widget';
+import '../components/widgets/theme-toggle';
+import '../components/widgets/session-management-widget';
 
 // Initialize global auth service
 window.authService = new AuthService();

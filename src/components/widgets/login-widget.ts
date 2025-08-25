@@ -1,5 +1,5 @@
-import type { User, LoginWidgetElement } from '../src/types/index.ts';
-import { generateUserColor } from './utils.ts';
+import type { User, LoginWidgetElement } from '../../types/index';
+import { generateUserColor } from '../../utils/utils';
 
 /**
  * Login Widget Web Component

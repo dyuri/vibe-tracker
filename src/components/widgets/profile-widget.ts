@@ -1,4 +1,4 @@
-import type { User, ProfileWidgetElement } from '../src/types/index.ts';
+import type { User, ProfileWidgetElement } from '../../types/index';
 
 export default class ProfileWidget extends HTMLElement implements ProfileWidgetElement {
   private user: User | null = null;

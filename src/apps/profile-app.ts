@@ -2,11 +2,11 @@ import type {
   AuthChangeEventDetail,
   LoginWidgetElement,
   ProfileWidgetElement,
-} from '../src/types/index.ts';
-import AuthService from './auth-service.ts';
-import './login-widget.ts';
-import './profile-widget.ts';
-import './theme-toggle.ts';
+} from '../types/index';
+import AuthService from '../services/auth-service';
+import '../components/widgets/login-widget';
+import '../components/widgets/profile-widget';
+import '../components/widgets/theme-toggle';
 
 // Initialize global auth service
 window.authService = new AuthService();
