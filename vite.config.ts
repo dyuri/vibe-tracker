@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import { visualizer } from 'rollup-plugin-visualizer';
+import { workboxPlugin } from './vite-plugin-workbox';
 
 export default defineConfig({
   root: '.', // Serve from project root
@@ -49,6 +50,8 @@ export default defineConfig({
     loader: 'ts',
   },
   plugins: [
+    // Workbox service worker generation
+    workboxPlugin(),
     // Bundle analyzer - only run when BUILD_ANALYZE is set
     ...(process.env.BUILD_ANALYZE
       ? [

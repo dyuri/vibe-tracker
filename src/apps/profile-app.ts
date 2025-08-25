@@ -1,11 +1,17 @@
 import type { AuthChangeEventDetail, LoginWidgetElement, ProfileWidgetElement } from '@/types';
 import { AuthService } from '@/services';
+import { initializePWA } from '@/utils/service-worker';
 import '@/components/widgets/login-widget';
 import '@/components/widgets/profile-widget';
 import '@/components/widgets/theme-toggle';
 
 // Initialize global auth service
 window.authService = new AuthService();
+
+// Initialize PWA functionality
+initializePWA().catch(error => {
+  console.error('Failed to initialize PWA:', error);
+});
 
 // Get widget references
 const loginWidget = document.getElementById('profile-login') as LoginWidgetElement | null;

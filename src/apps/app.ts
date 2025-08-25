@@ -9,6 +9,7 @@ import type {
 
 // Import modules
 import { AuthService } from '@/services';
+import { initializePWA } from '@/utils/service-worker';
 import '@/components/widgets/login-widget';
 import '@/components/widgets/location-widget';
 import '@/components/widgets/map-widget';
@@ -16,6 +17,11 @@ import '@/apps/theme-init';
 
 // Initialize global auth service
 window.authService = new AuthService();
+
+// Initialize PWA functionality
+initializePWA().catch(error => {
+  console.error('Failed to initialize PWA:', error);
+});
 
 // Dispatch initial auth state to ensure all widgets are properly initialized
 // This fixes the issue where widgets don't get the initial auth state on page reload
