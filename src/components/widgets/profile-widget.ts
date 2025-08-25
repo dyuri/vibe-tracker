@@ -1,5 +1,5 @@
-import type { User, ProfileWidgetElement } from '../../types/index';
-import styles from '../../styles/components/widgets/profile-widget.css?inline';
+import type { User, ProfileWidgetElement } from '@/types';
+import styles from '@/styles/components/widgets/profile-widget.css?inline';
 
 export default class ProfileWidget extends HTMLElement implements ProfileWidgetElement {
   private user: User | null = null;

@@ -33,6 +33,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': '/src',
+      '@/components': '/src/components',
+      '@/types': '/src/types',
+      '@/styles': '/src/styles',
+      '@/services': '/src/services',
+      '@/utils': '/src/utils',
+      '@/apps': '/src/apps',
     },
   },
   esbuild: {

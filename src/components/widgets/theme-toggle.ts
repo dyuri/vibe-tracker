@@ -1,5 +1,5 @@
-import type { ThemeToggleElement } from '../../types/index';
-import styles from '../../styles/components/widgets/theme-toggle.css?inline';
+import type { ThemeToggleElement } from '@/types';
+import styles from '@/styles/components/widgets/theme-toggle.css?inline';
 
 type Theme = 'light' | 'dark';
 

@@ -1,4 +1,4 @@
-import type { User, LoginResponse, UpdateProfileRequest } from '../types/index';
+import type { User, LoginResponse, UpdateProfileRequest } from '@/types';
 
 export default class AuthService {
   private baseUrl: string;

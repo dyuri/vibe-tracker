@@ -1,5 +1,5 @@
-import type { User, SessionManagementWidgetElement } from '../../types/index';
-import styles from '../../styles/components/widgets/session-management-widget.css?inline';
+import type { User, SessionManagementWidgetElement } from '@/types';
+import styles from '@/styles/components/widgets/session-management-widget.css?inline';
 
 interface Session {
   name: string;

@@ -1,12 +1,8 @@
-import type {
-  AuthChangeEventDetail,
-  LoginWidgetElement,
-  ProfileWidgetElement,
-} from '../types/index';
-import AuthService from '../services/auth-service';
-import '../components/widgets/login-widget';
-import '../components/widgets/profile-widget';
-import '../components/widgets/theme-toggle';
+import type { AuthChangeEventDetail, LoginWidgetElement, ProfileWidgetElement } from '@/types';
+import { AuthService } from '@/services';
+import '@/components/widgets/login-widget';
+import '@/components/widgets/profile-widget';
+import '@/components/widgets/theme-toggle';
 
 // Initialize global auth service
 window.authService = new AuthService();

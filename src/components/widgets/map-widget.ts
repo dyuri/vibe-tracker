@@ -5,9 +5,9 @@ import type {
   GeolocationCoordinates,
   GeoJSONFeature,
   LocationProperties,
-} from '../../types/index';
-import { createMarker } from '../ui/avatar-marker';
-import styles from '../../styles/components/widgets/map-widget.css?inline';
+} from '@/types';
+import { createMarker } from '@/components/ui';
+import styles from '@/styles/components/widgets/map-widget.css?inline';
 
 // Leaflet global (loaded via script tag)
 declare const L: typeof import('leaflet');

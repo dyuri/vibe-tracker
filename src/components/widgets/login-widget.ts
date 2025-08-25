@@ -1,6 +1,6 @@
-import type { User, LoginWidgetElement } from '../../types/index';
-import { generateUserColor } from '../../utils/utils';
-import styles from '../../styles/components/widgets/login-widget.css?inline';
+import type { User, LoginWidgetElement } from '@/types';
+import { generateUserColor } from '@/utils';
+import styles from '@/styles/components/widgets/login-widget.css?inline';
 
 /**
  * Login Widget Web Component

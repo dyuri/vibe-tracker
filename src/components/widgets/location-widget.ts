@@ -1,5 +1,5 @@
-import type { LocationWidgetElement, GeoJSONFeature } from '../../types/index';
-import styles from '../../styles/components/widgets/location-widget.css?inline';
+import type { LocationWidgetElement, GeoJSONFeature } from '@/types';
+import styles from '@/styles/components/widgets/location-widget.css?inline';
 
 /**
  * Location Widget for managing geolocation tracking

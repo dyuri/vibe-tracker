@@ -20,7 +20,17 @@
     "downlevelIteration": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "types": ["leaflet", "vite/client"],
-    "skipDefaultLibCheck": true
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@/components/*": ["src/components/*"],
+      "@/types/*": ["src/types/*"],
+      "@/styles/*": ["src/styles/*"],
+      "@/services/*": ["src/services/*"],
+      "@/utils/*": ["src/utils/*"],
+      "@/apps/*": ["src/apps/*"]
+    }
   },
   "include": ["public/**/*", "src/**/*", "vite.config.ts"],
   "exclude": ["node_modules", "dist", "pb_data", "docs", "tests"]

@@ -1,5 +1,5 @@
-import type { LocationProperties } from '../../types/index';
-import { generateUserColor } from '../../utils/utils';
+import type { LocationProperties } from '@/types';
+import { generateUserColor } from '@/utils';
 
 // Leaflet global (loaded via script tag)
 declare const L: typeof import('leaflet');
