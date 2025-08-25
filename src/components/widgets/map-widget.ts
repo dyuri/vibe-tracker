@@ -7,6 +7,7 @@ import type {
   LocationProperties,
 } from '../../types/index';
 import { createMarker } from '../ui/avatar-marker';
+import styles from '../../styles/components/widgets/map-widget.css?inline';
 
 // Leaflet global (loaded via script tag)
 declare const L: typeof import('leaflet');
@@ -34,62 +35,7 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
 
     this.shadowRoot!.innerHTML = `
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-      <style>
-        :host {
-          display: block;
-          height: 100%;
-        }
-        #map {
-          height: 100%;
-        }
-        
-        /* Theme variables for shadow DOM */
-        :host {
-          --font-family-base: sans-serif;
-          --font-size-base: 14px;
-        }
-    
-        /* Leaflet map */
-        :host([data-map-theme="dark"]) {
-          .leaflet-layer,
-          .leaflet-control-zoom-in,
-          .leaflet-control-zoom-out,
-          .leaflet-control-attribution {
-            filter: invert(100%) hue-rotate(180deg) brightness(0.9) contrast(0.9);
-          }
-        }
-
-        /* Leaflet popup theming */
-        .leaflet-popup-content-wrapper,
-        .leaflet-popup-tip {
-          background-color: var(--bg-panel) !important;
-          color: var(--text-primary) !important;
-          box-shadow: var(--shadow-medium) !important;
-        }
-
-        .leaflet-popup-content {
-          color: var(--text-primary) !important;
-          font-family: var(--font-family-base) !important;
-          font-size: var(--font-size-base) !important;
-        }
-
-        .leaflet-popup-content b {
-          color: var(--text-primary) !important;
-        }
-
-        .leaflet-popup-close-button {
-          color: var(--text-secondary) !important;
-        }
-
-        .leaflet-popup-close-button:hover {
-          color: var(--text-primary) !important;
-        }
-
-        /* Leaflet zoom controls positioning */
-        .leaflet-control-zoom {
-          margin-top: 80px !important;
-        }
-      </style>
+      <style>${styles}</style>
       <div id="map"></div>
     `;
   }

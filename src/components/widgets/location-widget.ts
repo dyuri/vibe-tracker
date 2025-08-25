@@ -1,4 +1,5 @@
 import type { LocationWidgetElement, GeoJSONFeature } from '../../types/index';
+import styles from '../../styles/components/widgets/location-widget.css?inline';
 
 /**
  * Location Widget for managing geolocation tracking
@@ -12,61 +13,7 @@ export default class LocationWidget extends HTMLElement implements LocationWidge
     this.attachShadow({ mode: 'open' });
 
     this.shadowRoot!.innerHTML = `
-      <style>
-        :host {
-          font-family: sans-serif;
-        }
-        #toggle-button {
-          background-color: var(--color-primary);
-          color: var(--text-inverse);
-          border: none;
-          border-radius: var(--border-radius-full);
-          width: 40px;
-          height: 40px;
-          font-size: 20px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          cursor: pointer;
-          box-shadow: var(--shadow-heavy);
-        }
-        #info-panel {
-          display: none; /* Hidden by default */
-          background-color: var(--bg-panel);
-          border: 1px solid var(--border-color);
-          border-radius: var(--border-radius-md);
-          padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md) var(--spacing-md);
-          box-shadow: var(--shadow-medium);
-          margin-top: var(--spacing-sm);
-          position: relative;
-        }
-        #close-button {
-          position: absolute;
-          top: var(--spacing-xs);
-          right: var(--spacing-sm);
-          font-size: 20px;
-          cursor: pointer;
-          color: var(--text-muted);
-        }
-        .property {
-          margin-bottom: var(--spacing-xs);
-          color: var(--text-primary);
-        }
-        .label {
-          font-weight: var(--font-weight-bold);
-          color: var(--text-secondary);
-        }
-        .refresh-container {
-          margin-top: var(--spacing-sm);
-          border-top: 1px solid var(--border-color);
-          padding-top: var(--spacing-sm);
-          & label {
-            display: block;
-            margin: var(--spacing-xs) 0;
-            color: var(--text-primary);
-          }
-        }
-      </style>
+      <style>${styles}</style>
       <div id="toggle-button">ℹ</div>
       <div id="info-panel">
         <span id="close-button">×</span>
