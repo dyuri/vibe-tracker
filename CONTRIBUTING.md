@@ -24,17 +24,20 @@ Welcome to the Vibe Tracker project! This document provides guidelines for contr
 ### Development Setup
 
 1. **Clone the repository:**
+
    ```bash
    git clone <repository-url>
    cd vibe-tracker-gemini
    ```
 
 2. **Install Go dependencies:**
+
    ```bash
    go mod download
    ```
 
 3. **Install development tools:**
+
    ```bash
    # Install static analysis tools
    go install honnef.co/go/tools/cmd/staticcheck@latest
@@ -43,23 +46,74 @@ Welcome to the Vibe Tracker project! This document provides guidelines for contr
    ```
 
 4. **Set up Git hooks (recommended):**
+
    ```bash
    # Run the installation script
    ./scripts/install-hooks.sh
-   
+
    # Or manually configure Git to use our hooks
    git config core.hooksPath .githooks
    ```
 
-5. **Start the development server:**
+5. **Install frontend dependencies (for advanced frontend development):**
+
+   ```bash
+   # Install Node.js dependencies
+   npm install
+   ```
+
+6. **Start the development server:**
+
    ```bash
    go run . serve
    ```
 
-   - Admin UI: http://localhost:8090/_/
+   - Admin UI: http://localhost:8090/\_/
    - Client: http://localhost:8090/
    - API: http://localhost:8090/api/
    - API Documentation: http://localhost:8090/swagger
+
+### Frontend Development Workflow
+
+The project uses a **hybrid development approach** with both Go backend serving and Vite development server for optimal frontend development experience.
+
+#### Development URLs (with Vite dev server)
+
+For frontend development with Hot Module Replacement (HMR), TypeScript support, and fast builds:
+
+```bash
+# Start Vite development server
+npm run dev
+```
+
+- **Homepage**: http://localhost:3000/ or http://localhost:3000/index.html
+- **Profile Page**: http://localhost:3000/profile.html
+- **Sessions Page**: http://localhost:3000/sessions.html
+
+**Note**: In development, you need to use the `.html` extension for profile pages to get full Vite development features (HMR, TypeScript, etc.).
+
+#### Production URLs (Go backend only)
+
+In production, the Go backend serves pretty URLs:
+
+- **Homepage**: http://localhost:8090/
+- **Profile Page**: http://localhost:8090/profile
+- **Sessions Page**: http://localhost:8090/profile/sessions
+
+#### Development Best Practices
+
+1. **For Frontend Development**: Use `npm run dev` and access pages with `.html` extensions
+2. **For Backend Development**: Use `go run . serve` and test with production URLs
+3. **API Development**: Both setups proxy API calls to the Go backend at `:8090`
+4. **Full Stack Testing**: Test with both development and production URL patterns
+
+#### Why This Approach?
+
+- ✅ **Full TypeScript Support**: IntelliSense, type checking, and debugging in development
+- ✅ **Hot Module Replacement**: Instant updates during frontend development
+- ✅ **Build Optimization**: Vite provides optimal production builds with tree shaking
+- ✅ **API Integration**: Seamless proxy to Go backend for API calls
+- ✅ **Production Ready**: Same codebase works with pretty URLs in production
 
 ## Code Style Guidelines
 
@@ -112,6 +166,7 @@ type(scope): description
 ```
 
 Types:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -121,6 +176,7 @@ Types:
 - `chore`: Maintenance tasks
 
 Examples:
+
 ```
 feat(auth): add JWT token refresh endpoint
 
@@ -137,6 +193,7 @@ We use Git hooks to enforce code quality:
 - **pre-push**: Runs full test suite and build checks
 
 To bypass hooks in emergency situations (use sparingly):
+
 ```bash
 git commit --no-verify
 git push --no-verify
@@ -241,6 +298,34 @@ vibe-tracker-gemini/
 
 # Generate API documentation
 ./scripts/generate-docs.sh
+```
+
+### Frontend Development Commands
+
+```bash
+# Start Vite development server (with HMR)
+npm run dev
+
+# Build frontend for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Run ESLint on frontend code
+npm run lint
+
+# Format frontend code with Prettier
+npm run format
+
+# Run frontend tests
+npm test
+
+# Run end-to-end tests with Playwright
+npm run test:e2e
+
+# Analyze bundle size
+npm run analyze
 ```
 
 ### Manual Commands

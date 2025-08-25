@@ -1,0 +1,6 @@
+/* Main CSS entry point - imports all styles */
+@import './variables.css';
+@import './base.css';
+@import './components/layout.css';
+@import './components/widgets.css';
+@import './pages/profile.css';

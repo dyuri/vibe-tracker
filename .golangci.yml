@@ -4,25 +4,25 @@
 run:
   # Timeout for analysis
   timeout: 5m
-  
+
   # Exit code when at least one issue was found
   issues-exit-code: 1
-  
+
   # Include test files in analysis
   tests: true
-  
+
   # Go version to target
-  go: "1.23"
+  go: '1.23'
 
 # Output configuration
 output:
   # Format: colored-line-number|line-number|json|tab|checkstyle|code-climate
   formats:
     - format: colored-line-number
-  
+
   # Print lines of code with issue
   print-issued-lines: true
-  
+
   # Print linter name in the end of issue text
   print-linter-name: true
 
@@ -30,43 +30,43 @@ output:
 linters:
   # Disable all linters by default
   disable-all: true
-  
+
   # Enable specific linters (focusing on critical issues)
   enable:
     # Built-in Go tools (essential)
-    - gofmt          # Checks whether code was gofmt-ed
-    - govet          # Reports suspicious constructs (go vet)
-    - ineffassign    # Detects ineffective assignments
-    - staticcheck    # Advanced static analysis
-    
+    - gofmt # Checks whether code was gofmt-ed
+    - govet # Reports suspicious constructs (go vet)
+    - ineffassign # Detects ineffective assignments
+    - staticcheck # Advanced static analysis
+
     # Code quality (important)
-    - gosimple       # Simplify code
-    - unused         # Checks for unused constants, variables, functions and types
-    - misspell       # Finds commonly misspelled English words
-    
+    - gosimple # Simplify code
+    - unused # Checks for unused constants, variables, functions and types
+    - misspell # Finds commonly misspelled English words
+
     # Security (critical)
-    - gosec          # Security-focused linter
+    - gosec # Security-focused linter
 
 # Linters settings
 linters-settings:
   gocyclo:
     # Minimal cyclomatic complexity to report
     min-complexity: 15
-    
+
   goconst:
     # Minimal length of string constant
     min-len: 3
     # Minimal occurrences count to trigger
     min-occurrences: 3
-    
+
   misspell:
     # Correct spellings using locale preferences for US or UK
     locale: US
-    
+
   dupl:
     # Tokens count to trigger issue
     threshold: 100
-    
+
   gosec:
     # To select a subset of rules to run
     includes:
@@ -100,14 +100,14 @@ linters-settings:
       - G504 # Import blocklist: net/http/cgi
       - G505 # Import blocklist: crypto/sha1
       - G601 # Implicit memory aliasing of items from a range statement
-      
+
 # Issues configuration
 issues:
   # Exclude files and directories
   exclude-files:
     - ".*\\.pb\\.go$"
     - ".*_generated\\.go$"
-    
+
   exclude-dirs:
     - vendor
     - .serena
@@ -119,27 +119,27 @@ issues:
   exclude:
     # Common false positives
     - "Error return value of .((os\\.)?std(out|err)\\..*|.*Close|.*Flush|os\\.Remove(All)?|.*print(f|ln)?|os\\.(Un)?Setenv). is not checked"
-    
+
   # Exclude specific issues by linter
   exclude-rules:
     # Be more lenient with test files
     - path: _test\.go
       linters:
         - gosec
-        
+
     # Allow main.go to have some complexity
     - path: main\.go
       linters:
         - gosimple
-        
+
     # Migration files can be less strict
     - path: migrations/.*\.go
       linters:
         - gosec
         - staticcheck
-      
+
   # Maximum issues count per one linter
   max-issues-per-linter: 50
-  
+
   # Maximum count of issues with the same text
   max-same-issues: 10

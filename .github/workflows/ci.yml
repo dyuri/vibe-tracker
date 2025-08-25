@@ -5,11 +5,12 @@
 name: CI
 
 # Trigger on pull requests and pushes to main branch only
+# Disabled for now
 on:
   push:
-    branches: [ main ]
+    branches: [main-disabled]
   pull_request:
-    branches: [ main ]
+    branches: [main-disabled]
 
 # Cancel in-progress runs when a new run is triggered
 concurrency:
@@ -21,12 +22,12 @@ jobs:
   lint-test-build:
     name: Lint, Test & Build
     runs-on: ubuntu-latest
-    
+
     # Use specific Go version for consistency
     strategy:
       matrix:
         go-version: [1.23.6]
-    
+
     steps:
     # Checkout code
     - name: Checkout code

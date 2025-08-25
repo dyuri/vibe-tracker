@@ -1,0 +1,102 @@
+/* CSS Variables for Theme Support */
+:root {
+  /* Backgrounds */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #ffffff;
+  --bg-panel: #ffffff;
+
+  /* Text Colors */
+  --text-primary: #333333;
+  --text-secondary: #555555;
+  --text-muted: #6c757d;
+  --text-inverse: #ffffff;
+  --text-error: #dc3545;
+
+  /* Border & Dividers */
+  --border-color: #cccccc;
+  --border-light: #dddddd;
+  --border-accent: #eeeeee;
+
+  /* Accent Colors */
+  --color-primary: #007bff;
+  --color-success: #28a745;
+  --color-danger: #dc3545;
+  --color-warning: #ffc107;
+  --color-logged-out: #6c757d;
+
+  /* Interactive States */
+  --color-hover: #0056b3;
+  --color-focus: #80bdff;
+  --color-primary-hover: #0056b3;
+  --color-danger-hover: #c82333;
+
+  /* Shadows & Effects */
+  --shadow-light: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-heavy: 0 2px 5px rgba(0, 0, 0, 0.2);
+
+  /* Typography */
+  --font-family-base: sans-serif;
+  --font-size-base: 14px;
+  --font-size-large: 16px;
+  --font-size-xlarge: 18px;
+  --font-size-xxlarge: 28px;
+  --font-weight-normal: normal;
+  --font-weight-bold: bold;
+
+  /* Spacing */
+  --spacing-xs: 5px;
+  --spacing-sm: 10px;
+  --spacing-md: 15px;
+  --spacing-lg: 20px;
+  --spacing-xl: 25px;
+  --spacing-xxl: 40px;
+
+  /* Border Radius */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-full: 50%;
+
+  /* Transitions */
+  --transition-base: all 0.3s ease;
+}
+
+/* Dark Mode Theme Variables */
+[data-theme='dark'] {
+  /* Dark Backgrounds */
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3a3a3a;
+  --bg-panel: #2d2d2d;
+
+  /* Dark Mode Text */
+  --text-primary: #e1e1e1;
+  --text-secondary: #b8b8b8;
+  --text-muted: #888888;
+  --text-inverse: #1a1a1a;
+  --text-error: #ff6b6b;
+
+  /* Dark Mode Borders */
+  --border-color: #404040;
+  --border-light: #505050;
+  --border-accent: #333333;
+
+  /* Adjusted Accent Colors for Dark Mode */
+  --color-primary: #4a9eff;
+  --color-success: #40d862;
+  --color-danger: #ff6b6b;
+  --color-warning: #ffeb3b;
+  --color-logged-out: #666666;
+
+  /* Dark Mode Interactive States */
+  --color-hover: #357abd;
+  --color-focus: #80bdff;
+  --color-primary-hover: #357abd;
+  --color-danger-hover: #ff5252;
+
+  /* Dark Mode Shadows */
+  --shadow-light: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.3);
+  --shadow-heavy: 0 2px 5px rgba(0, 0, 0, 0.4);
+}

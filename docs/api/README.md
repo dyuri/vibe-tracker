@@ -5,7 +5,7 @@ This directory contains automatically generated API documentation for the Vibe T
 ## Files
 
 - `swagger.json` - OpenAPI 3.0 specification in JSON format
-- `swagger.yaml` - OpenAPI 3.0 specification in YAML format  
+- `swagger.yaml` - OpenAPI 3.0 specification in YAML format
 - `docs.go` - Generated Go code for embedding documentation
 
 ## Viewing the Documentation
@@ -19,6 +19,7 @@ http://localhost:8090/swagger
 ```
 
 This provides a user-friendly interface to:
+
 - Browse all available endpoints
 - View request/response schemas
 - Test API endpoints directly from the browser
@@ -37,6 +38,7 @@ http://localhost:8090/swagger/json
 The Vibe Tracker API provides the following functionality:
 
 ### Authentication
+
 - User login with email/password
 - JWT token refresh
 - Profile management
@@ -44,17 +46,20 @@ The Vibe Tracker API provides the following functionality:
 - Custom token generation for tracking
 
 ### Session Management
+
 - Create, read, update, delete tracking sessions
 - List sessions with pagination
 - Session-based location filtering
 
 ### Location Tracking
+
 - Track location via GET (query parameters) or POST (JSON)
 - Support for both JWT and custom token authentication
 - Batch location uploads
 - GeoJSON format support
 
 ### Public Data Access
+
 - Access public location data
 - Retrieve user's latest locations
 - Session-specific location data
@@ -64,6 +69,7 @@ The Vibe Tracker API provides the following functionality:
 The API supports two authentication methods:
 
 1. **Bearer Token (JWT)** - For authenticated user operations
+
    ```
    Authorization: Bearer <jwt_token>
    ```
@@ -78,6 +84,7 @@ The API supports two authentication methods:
 All API responses follow a consistent format:
 
 ### Success Response
+
 ```json
 {
   "status": "success",
@@ -87,15 +94,17 @@ All API responses follow a consistent format:
 ```
 
 ### Error Response
+
 ```json
 {
   "code": 400,
-  "message": "Error description", 
+  "message": "Error description",
   "details": "Additional error information"
 }
 ```
 
 ### Paginated Response
+
 ```json
 {
   "status": "success",
@@ -119,6 +128,7 @@ To regenerate the documentation after making changes to the API:
 ```
 
 This will:
+
 1. Parse Swagger annotations in the code
 2. Generate updated `swagger.json` and `swagger.yaml` files
 3. Update the embedded Go documentation

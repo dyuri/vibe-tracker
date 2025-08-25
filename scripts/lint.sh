@@ -46,6 +46,15 @@ go build -o /tmp/vibe-tracker-lint-test .
 rm -f /tmp/vibe-tracker-lint-test
 echo "✅ Build check passed"
 
+# TypeScript type check
+echo "🔧 Running TypeScript checks..."
+if command -v npm >/dev/null 2>&1; then
+    npx tsc --noEmit --skipLibCheck
+    echo "✅ TypeScript checks passed"
+else
+    echo "⚠️  npm not found, skipping TypeScript checks"
+fi
+
 # Test check
 echo "🧪 Running tests..."
 go test ./...

@@ -1,11 +1,13 @@
 # Refined Step-by-Step Refactor Plan for main.go
 
 ## ✅ 1. Preparation & Analysis - COMPLETED
+
 - ✅ Review all existing endpoints, business logic, and helper functions in main.go.
 - ✅ Identify all duplicated code, hardcoded values, and mixed concerns.
 - ✅ List all models, request/response shapes, and DB queries used.
 
 ## ✅ 2. Directory and Package Setup - COMPLETED
+
 - ✅ Create the following directories:
   - ✅ `handlers/`
   - ✅ `middleware/`
@@ -17,6 +19,7 @@
   - ✅ `tests/` (already existed)
 
 ## ✅ 3. Handlers Extraction - COMPLETED
+
 - ✅ Move each route handler to its own file in `handlers/`, grouped by domain:
   - ✅ `auth.go` (login, refresh, profile)
   - ✅ `sessions.go` (session CRUD)
@@ -26,6 +29,7 @@
 - ✅ Create `helpers.go` with shared utility functions
 
 ## ✅ 4. Middleware Extraction - COMPLETED
+
 - ✅ Implement authentication middleware (JWT, custom token).
 - ✅ Add user lookup and error handling middleware.
 - ✅ Centralize input validation middleware.
@@ -38,6 +42,7 @@
 - ✅ Apply middleware to routes in main.go
 
 ## ✅ 5. Models Definition - COMPLETED
+
 - ✅ Define request/response structs in `models/`:
   - ✅ `auth.go` (LoginRequest, UpdateProfileRequest, LoginResponse, User, TokenResponse)
   - ✅ `session.go` (CreateSessionRequest, UpdateSessionRequest, Session, SessionsListResponse)
@@ -48,6 +53,7 @@
 - ✅ Verified all tests still pass with new models
 
 ## ✅ 6. Services Layer - COMPLETED
+
 - ✅ Move business logic to `services/`:
   - ✅ `auth_service.go` (authentication, token management, profile updates)
   - ✅ `session_service.go` (session CRUD, pagination, validation)
@@ -60,6 +66,7 @@
 - ✅ All tests passing with services integration
 
 ## ✅ 7. Repository Layer - COMPLETED
+
 - ✅ Abstract DB operations in `repositories/`:
   - ✅ `interfaces.go` (UserRepository, SessionRepository, LocationRepository interfaces)
   - ✅ `user_repository.go` (user CRUD operations with FindByUsername, FindByEmail, FindByID, FindByToken, Save)
@@ -73,6 +80,7 @@
 - ✅ All API tests passing, confirming repository layer functionality
 
 ## ✅ 8. Constants & Config - COMPLETED
+
 - ✅ Move all hardcoded values (pagination, limits, etc.) to `constants/`:
   - ✅ `constants/app.go` (pagination defaults: DefaultPage=1, DefaultPerPage=20, MaxPerPageLimit=100)
   - ✅ Collection names: CollectionUsers, CollectionSessions, CollectionLocations
@@ -92,15 +100,17 @@
 - ✅ All API tests passing, confirming constants and config integration
 
 ## 9. Validation ✅
+
 - ✅ Integrated go-playground/validator/v10 package for comprehensive validation
 - ✅ Added validation struct tags to all request models with custom validators (latitude, longitude, session_name, username)
-- ✅ Created utils/validation.go with structured error handling and custom validation functions  
+- ✅ Created utils/validation.go with structured error handling and custom validation functions
 - ✅ Updated middleware/validation.go to use new validator system for JSON and query parameter validation
 - ✅ Applied validation middleware to all API endpoints requiring input validation
 - ✅ All handlers updated to use validated data from middleware context
 - ✅ Build successful and all API tests passing
 
 ## ✅ 10. Response Standardization - COMPLETED
+
 - ✅ Created `utils/response.go` with standardized response utilities:
   - ✅ `SendSuccess()` for success responses with data and message
   - ✅ `SendError()` for error responses with code, message, and details
@@ -123,6 +133,7 @@
 - ✅ All API tests passing and frontend functionality verified
 
 ## ✅ 11. Logging & Error Handling - COMPLETED
+
 - ✅ Replaced log.Printf with structured logger (zerolog):
   - ✅ Created `utils/logger.go` with zerolog integration
   - ✅ Console-friendly output for development mode
@@ -145,6 +156,7 @@
 - ✅ Application startup verified with structured logging functionality
 
 ## ✅ 12. Dependency Injection - COMPLETED
+
 - ✅ Created dedicated `container/` package with comprehensive DI container
 - ✅ Implemented lightweight DI pattern managing all application dependencies:
   - ✅ `container/container.go` with Container struct holding all dependencies
@@ -162,6 +174,7 @@
 - ✅ All API tests passing (8/8 test suites)
 
 ## ✅ 13. API Documentation - COMPLETED
+
 - ✅ Installed and setup swaggo/swag for OpenAPI documentation generation
 - ✅ Added comprehensive Swagger/OpenAPI annotations to all handlers:
   - ✅ Authentication endpoints (login, refresh, profile, avatar, token regeneration)
@@ -182,6 +195,7 @@
 - ✅ Comprehensive documentation covering authentication, request/response formats, and error handling
 
 ## ✅ 14. Security & Rate Limiting - COMPLETED
+
 - ✅ Created comprehensive rate limiting middleware (`middleware/rate_limit.go`):
   - ✅ Configurable limits per endpoint type (auth: 5/min, tracking: 60/min, sessions: 30/min, public: 100/min, docs: 10/min)
   - ✅ Token bucket algorithm with automatic cleanup and goroutine management
@@ -232,6 +246,7 @@
 - ✅ Security features active and protecting all endpoints with minimal performance impact
 
 ## ✅ 15. Health Checks & Metrics - COMPLETED
+
 - ✅ Added comprehensive health check system with three endpoints:
   - ✅ `/health/live` - Liveness probe (always returns 200 if process running)
   - ✅ `/health/ready` - Readiness probe (checks database connectivity and service availability)
@@ -249,6 +264,7 @@
 - ❌ Integrate basic metrics (e.g., Prometheus) for monitoring. - Will do later, see @PLAN-metrics.md
 
 ## ✅ 16. Tests - COMPLETED
+
 - ✅ Comprehensive unit test suite for all service layers:
   - ✅ **SessionService** - 21 test cases covering CRUD operations, pagination, validation, and error scenarios
   - ✅ **AuthService** - 13 test cases covering authentication, profile updates, token management, and security validations
@@ -265,6 +281,7 @@
 - ❌ Handler and middleware unit tests - Lower priority, would benefit from integration testing approach
 
 ## ✅ 17. Main.go Cleanup - COMPLETED
+
 - ✅ Reduced main.go to app initialization and route registration only
 - ✅ Consolidated two OnBeforeServe hooks into one organized hook
 - ✅ Extracted route setup into organized helper functions:
@@ -281,6 +298,7 @@
 - ✅ All existing functionality preserved with improved organization
 
 ## ✅ 18. Code Style & CI - COMPLETED
+
 - ✅ Implemented comprehensive code style enforcement:
   - ✅ Git hooks for local enforcement (pre-commit: formatting & linting, pre-push: tests & build)
   - ✅ Cost-effective GitHub Actions CI workflow (minimal usage: ~100-200 minutes/month)
@@ -310,6 +328,7 @@
 ---
 
 **Outcome:**
+
 - Modular, maintainable, and testable codebase.
 - Consistent API and error handling.
 - Easier onboarding and future feature development.

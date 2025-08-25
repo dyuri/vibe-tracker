@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vibe Tracker</title>
+
+    <!-- Security Headers -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' ws: wss:; media-src 'self'; object-src 'none'; frame-src 'none'; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+    />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+    <!-- PWA Meta Tags -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#007bff" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Vibe Tracker" />
+
+    <!-- External Dependencies -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body>
+    <header
+      id="page-header"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background-color: var(--bg-panel, rgba(255, 255, 255, 0.95));
+        color: var(--text-primary, #333);
+        padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
+        box-shadow: var(--shadow-light, 0 2px 4px rgba(0, 0, 0, 0.1));
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+        display: none;
+      "
+    >
+      <h1
+        id="page-title"
+        style="margin: 0; font-size: var(--font-size-xlarge, 24px); font-weight: var(--font-weight-bold, 600)"
+      ></h1>
+      <p
+        id="page-subtitle"
+        style="
+          margin: var(--spacing-xs, 4px) 0 0 0;
+          font-size: var(--font-size-base, 14px);
+          color: var(--text-secondary, #666);
+        "
+      ></p>
+    </header>
+    <div id="content">
+      <map-widget></map-widget>
+      <location-widget></location-widget>
+      <login-widget></login-widget>
+      <div id="error-message" style="display: none; text-align: center; padding: 20px"></div>
+    </div>
+    <script type="module" src="/src/apps/app.ts"></script>
+  </body>
+</html>

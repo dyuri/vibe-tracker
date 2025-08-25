@@ -1,0 +1,14 @@
+/* Profile page specific styles */
+
+/* Profile login widget positioning - bottom right */
+.profile-container login-widget {
+  position: fixed;
+  bottom: var(--spacing-sm);
+  right: var(--spacing-sm);
+  z-index: 1000;
+}
+
+/* Profile widget container */
+.profile-container profile-widget {
+  display: block;
+}
