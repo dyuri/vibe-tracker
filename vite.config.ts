@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { workboxPlugin } from './vite-plugin-workbox';
 
+// Backend URL configuration
+const BACKEND_URL = 'http://localhost:8090';
+
 export default defineConfig({
   root: '.', // Serve from project root
   build: {
@@ -18,12 +21,12 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api': 'http://localhost:8090', // Proxy API calls to Go backend
-      '/health': 'http://localhost:8090',
-      '/swagger': 'http://localhost:8090',
+      '/api': BACKEND_URL, // Proxy API calls to Go backend
+      '/health': BACKEND_URL,
+      '/swagger': BACKEND_URL,
       // Proxy only user routes to Go backend, not static files
-      '^/u/[^/]+$': 'http://localhost:8090',
-      '^/u/[^/]+/s/[^/]+$': 'http://localhost:8090',
+      '^/u/[^/]+$': BACKEND_URL,
+      '^/u/[^/]+/s/[^/]+$': BACKEND_URL,
     },
     fs: {
       // Allow serving files from src/ directory

@@ -150,33 +150,37 @@ class SecurityManager {
    * Set up DOM sanitization monitoring
    */
   private setupDOMSanitization(): void {
-    // Monitor for potentially dangerous innerHTML updates
-    const originalInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
-
-    if (originalInnerHTML) {
-      Object.defineProperty(Element.prototype, 'innerHTML', {
-        set: function (value: string) {
-          // Check for potentially dangerous content
-          if (this.sanitizeHTML && typeof value === 'string') {
-            const sanitized = this.sanitizeHTML(value);
-            if (sanitized !== value) {
-              console.warn('🧽 HTML content sanitized:', {
-                original: value.length,
-                sanitized: sanitized.length,
-                element: this.tagName,
-              });
+    // Use MutationObserver to monitor DOM changes
+    if ('MutationObserver' in window) {
+      const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+          // Check added nodes for dangerous content
+          mutation.addedNodes.forEach(node => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              this.scanElementForDangerousContent(node as Element);
             }
-            value = sanitized;
-          }
+          });
 
-          if (originalInnerHTML.set) {
-            originalInnerHTML.set.call(this, value);
+          // Check modified attributes
+          if (mutation.type === 'attributes' && mutation.target.nodeType === Node.ELEMENT_NODE) {
+            this.checkElementAttributes(mutation.target as Element);
           }
-        },
-        get: originalInnerHTML.get,
-        configurable: true,
+        });
       });
+
+      // Start observing
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['onclick', 'onload', 'onerror', 'href', 'src'],
+      });
+
+      console.log('🔍 DOM mutation observer initialized');
     }
+
+    // Also scan existing DOM on initialization
+    this.scanElementForDangerousContent(document.body);
   }
 
   /**
@@ -213,6 +217,66 @@ class SecurityManager {
     ];
 
     return suspiciousPatterns.some(pattern => pattern.test(content));
+  }
+
+  /**
+   * Scan element and its children for dangerous content
+   */
+  private scanElementForDangerousContent(element: Element): void {
+    // Check for dangerous elements
+    const dangerousTags = ['script', 'object', 'embed', 'applet', 'iframe'];
+    if (dangerousTags.includes(element.tagName.toLowerCase())) {
+      console.warn('🚨 Dangerous element detected:', {
+        tag: element.tagName,
+        content: element.outerHTML.substring(0, 200),
+      });
+      this.reportSecurityIncident('dangerous-element', {
+        tag: element.tagName,
+        content: element.outerHTML,
+      });
+    }
+
+    // Check attributes
+    this.checkElementAttributes(element);
+
+    // Recursively check children
+    element.querySelectorAll('*').forEach(child => {
+      if (dangerousTags.includes(child.tagName.toLowerCase())) {
+        console.warn('🚨 Dangerous child element detected:', {
+          tag: child.tagName,
+          parent: element.tagName,
+          content: child.outerHTML.substring(0, 200),
+        });
+        this.reportSecurityIncident('dangerous-child-element', {
+          tag: child.tagName,
+          parent: element.tagName,
+          content: child.outerHTML,
+        });
+      }
+      this.checkElementAttributes(child);
+    });
+  }
+
+  /**
+   * Check element attributes for dangerous content
+   */
+  private checkElementAttributes(element: Element): void {
+    const dangerousAttrs = /^on\w+|javascript:|data:text\/html|vbscript:/i;
+
+    Array.from(element.attributes).forEach(attr => {
+      if (dangerousAttrs.test(attr.name) || dangerousAttrs.test(attr.value)) {
+        console.warn('🚨 Dangerous attribute detected:', {
+          element: element.tagName,
+          attribute: attr.name,
+          value: attr.value,
+        });
+        this.reportSecurityIncident('dangerous-attribute', {
+          element: element.tagName,
+          attribute: attr.name,
+          value: attr.value,
+        });
+      }
+    });
   }
 
   /**
