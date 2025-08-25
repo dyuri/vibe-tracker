@@ -49,5 +49,7 @@ This sets up:
 ## Testing
 
 - feel free to use playwright for testing the frontend
-- test credentials for the webapp: claude@claude.ai / claude123
+- test credentials for the webapp:
+  - email: $TEST_EMAIL env variable
+  - password: $TEST_PASSWORD env variable
 - there's usually some test data under `/u/dyuri`

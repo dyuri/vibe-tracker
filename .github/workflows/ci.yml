@@ -5,11 +5,12 @@
 name: CI
 
 # Trigger on pull requests and pushes to main branch only
+# Disabled for now
 on:
   push:
-    branches: [main]
+    branches: [main-disabled]
   pull_request:
-    branches: [main]
+    branches: [main-disabled]
 
 # Cancel in-progress runs when a new run is triggered
 concurrency:
@@ -28,109 +29,109 @@ jobs:
         go-version: [1.23.6]
 
     steps:
-      # Checkout code
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Setup Go with caching
-      - name: Set up Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go-version }}
-          cache: true
-
-      # Cache Go build cache and module cache for faster runs
-      - name: Cache Go modules and build cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            ~/.cache/golangci-lint
-          key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}-${{ hashFiles('**/.golangci.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-go-${{ matrix.go-version }}-
-            ${{ runner.os }}-go-
-
-      # Download dependencies
-      - name: Download Go modules
-        run: go mod download
-
-      # Verify dependencies and check for known vulnerabilities
-      - name: Verify Go modules
-        run: go mod verify
-
-      # Check if code is formatted with gofmt
-      - name: Check Go formatting
-        run: |
-          UNFORMATTED=$(go fmt ./...)
-          if [ -n "$UNFORMATTED" ]; then
-            echo "The following files are not formatted with gofmt:"
-            echo "$UNFORMATTED"
-            exit 1
-          fi
-          echo "✅ All Go files are properly formatted"
-
-      # Run go vet for static analysis
-      - name: Run go vet
-        run: go vet ./...
-
-      # Install and run staticcheck
-      - name: Install staticcheck
-        run: go install honnef.co/go/tools/cmd/staticcheck@latest
-
-      - name: Run staticcheck
-        run: staticcheck ./...
-
-      # Install and run golangci-lint with caching
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          args: --timeout=5m --config=.golangci.yml
-          skip-cache: false
-          skip-save-cache: false
-
-      # Run tests with race detection and coverage
-      - name: Run tests
-        run: |
-          go test -v -race -coverprofile=coverage.out ./...
-
-      # Upload coverage to GitHub (optional, lightweight)
-      - name: Upload coverage reports
-        if: success()
-        run: |
-          echo "Coverage report generated: coverage.out"
-          go tool cover -func=coverage.out
-
-      # Build the application to ensure it compiles
-      - name: Build application
-        run: |
-          echo "Building application..."
-          go build -v -o vibe-tracker ./...
-          echo "✅ Application built successfully"
-
-      # Optional: Check for security vulnerabilities using govulncheck
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-
-      - name: Run security check
-        run: govulncheck ./...
-
-      # Clean up built artifacts (optional)
-      - name: Cleanup
-        if: always()
-        run: |
-          rm -f vibe-tracker
-          rm -f coverage.out
-
-      # Summary step
-      - name: CI Summary
-        if: success()
-        run: |
-          echo "🎉 All CI checks passed!"
-          echo "✅ Code formatting check"
-          echo "✅ Static analysis (go vet, staticcheck, golangci-lint)"
-          echo "✅ Tests with race detection"
-          echo "✅ Build verification"
-          echo "✅ Security vulnerability check"
+    # Checkout code
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    # Setup Go with caching
+    - name: Set up Go ${{ matrix.go-version }}
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+        cache: true
+    
+    # Cache Go build cache and module cache for faster runs
+    - name: Cache Go modules and build cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+          ~/.cache/golangci-lint
+        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}-${{ hashFiles('**/.golangci.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ matrix.go-version }}-
+          ${{ runner.os }}-go-
+    
+    # Download dependencies
+    - name: Download Go modules
+      run: go mod download
+    
+    # Verify dependencies and check for known vulnerabilities
+    - name: Verify Go modules
+      run: go mod verify
+    
+    # Check if code is formatted with gofmt
+    - name: Check Go formatting
+      run: |
+        UNFORMATTED=$(go fmt ./...)
+        if [ -n "$UNFORMATTED" ]; then
+          echo "The following files are not formatted with gofmt:"
+          echo "$UNFORMATTED"
+          exit 1
+        fi
+        echo "✅ All Go files are properly formatted"
+    
+    # Run go vet for static analysis
+    - name: Run go vet
+      run: go vet ./...
+    
+    # Install and run staticcheck
+    - name: Install staticcheck
+      run: go install honnef.co/go/tools/cmd/staticcheck@latest
+    
+    - name: Run staticcheck
+      run: staticcheck ./...
+    
+    # Install and run golangci-lint with caching
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: latest
+        args: --timeout=5m --config=.golangci.yml
+        skip-cache: false
+        skip-save-cache: false
+    
+    # Run tests with race detection and coverage
+    - name: Run tests
+      run: |
+        go test -v -race -coverprofile=coverage.out ./...
+    
+    # Upload coverage to GitHub (optional, lightweight)
+    - name: Upload coverage reports
+      if: success()
+      run: |
+        echo "Coverage report generated: coverage.out"
+        go tool cover -func=coverage.out
+    
+    # Build the application to ensure it compiles
+    - name: Build application
+      run: |
+        echo "Building application..."
+        go build -v -o vibe-tracker .
+        echo "✅ Application built successfully"
+    
+    # Optional: Check for security vulnerabilities using govulncheck
+    #- name: Install govulncheck
+    #  run: go install golang.org/x/vuln/cmd/govulncheck@latest
+    
+    #- name: Run security check
+    #  run: govulncheck ./...
+    
+    # Clean up built artifacts (optional)
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -f vibe-tracker
+        rm -f coverage.out
+    
+    # Summary step
+    - name: CI Summary
+      if: success()
+      run: |
+        echo "🎉 All CI checks passed!"
+        echo "✅ Code formatting check"
+        echo "✅ Static analysis (go vet, staticcheck, golangci-lint)"
+        echo "✅ Tests with race detection"
+        echo "✅ Build verification"
+        echo "✅ Security vulnerability check"

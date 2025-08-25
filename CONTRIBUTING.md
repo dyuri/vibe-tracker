@@ -215,14 +215,6 @@ go test -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out
 ```
 
-### Test Credentials
-
-For integration testing:
-
-- Username: `claude@claude.ai`
-- Password: `claude123`
-- Test data usually available under `/u/dyuri`
-
 ### Frontend Testing
 
 We use Playwright for frontend testing:
