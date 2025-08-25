@@ -246,27 +246,28 @@ coverage/                  # Test coverage reports
 - **Source control** tracks source files, ignores generated files
 - **Documentation** clearly indicates which files are source vs generated
 
-### **Docker Integration**
+### **Docker Integration** ✅ **IMPLEMENTED**
 
-**Current Dockerfile Analysis:**
-The existing Dockerfile already copies the `public/` directory to the final image, which is perfect for our approach. However, we need to add a frontend build step.
+**Multi-Stage Dockerfile with Frontend Build:**
 
-**Updated Dockerfile Strategy:**
+The Docker build process now includes frontend compilation with optimized 3-stage build:
 
 ```dockerfile
 # --- Frontend Build Stage ---
-FROM node:18-alpine AS frontend-builder
+FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app
 
 # Copy package files for better caching
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --ignore-scripts
 
 # Copy source files and build
 COPY src/ ./src/
 COPY public/ ./public/
-COPY tsconfig.json vite.config.ts ./
+COPY index.html tsconfig.json vite.config.ts vite-plugin-workbox.ts ./
+
+# Build the frontend
 RUN npm run build
 
 # --- Go Build Stage ---
@@ -282,7 +283,7 @@ RUN go mod download
 COPY . .
 
 # Copy built frontend from frontend-builder stage
-COPY --from=frontend-builder /app/public ./public
+COPY --from=frontend-builder /app/dist ./dist
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o vibe-tracker .
@@ -290,13 +291,16 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o vibe-tracker .
 # --- Final Stage ---
 FROM alpine:latest
 
+# Install ca-certificates for HTTPS requests
+RUN apk --no-cache add ca-certificates
+
 WORKDIR /app
 
 # Copy the built binary from the go-builder stage
 COPY --from=go-builder /app/vibe-tracker .
 
-# Copy the built frontend (with optimized assets)
-COPY --from=go-builder /app/public ./public
+# Copy the built frontend (optimized assets)
+COPY --from=go-builder /app/dist ./dist
 
 # Expose the port the app runs on
 EXPOSE 8090
@@ -306,6 +310,14 @@ VOLUME /app/pb_data
 # Run the application
 CMD ["./vibe-tracker", "serve", "--http=0.0.0.0:8090"]
 ```
+
+**✅ Key Implementation Details:**
+
+- **Node 20** for compatibility with Vite 7 and modern dependencies
+- **Frontend Build**: Complete TypeScript compilation with Workbox service worker generation
+- **Optimized Layers**: Frontend and Go builds in parallel for better caching
+- **Correct Directory**: Built frontend copied to `dist/` to match Go server expectations
+- **Production Ready**: Minified assets, PWA features, and security hardening included
 
 **Alternative Simpler Approach (Recommended):**
 If you prefer to keep the Dockerfile simpler, you can build the frontend in CI and keep the current Dockerfile:
