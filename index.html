@@ -58,10 +58,45 @@
       ></p>
     </header>
     <div id="content">
-      <map-widget></map-widget>
-      <location-widget></location-widget>
-      <login-widget></login-widget>
-      <div id="error-message" style="display: none; text-align: center; padding: 20px"></div>
+      <!-- Main app view (map, location tracking) -->
+      <div id="main-view" style="display: none">
+        <map-widget></map-widget>
+        <location-widget></location-widget>
+        <login-widget></login-widget>
+        <div id="error-message" style="display: none; text-align: center; padding: 20px"></div>
+      </div>
+
+      <!-- Profile view container -->
+      <div id="profile-view" style="display: none">
+        <div class="profile-container">
+          <header class="profile-header">
+            <h1>User Profile</h1>
+            <nav>
+              <a href="/" data-route="/">← Back to Map</a>
+              <a href="/profile/sessions" data-route="/profile/sessions">Sessions</a>
+            </nav>
+          </header>
+          <login-widget id="profile-login" open-by-default></login-widget>
+          <div id="profile-widget-container"></div>
+          <theme-toggle id="profile-theme-toggle"></theme-toggle>
+        </div>
+      </div>
+
+      <!-- Sessions view container -->
+      <div id="sessions-view" style="display: none">
+        <div class="profile-container">
+          <header class="profile-header">
+            <h1>Session Management</h1>
+            <nav>
+              <a href="/" data-route="/">← Back to Map</a>
+              <a href="/profile" data-route="/profile">Profile</a>
+            </nav>
+          </header>
+          <login-widget id="sessions-login" open-by-default></login-widget>
+          <div id="session-widget-container"></div>
+          <theme-toggle id="sessions-theme-toggle"></theme-toggle>
+        </div>
+      </div>
     </div>
     <script type="module" src="/src/apps/app.ts"></script>
   </body>
