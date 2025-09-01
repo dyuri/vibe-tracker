@@ -5,14 +5,19 @@ import type {
   LocationsResponse,
   MapWidgetElement,
   LocationWidgetElement,
+  LoginWidgetElement,
+  ProfileWidgetElement,
+  SessionManagementWidgetElement,
 } from '@/types';
 
 // Import modules
 import { AuthService } from '@/services';
 import { initializePWA } from '@/utils/service-worker';
+import { Router } from '@/utils/router';
 import '@/components/widgets/login-widget';
 import '@/components/widgets/location-widget';
 import '@/components/widgets/map-widget';
+import '@/components/widgets/theme-toggle';
 import '@/apps/theme-init';
 
 // Initialize global auth service
@@ -23,14 +28,108 @@ initializePWA().catch(error => {
   console.error('Failed to initialize PWA:', error);
 });
 
-// Dispatch initial auth state to ensure all widgets are properly initialized
-// This fixes the issue where widgets don't get the initial auth state on page reload
-// Use setTimeout to ensure DOM elements are fully initialized before dispatching
-setTimeout(() => {
-  if (window.authService.isAuthenticated()) {
-    window.authService.dispatchAuthChange();
+// Initialize router
+const router = new Router();
+
+// View elements
+const mainView = document.getElementById('main-view') as HTMLElement | null;
+const profileView = document.getElementById('profile-view') as HTMLElement | null;
+const sessionsView = document.getElementById('sessions-view') as HTMLElement | null;
+
+// Widget containers for dynamic loading
+const profileWidgetContainer = document.getElementById(
+  'profile-widget-container'
+) as HTMLElement | null;
+const sessionWidgetContainer = document.getElementById(
+  'session-widget-container'
+) as HTMLElement | null;
+
+// Track loaded widgets to avoid duplicate loading
+let profileWidgetLoaded = false;
+let sessionWidgetLoaded = false;
+
+/**
+ * Show a specific view and hide others
+ */
+function showView(viewName: 'main' | 'profile' | 'sessions'): void {
+  // Hide all views
+  if (mainView) {mainView.style.display = 'none';}
+  if (profileView) {profileView.style.display = 'none';}
+  if (sessionsView) {sessionsView.style.display = 'none';}
+
+  // Show the requested view
+  switch (viewName) {
+    case 'main':
+      if (mainView) {mainView.style.display = 'block';}
+      break;
+    case 'profile':
+      if (profileView) {profileView.style.display = 'block';}
+      break;
+    case 'sessions':
+      if (sessionsView) {sessionsView.style.display = 'block';}
+      break;
   }
-}, 0);
+}
+
+/**
+ * Dynamically load and initialize the profile widget
+ */
+async function loadProfileWidget(): Promise<void> {
+  if (profileWidgetLoaded || !profileWidgetContainer) {return;}
+
+  try {
+    // Dynamic import of profile widget
+    await import('@/components/widgets/profile-widget');
+
+    // Create and append profile widget
+    const profileWidget = document.createElement('profile-widget') as ProfileWidgetElement;
+    profileWidgetContainer.appendChild(profileWidget);
+
+    profileWidgetLoaded = true;
+  } catch (error) {
+    console.error('Failed to load profile widget:', error);
+  }
+}
+
+/**
+ * Dynamically load and initialize the session management widget
+ */
+async function loadSessionWidget(): Promise<void> {
+  if (sessionWidgetLoaded || !sessionWidgetContainer) {return;}
+
+  try {
+    // Dynamic import of session management widget
+    await import('@/components/widgets/session-management-widget');
+
+    // Create and append session widget
+    const sessionWidget = document.createElement(
+      'session-management-widget'
+    ) as SessionManagementWidgetElement;
+    sessionWidgetContainer.appendChild(sessionWidget);
+
+    sessionWidgetLoaded = true;
+  } catch (error) {
+    console.error('Failed to load session widget:', error);
+  }
+}
+
+/**
+ * Check authentication and configure login widget for profile/sessions views
+ */
+function checkAuthAndConfigureLogin(loginWidgetId: string): void {
+  const loginWidget = document.getElementById(loginWidgetId) as LoginWidgetElement | null;
+  if (!loginWidget) {return;}
+
+  if (!window.authService.isAuthenticated()) {
+    setTimeout(() => {
+      try {
+        loginWidget.showPanel();
+      } catch (error) {
+        console.warn('Could not show login panel:', error);
+      }
+    }, 100);
+  }
+}
 
 // Get widget references
 const mapWidget = document.querySelector('map-widget') as MapWidgetElement | null;
@@ -40,21 +139,57 @@ const pageHeader = document.getElementById('page-header') as HTMLElement | null;
 const pageTitle = document.getElementById('page-title') as HTMLElement | null;
 const pageSubtitle = document.getElementById('page-subtitle') as HTMLElement | null;
 
+// Router setup - define routes and their handlers
+router.addRoute('/', () => {
+  showView('main');
+  handleMainRoute();
+});
+
+router.addRoute('/profile', () => {
+  showView('profile');
+  loadProfileWidget().then(() => {
+    checkAuthAndConfigureLogin('profile-login');
+  });
+});
+
+router.addRoute('/profile/sessions', () => {
+  showView('sessions');
+  loadSessionWidget().then(() => {
+    checkAuthAndConfigureLogin('sessions-login');
+  });
+});
+
+router.addRoute('/u/[username]', params => {
+  showView('main');
+  handleMainRoute(params.username, null);
+});
+
+router.addRoute('/u/[username]/s/[session]', params => {
+  showView('main');
+  handleMainRoute(params.username, params.session);
+});
+
+// Variables for main route handling
 let username: string | null;
 let session: string | null;
 
-// Try to parse the new path-based format first
-const path = window.location.pathname;
-const match = path.match(/^\/u\/([^/]+)(?:\/s\/([^/]+))?$/);
+/**
+ * Handle main route (map view) with optional username and session
+ */
+function handleMainRoute(routeUsername?: string, routeSession?: string): void {
+  // Set username and session from route parameters or fallback to URL params
+  if (routeUsername !== undefined) {
+    username = routeUsername;
+    session = routeSession || null;
+  } else {
+    // Fallback to URL parameters for backward compatibility
+    const urlParams = new URLSearchParams(window.location.search);
+    username = urlParams.get('username');
+    session = urlParams.get('session');
+  }
 
-if (match) {
-  username = match[1];
-  session = match[2];
-} else {
-  // Fallback to URL parameters for backward compatibility
-  const urlParams = new URLSearchParams(window.location.search);
-  username = urlParams.get('username');
-  session = urlParams.get('session');
+  // Initialize the main view
+  initializeMainView();
 }
 
 /** Timer ID for refresh interval */
@@ -201,62 +336,137 @@ function fetchDeltaData(): void {
   fetchData(false, true);
 }
 
-// Update the page header based on the current view
-updatePageHeader();
+/**
+ * Initialize the main view (map) based on username and session
+ */
+function initializeMainView(): void {
+  // Clear any existing refresh intervals
+  if (refreshIntervalId) {
+    clearInterval(refreshIntervalId);
+    refreshIntervalId = null;
+  }
 
-if (username) {
-  // User-specific view - enable all features
-  locationWidget?.addEventListener('refresh-change', (e: Event) => {
-    const customEvent = e as CustomEvent<{ checked: boolean }>;
-    if (customEvent.detail.checked) {
-      fetchData(); // Initial fetch
-      refreshIntervalId = setInterval(fetchDeltaData, 30000) as unknown as number; // Use delta fetching for subsequent refreshes
-    } else {
-      if (refreshIntervalId) {
-        clearInterval(refreshIntervalId);
-        refreshIntervalId = null;
-      }
-    }
-  });
+  // Update the page header based on the current view
+  updatePageHeader();
 
-  locationWidget?.addEventListener('show-current-position', (e: Event) => {
-    const customEvent = e as CustomEvent<{ coords: GeolocationCoordinates }>;
-    if (mapWidget) {
-      mapWidget.showCurrentPosition(customEvent.detail.coords);
-    }
-  });
-
-  locationWidget?.addEventListener('hide-current-position', (_e: Event) => {
-    if (mapWidget) {
-      mapWidget.hideCurrentPosition();
-    }
-  });
-
-  mapWidget?.addEventListener('location-update', (e: Event) => {
-    const customEvent = e as CustomEvent<LocationUpdateEventDetail>;
+  if (username) {
+    // User-specific view - enable all features
+    // Show location widget
     if (locationWidget) {
-      locationWidget.update(customEvent.detail);
+      locationWidget.style.display = 'block';
     }
-  });
 
-  // Only do initial fetch if refresh is not already enabled (to avoid duplicate fetches)
-  const savedRefresh = localStorage.getItem('refresh-enabled');
-  if (savedRefresh !== 'true') {
+    // Remove existing event listeners to prevent duplicates
+    locationWidget?.removeEventListener('refresh-change', handleRefreshChange);
+    locationWidget?.removeEventListener('show-current-position', handleShowCurrentPosition);
+    locationWidget?.removeEventListener('hide-current-position', handleHideCurrentPosition);
+    mapWidget?.removeEventListener('location-update', handleLocationUpdate);
+
+    // Add event listeners
+    locationWidget?.addEventListener('refresh-change', handleRefreshChange);
+    locationWidget?.addEventListener('show-current-position', handleShowCurrentPosition);
+    locationWidget?.addEventListener('hide-current-position', handleHideCurrentPosition);
+    mapWidget?.addEventListener('location-update', handleLocationUpdate);
+
+    // Only do initial fetch if refresh is not already enabled (to avoid duplicate fetches)
+    const savedRefresh = localStorage.getItem('refresh-enabled');
+    if (savedRefresh !== 'true') {
+      fetchData(true);
+    }
+  } else {
+    // Public locations view - limited features
+    // Hide location widget controls since we're not tracking a specific user
+    if (locationWidget) {
+      locationWidget.style.display = 'none';
+    }
+
+    // Do initial fetch of public locations
     fetchData(true);
-  }
-} else {
-  // Public locations view - limited features
-  // Hide location widget controls since we're not tracking a specific user
-  if (locationWidget) {
-    locationWidget.style.display = 'none';
-  }
 
-  // Do initial fetch of public locations
-  fetchData(true);
-
-  // Set up periodic refresh for public view (every 5 minutes)
-  refreshIntervalId = setInterval(
-    () => fetchData(false, false),
-    5 * 60 * 1000
-  ) as unknown as number;
+    // Set up periodic refresh for public view (every 5 minutes)
+    refreshIntervalId = setInterval(
+      () => fetchData(false, false),
+      5 * 60 * 1000
+    ) as unknown as number;
+  }
 }
+
+// Event handlers for location widget
+function handleRefreshChange(e: Event): void {
+  const customEvent = e as CustomEvent<{ checked: boolean }>;
+  if (customEvent.detail.checked) {
+    fetchData(); // Initial fetch
+    refreshIntervalId = setInterval(fetchDeltaData, 30000) as unknown as number; // Use delta fetching for subsequent refreshes
+  } else {
+    if (refreshIntervalId) {
+      clearInterval(refreshIntervalId);
+      refreshIntervalId = null;
+    }
+  }
+}
+
+function handleShowCurrentPosition(e: Event): void {
+  const customEvent = e as CustomEvent<{ coords: GeolocationCoordinates }>;
+  if (mapWidget) {
+    mapWidget.showCurrentPosition(customEvent.detail.coords);
+  }
+}
+
+function handleHideCurrentPosition(_e: Event): void {
+  if (mapWidget) {
+    mapWidget.hideCurrentPosition();
+  }
+}
+
+function handleLocationUpdate(e: Event): void {
+  const customEvent = e as CustomEvent<LocationUpdateEventDetail>;
+  if (locationWidget) {
+    locationWidget.update(customEvent.detail);
+  }
+}
+
+// Unified authentication handling (consolidating from profile-app and sessions-app)
+document.addEventListener('auth-change', (e: Event) => {
+  const customEvent = e as CustomEvent<AuthChangeEventDetail>;
+  console.log('Auth state changed:', customEvent.detail);
+
+  if (customEvent.detail.isAuthenticated) {
+    console.log('User logged in:', customEvent.detail.user);
+  } else {
+    console.log('User logged out');
+
+    // If user logs out from profile or sessions view, show login panel again
+    const currentRoute = router.getCurrentRoute();
+    if (currentRoute === '/profile') {
+      setTimeout(() => checkAuthAndConfigureLogin('profile-login'), 100);
+    } else if (currentRoute === '/profile/sessions') {
+      setTimeout(() => checkAuthAndConfigureLogin('sessions-login'), 100);
+    }
+  }
+});
+
+// SPA Navigation: Handle clicks on navigation links
+document.addEventListener('click', (e: Event) => {
+  const target = e.target as HTMLElement;
+  const routeLink = target.closest('[data-route]') as HTMLElement;
+
+  if (routeLink) {
+    e.preventDefault();
+    const route = routeLink.getAttribute('data-route');
+    if (route) {
+      router.navigate(route);
+    }
+  }
+});
+
+// Dispatch initial auth state to ensure all widgets are properly initialized
+// This fixes the issue where widgets don't get the initial auth state on page reload
+// Use setTimeout to ensure DOM elements are fully initialized before dispatching
+setTimeout(() => {
+  if (window.authService.isAuthenticated()) {
+    window.authService.dispatchAuthChange();
+  }
+}, 0);
+
+// Start the router
+router.start();

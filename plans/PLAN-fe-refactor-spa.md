@@ -107,11 +107,11 @@
 - [x] Update Vite config to SPA mode (removed MPA entry points, removed /u/ proxy rules)
 - [x] Modify main `index.html` for SPA architecture (added view containers, navigation)
 
-### ⏳ Phase 3: Merge App Logic
+### ✅ Phase 3: Merge App Logic
 
-- [ ] Consolidate authentication and PWA logic in main `app.ts`
-- [ ] Implement dynamic widget loading system
-- [ ] Add route-based content rendering
+- [x] Consolidate authentication and PWA logic in main `app.ts`
+- [x] Implement dynamic widget loading system
+- [x] Add route-based content rendering
 
 ### ⏳ Phase 4: Widget Integration
 
