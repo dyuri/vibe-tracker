@@ -32,7 +32,6 @@ initializePWA().catch(error => {
 const router = new Router();
 
 // View elements
-const mainView = document.getElementById('main-view') as HTMLElement | null;
 const profileView = document.getElementById('profile-view') as HTMLElement | null;
 const sessionsView = document.getElementById('sessions-view') as HTMLElement | null;
 
@@ -50,23 +49,31 @@ let sessionWidgetLoaded = false;
 
 /**
  * Show a specific view and hide others
+ * Main view is always visible as background, overlays are shown/hidden
  */
 function showView(viewName: 'main' | 'profile' | 'sessions'): void {
-  // Hide all views
-  if (mainView) {mainView.style.display = 'none';}
-  if (profileView) {profileView.style.display = 'none';}
-  if (sessionsView) {sessionsView.style.display = 'none';}
+  // Hide all overlay views
+  if (profileView) {
+    profileView.classList.add('hidden');
+  }
+  if (sessionsView) {
+    sessionsView.classList.add('hidden');
+  }
 
-  // Show the requested view
+  // Show the requested overlay view (main view is always visible)
   switch (viewName) {
     case 'main':
-      if (mainView) {mainView.style.display = 'block';}
+      // Main view is always visible, just ensure overlays are hidden (already done above)
       break;
     case 'profile':
-      if (profileView) {profileView.style.display = 'block';}
+      if (profileView) {
+        profileView.classList.remove('hidden');
+      }
       break;
     case 'sessions':
-      if (sessionsView) {sessionsView.style.display = 'block';}
+      if (sessionsView) {
+        sessionsView.classList.remove('hidden');
+      }
       break;
   }
 }
@@ -75,7 +82,9 @@ function showView(viewName: 'main' | 'profile' | 'sessions'): void {
  * Dynamically load and initialize the profile widget
  */
 async function loadProfileWidget(): Promise<void> {
-  if (profileWidgetLoaded || !profileWidgetContainer) {return;}
+  if (profileWidgetLoaded || !profileWidgetContainer) {
+    return;
+  }
 
   try {
     // Dynamic import of profile widget
@@ -95,7 +104,9 @@ async function loadProfileWidget(): Promise<void> {
  * Dynamically load and initialize the session management widget
  */
 async function loadSessionWidget(): Promise<void> {
-  if (sessionWidgetLoaded || !sessionWidgetContainer) {return;}
+  if (sessionWidgetLoaded || !sessionWidgetContainer) {
+    return;
+  }
 
   try {
     // Dynamic import of session management widget
@@ -118,7 +129,9 @@ async function loadSessionWidget(): Promise<void> {
  */
 function checkAuthAndConfigureLogin(loginWidgetId: string): void {
   const loginWidget = document.getElementById(loginWidgetId) as LoginWidgetElement | null;
-  if (!loginWidget) {return;}
+  if (!loginWidget) {
+    return;
+  }
 
   if (!window.authService.isAuthenticated()) {
     setTimeout(() => {
@@ -321,9 +334,8 @@ function fetchData(isInitialLoad: boolean = false, useDelta: boolean = false): v
     })
     .catch((error: Error) => {
       console.error(error);
-      if (isInitialLoad && mapWidget && errorMessage) {
-        mapWidget.style.display = 'none';
-        errorMessage.style.display = 'block';
+      if (isInitialLoad && errorMessage) {
+        errorMessage.classList.remove('hidden');
         errorMessage.textContent = error.message;
       }
     });

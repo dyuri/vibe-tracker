@@ -58,20 +58,20 @@
       ></p>
     </header>
     <div id="content">
-      <!-- Main app view (map, location tracking) -->
-      <div id="main-view" style="display: none">
+      <!-- Main app view (map, location tracking) - Always visible as background -->
+      <div id="main-view" class="main-view">
         <map-widget></map-widget>
         <location-widget></location-widget>
         <login-widget></login-widget>
-        <div id="error-message" style="display: none; text-align: center; padding: 20px"></div>
+        <div id="error-message" class="error-message hidden"></div>
       </div>
 
-      <!-- Profile view container -->
-      <div id="profile-view" style="display: none">
-        <div class="profile-container">
+      <!-- Profile view overlay -->
+      <div id="profile-view" class="view-overlay hidden">
+        <div class="overlay-container">
           <header class="profile-header">
             <h1>User Profile</h1>
-            <nav>
+            <nav class="overlay-nav">
               <a href="/" data-route="/">← Back to Map</a>
               <a href="/profile/sessions" data-route="/profile/sessions">Sessions</a>
             </nav>
@@ -82,12 +82,12 @@
         </div>
       </div>
 
-      <!-- Sessions view container -->
-      <div id="sessions-view" style="display: none">
-        <div class="profile-container">
+      <!-- Sessions view overlay -->
+      <div id="sessions-view" class="view-overlay hidden">
+        <div class="overlay-container">
           <header class="profile-header">
             <h1>Session Management</h1>
-            <nav>
+            <nav class="overlay-nav">
               <a href="/" data-route="/">← Back to Map</a>
               <a href="/profile" data-route="/profile">Profile</a>
             </nav>
