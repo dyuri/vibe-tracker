@@ -12,9 +12,7 @@ export default defineConfig({
     emptyOutDir: true, // Clean dist directory on build
     rollupOptions: {
       input: {
-        main: 'index.html', // Development entry point
-        profile: 'public/profile.html',
-        sessions: 'public/sessions.html',
+        main: 'index.html', // Single entry point for SPA
       },
     },
   },
@@ -24,16 +22,13 @@ export default defineConfig({
       '/api': BACKEND_URL, // Proxy API calls to Go backend
       '/health': BACKEND_URL,
       '/swagger': BACKEND_URL,
-      // Proxy only user routes to Go backend, not static files
-      '^/u/[^/]+$': BACKEND_URL,
-      '^/u/[^/]+/s/[^/]+$': BACKEND_URL,
     },
     fs: {
       // Allow serving files from src/ directory
       allow: ['.'],
     },
   },
-  appType: 'mpa', // Multi-page application
+  appType: 'spa', // Single-page application
   resolve: {
     alias: {
       '@': '/src',

@@ -104,7 +104,7 @@
 ### ⏳ Phase 2: Router Implementation
 
 - [x] Create client-side router utility (`src/utils/router.ts`)
-- [ ] Update Vite config to SPA mode
+- [x] Update Vite config to SPA mode (removed MPA entry points, removed /u/ proxy rules)
 - [ ] Modify main `index.html` for SPA architecture
 
 ### ⏳ Phase 3: Merge App Logic
