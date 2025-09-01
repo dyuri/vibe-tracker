@@ -61,6 +61,17 @@ export function workboxPlugin(): Plugin {
                 },
               },
             ],
+            // SPA fallback - serve index.html for client-side routing
+            navigateFallback: '/index.html',
+            navigateFallbackDenylist: [
+              // Don't fallback for API routes
+              /^\/api\//,
+              // Don't fallback for static assets
+              /\.(js|css|png|jpg|jpeg|svg|gif|webp|ico|woff|woff2|ttf|eot)$/,
+              // Don't fallback for backend routes
+              /^\/health$/,
+              /^\/swagger/,
+            ],
             dontCacheBustURLsMatching: /\.\w{8}\./,
           });
 
