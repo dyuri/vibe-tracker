@@ -46,7 +46,7 @@ export default class LoginWidget extends HTMLElement implements LoginWidgetEleme
           <button id="login-button">Login</button>
           <div id="error-message" class="error"></div>
         </div>
-        <div id="user-menu" style="display: none;">
+        <div id="user-menu" class="hidden">
           <div class="user-info">
             <a href="/profile" data-route="/profile" class="username" id="user-name"></a>
             <div class="email" id="user-email"></div>
@@ -153,8 +153,9 @@ export default class LoginWidget extends HTMLElement implements LoginWidgetEleme
   }
 
   showPanel(): void {
-    this.authPanel.style.display = 'block';
-    this.toggleButton.style.display = 'none';
+    this.authPanel.classList.remove('hidden');
+    this.authPanel.classList.add('show-block');
+    this.toggleButton.classList.add('hidden');
 
     if (!this.isAuthenticated) {
       this.emailInput.focus();
@@ -162,8 +163,9 @@ export default class LoginWidget extends HTMLElement implements LoginWidgetEleme
   }
 
   hidePanel(): void {
-    this.authPanel.style.display = 'none';
-    this.toggleButton.style.display = 'flex';
+    this.authPanel.classList.add('hidden');
+    this.authPanel.classList.remove('show-block');
+    this.toggleButton.classList.remove('hidden');
     this.clearForm();
   }
 
@@ -197,8 +199,9 @@ export default class LoginWidget extends HTMLElement implements LoginWidgetEleme
         this.showInitialText(this.user.username ? this.user.username.charAt(0).toUpperCase() : 'U');
       }
 
-      this.loginForm.style.display = 'none';
-      this.userMenu.style.display = 'block';
+      this.loginForm.classList.add('hidden');
+      this.userMenu.classList.remove('hidden');
+      this.userMenu.classList.add('show-block');
 
       this.userName.textContent = this.user.username || 'User';
       this.userEmail.textContent = this.user.email || '';
@@ -219,8 +222,9 @@ export default class LoginWidget extends HTMLElement implements LoginWidgetEleme
       this.clearButtonContent();
       this.showInitialText('?');
 
-      this.loginForm.style.display = 'block';
-      this.userMenu.style.display = 'none';
+      this.loginForm.classList.remove('hidden');
+      this.userMenu.classList.add('hidden');
+      this.userMenu.classList.remove('show-block');
     }
   }
 
@@ -269,7 +273,8 @@ export default class LoginWidget extends HTMLElement implements LoginWidgetEleme
 
     // Hide initial text
     if (this.initialText) {
-      this.initialText.style.display = 'none';
+      this.initialText.classList.add('hidden');
+      this.initialText.classList.remove('show-block');
     }
   }
 
@@ -295,7 +300,8 @@ export default class LoginWidget extends HTMLElement implements LoginWidgetEleme
   showInitialText(text: string): void {
     if (this.initialText) {
       this.initialText.textContent = text;
-      this.initialText.style.display = 'block';
+      this.initialText.classList.remove('hidden');
+      this.initialText.classList.add('show-block');
     }
   }
 

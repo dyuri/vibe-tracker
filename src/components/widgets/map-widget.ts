@@ -68,7 +68,7 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     } catch (error) {
       console.error('Failed to initialize map widget:', error);
       this.shadowRoot!.getElementById('map')!.innerHTML =
-        '<div style="padding: 20px; text-align: center; color: #666;">Map initialization failed</div>';
+        '<div class="map-error">Map initialization failed</div>';
     }
   }
 
@@ -343,11 +343,11 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
         : session || 'N/A';
     const sessionLink =
       session && username
-        ? `<a href="/u/${username}/s/${session}" style="color: var(--color-primary); text-decoration: none;">${sessionDisplay}</a>`
+        ? `<a href="/u/${username}/s/${session}" class="popup-link">${sessionDisplay}</a>`
         : sessionDisplay;
 
     const userLine = username
-      ? `<b>User:</b> <a href="/u/${username}" style="color: var(--color-primary); text-decoration: none;">${username}</a><br>`
+      ? `<b>User:</b> <a href="/u/${username}" class="popup-link">${username}</a><br>`
       : '';
 
     return `

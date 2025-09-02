@@ -184,7 +184,7 @@ func setupStaticRoutes(router *echo.Echo) {
 	router.GET("/profile", func(c echo.Context) error {
 		return c.File("dist/index.html")
 	})
-	
+
 	router.GET("/profile/sessions", func(c echo.Context) error {
 		return c.File("dist/index.html")
 	})

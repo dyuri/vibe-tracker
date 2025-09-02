@@ -52,3 +52,15 @@
 .leaflet-control-zoom {
   margin-top: 80px !important;
 }
+
+/* Utility classes for map functionality */
+.map-error {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+
+.popup-link {
+  color: var(--color-primary);
+  text-decoration: none;
+}

@@ -146,3 +146,16 @@ button:disabled {
   color: var(--text-inverse);
   border-color: var(--color-primary);
 }
+
+/* Utility classes for show/hide functionality */
+.hidden {
+  display: none !important;
+}
+
+.show-block {
+  display: block !important;
+}
+
+.show-inline-block {
+  display: inline-block !important;
+}

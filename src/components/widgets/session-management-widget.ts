@@ -80,7 +80,7 @@ export default class SessionManagementWidget
             <div class="form-group">
               <label for="session-name">Session Name *</label>
               <input type="text" id="session-name" placeholder="e.g., morning-run-2024" pattern="^[a-zA-Z0-9_-]+$" required>
-              <small style="color: var(--text-muted);">Only letters, numbers, hyphens, and underscores allowed</small>
+              <small class="form-help-text">Only letters, numbers, hyphens, and underscores allowed</small>
             </div>
             
             <div class="form-group">
@@ -98,11 +98,11 @@ export default class SessionManagementWidget
                 <input type="checkbox" id="session-public">
                 <label for="session-public">Make this session public</label>
               </div>
-              <small style="color: var(--text-muted);">Public sessions can be viewed by anyone</small>
+              <small class="form-help-text">Public sessions can be viewed by anyone</small>
             </div>
             
             <button type="submit" id="submit-btn">Create Session</button>
-            <button type="button" id="cancel-btn" class="btn-secondary" style="display: none;">Cancel</button>
+            <button type="button" id="cancel-btn" class="btn-secondary hidden">Cancel</button>
             <div id="form-message"></div>
           </form>
         </div>
@@ -111,18 +111,18 @@ export default class SessionManagementWidget
         <div class="profile-section">
           <div class="section-title">Your Sessions</div>
           
-          <div id="loading" class="loading" style="display: none;">
+          <div id="loading" class="loading hidden">
             Loading sessions...
           </div>
           
-          <div id="empty-state" class="empty-state" style="display: none;">
+          <div id="empty-state" class="empty-state hidden">
             <h3>No sessions yet</h3>
             <p>Create your first session above to start organizing your tracking data.</p>
           </div>
           
           <div class="session-list" id="session-list"></div>
           
-          <div class="pagination" id="pagination" style="display: none;">
+          <div class="pagination hidden" id="pagination">
             <div class="pagination-info" id="pagination-info"></div>
             <button id="prev-btn" class="btn-secondary">← Previous</button>
             <button id="next-btn" class="btn-secondary">Next →</button>
@@ -210,10 +210,10 @@ export default class SessionManagementWidget
 
   updateUI(): void {
     if (this.isAuthenticated && this.user) {
-      this.notAuthenticated.style.display = 'none';
+      this.notAuthenticated.classList.add('hidden');
       this.sessionContent.classList.add('show');
     } else {
-      this.notAuthenticated.style.display = 'block';
+      this.notAuthenticated.classList.remove('hidden');
       this.sessionContent.classList.remove('show');
     }
   }
@@ -233,10 +233,10 @@ export default class SessionManagementWidget
       return;
     }
 
-    this.loading.style.display = 'block';
-    this.emptyState.style.display = 'none';
+    this.loading.classList.remove('hidden');
+    this.emptyState.classList.add('hidden');
     this.sessionList.innerHTML = '';
-    this.pagination.style.display = 'none';
+    this.pagination.classList.add('hidden');
 
     try {
       const response = await fetch(
@@ -280,13 +280,13 @@ export default class SessionManagementWidget
       console.error('Error loading sessions:', error);
       this.showMessage(this.formMessage, error.message || 'Failed to load sessions', 'error');
     } finally {
-      this.loading.style.display = 'none';
+      this.loading.classList.add('hidden');
     }
   }
 
   renderSessions(): void {
     if (this.sessions.length === 0) {
-      this.emptyState.style.display = 'block';
+      this.emptyState.classList.remove('hidden');
       return;
     }
 
@@ -317,11 +317,11 @@ export default class SessionManagementWidget
 
   updatePagination(data: PaginationData): void {
     if (data.totalPages <= 1) {
-      this.pagination.style.display = 'none';
+      this.pagination.classList.add('hidden');
       return;
     }
 
-    this.pagination.style.display = 'block';
+    this.pagination.classList.remove('hidden');
     this.paginationInfo.textContent = `Page ${data.page} of ${data.totalPages} (${data.totalItems} sessions)`;
     this.prevBtn.disabled = data.page <= 1;
     this.nextBtn.disabled = data.page >= data.totalPages;
@@ -467,7 +467,8 @@ export default class SessionManagementWidget
     this.editingSession = session;
     this.formTitle.textContent = 'Edit Session';
     this.submitBtn.textContent = 'Update Session';
-    this.cancelBtn.style.display = 'inline-block';
+    this.cancelBtn.classList.remove('hidden');
+    this.cancelBtn.classList.add('show-inline-block');
 
     // Populate form with session data
     this.sessionNameInput.value = session.name;
@@ -488,7 +489,8 @@ export default class SessionManagementWidget
     this.editingSession = null;
     this.formTitle.textContent = 'Create New Session';
     this.submitBtn.textContent = 'Create Session';
-    this.cancelBtn.style.display = 'none';
+    this.cancelBtn.classList.add('hidden');
+    this.cancelBtn.classList.remove('show-inline-block');
 
     this.sessionNameInput.disabled = false;
     this.sessionForm.reset();
