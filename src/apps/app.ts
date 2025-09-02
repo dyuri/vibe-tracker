@@ -19,6 +19,7 @@ import '@/components/widgets/location-widget';
 import '@/components/widgets/map-widget';
 import '@/components/widgets/theme-toggle';
 import '@/apps/theme-init';
+import '@/styles/transitions.css';
 
 // Initialize global auth service
 window.authService = new AuthService();
@@ -152,32 +153,54 @@ const pageHeader = document.getElementById('page-header') as HTMLElement | null;
 const pageTitle = document.getElementById('page-title') as HTMLElement | null;
 const pageSubtitle = document.getElementById('page-subtitle') as HTMLElement | null;
 
-// Router setup - define routes and their handlers
-router.addRoute('/', () => {
+// Router setup - define routes and their handlers with async support
+router.addRoute('/', async () => {
   showView('main');
   handleMainRoute();
 });
 
-router.addRoute('/profile', () => {
+router.addRoute('/profile', async () => {
   showView('profile');
-  loadProfileWidget().then(() => {
+
+  // Show loading state during widget load
+  if (profileView) {
+    profileView.classList.add('view-transition-loading');
+  }
+
+  try {
+    await loadProfileWidget();
     checkAuthAndConfigureLogin('profile-login');
-  });
+  } finally {
+    if (profileView) {
+      profileView.classList.remove('view-transition-loading');
+    }
+  }
 });
 
-router.addRoute('/profile/sessions', () => {
+router.addRoute('/profile/sessions', async () => {
   showView('sessions');
-  loadSessionWidget().then(() => {
+
+  // Show loading state during widget load
+  if (sessionsView) {
+    sessionsView.classList.add('view-transition-loading');
+  }
+
+  try {
+    await loadSessionWidget();
     checkAuthAndConfigureLogin('sessions-login');
-  });
+  } finally {
+    if (sessionsView) {
+      sessionsView.classList.remove('view-transition-loading');
+    }
+  }
 });
 
-router.addRoute('/u/[username]', params => {
+router.addRoute('/u/[username]', async params => {
   showView('main');
   handleMainRoute(params.username, null);
 });
 
-router.addRoute('/u/[username]/s/[session]', params => {
+router.addRoute('/u/[username]/s/[session]', async params => {
   showView('main');
   handleMainRoute(params.username, params.session);
 });

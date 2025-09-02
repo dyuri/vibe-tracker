@@ -1,21 +1,32 @@
 /**
- * Simple client-side router for SPA navigation
+ * Enhanced client-side router with Navigation API support and progressive enhancement
  */
 
 export interface Route {
   path: string;
-  handler: (params: Record<string, string>) => void;
+  handler: (params: Record<string, string>) => void | Promise<void>;
 }
 
 export class Router {
   private routes: Route[] = [];
   private currentRoute: string | null = null;
+  private supportsNavigationAPI: boolean;
+  private supportsViewTransitions: boolean;
 
   constructor() {
-    // Listen for browser back/forward navigation
-    window.addEventListener('popstate', () => {
-      this.handleRoute(window.location.pathname);
-    });
+    // Feature detection
+    this.supportsNavigationAPI = 'navigation' in window;
+    this.supportsViewTransitions = 'startViewTransition' in document;
+
+    console.log(
+      `Router initialized: Navigation API=${this.supportsNavigationAPI}, View Transitions=${this.supportsViewTransitions}`
+    );
+
+    if (this.supportsNavigationAPI) {
+      this.setupNavigationAPI();
+    } else {
+      this.setupHistoryAPIFallback();
+    }
   }
 
   /**
@@ -29,10 +40,18 @@ export class Router {
    * Navigate to a route programmatically
    */
   navigate(path: string): void {
-    if (this.currentRoute === path) {return;}
+    if (this.currentRoute === path) {
+      return;
+    }
 
-    window.history.pushState({}, '', path);
-    this.handleRoute(path);
+    if (this.supportsNavigationAPI) {
+      // Use Navigation API for programmatic navigation
+      (window as any).navigation.navigate(path);
+    } else {
+      // Fallback to History API
+      window.history.pushState({}, '', path);
+      this.handleRouteWithTransition(path);
+    }
   }
 
   /**
@@ -66,7 +85,9 @@ export class Router {
     const regex = new RegExp(`^${regexPattern}$`);
     const match = path.match(regex);
 
-    if (!match) {return null;}
+    if (!match) {
+      return null;
+    }
 
     // Extract parameter names from pattern
     const paramNames = [];
@@ -98,5 +119,95 @@ export class Router {
    */
   getCurrentRoute(): string | null {
     return this.currentRoute;
+  }
+
+  /**
+   * Setup Navigation API for modern browsers
+   */
+  private setupNavigationAPI(): void {
+    (window as any).navigation.addEventListener('navigate', (event: any) => {
+      // Only intercept same-origin navigations
+      if (!this.shouldInterceptNavigation(event)) {
+        return;
+      }
+
+      const url = new URL(event.destination.url);
+      const path = url.pathname;
+
+      // Check if we have a route handler for this path
+      const matchingRoute = this.routes.find(route => this.matchRoute(route.path, path) !== null);
+
+      if (matchingRoute) {
+        event.intercept({
+          handler: () => this.handleRouteWithTransition(path),
+        });
+      }
+    });
+  }
+
+  /**
+   * Setup History API fallback for older browsers
+   */
+  private setupHistoryAPIFallback(): void {
+    // Listen for browser back/forward navigation
+    window.addEventListener('popstate', () => {
+      this.handleRoute(window.location.pathname);
+    });
+  }
+
+  /**
+   * Determine if navigation should be intercepted
+   */
+  private shouldInterceptNavigation(event: any): boolean {
+    // Don't intercept if:
+    // - Cross-origin navigation
+    // - Form submission
+    // - Download request
+    // - Hash-only changes (for now)
+
+    if (event.destination.url === undefined) {
+      return false;
+    }
+
+    const url = new URL(event.destination.url);
+
+    // Only handle same-origin navigations
+    if (url.origin !== window.location.origin) {
+      return false;
+    }
+
+    // Don't handle downloads
+    if (event.downloadRequest) {
+      return false;
+    }
+
+    // Don't handle form submissions (for now)
+    if (event.formData) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Handle route with optional view transitions
+   */
+  private async handleRouteWithTransition(path: string): Promise<void> {
+    if (this.supportsViewTransitions) {
+      // Use view transitions for smooth animations
+      const transition = (document as any).startViewTransition(() => {
+        this.handleRoute(path);
+      });
+
+      // Optionally wait for transition to complete
+      try {
+        await transition.finished;
+      } catch (error) {
+        console.warn('View transition failed:', error);
+      }
+    } else {
+      // Fallback to direct route handling
+      this.handleRoute(path);
+    }
   }
 }
