@@ -160,6 +160,12 @@ router.addRoute('/', async () => {
 });
 
 router.addRoute('/profile', async () => {
+  // Clear any running intervals when leaving main view
+  clearRefreshInterval();
+
+  // Reset main view initialization since we're leaving it
+  isInitialized = false;
+
   showView('profile');
 
   // Show loading state during widget load
@@ -178,6 +184,12 @@ router.addRoute('/profile', async () => {
 });
 
 router.addRoute('/profile/sessions', async () => {
+  // Clear any running intervals when leaving main view
+  clearRefreshInterval();
+
+  // Reset main view initialization since we're leaving it
+  isInitialized = false;
+
   showView('sessions');
 
   // Show loading state during widget load
@@ -213,6 +225,22 @@ let session: string | null;
  * Handle main route (map view) with optional username and session
  */
 function handleMainRoute(routeUsername?: string, routeSession?: string): void {
+  // Check if this is actually a different route
+  const newUsername =
+    routeUsername !== undefined
+      ? routeUsername
+      : new URLSearchParams(window.location.search).get('username');
+  const newSession =
+    routeUsername !== undefined
+      ? routeSession || null
+      : new URLSearchParams(window.location.search).get('session');
+
+  // Reset initialization if the route parameters have actually changed
+  if (username !== newUsername || session !== newSession) {
+    console.log(`Route changed from ${username}/${session} to ${newUsername}/${newSession}`);
+    isInitialized = false;
+  }
+
   // Set username and session from route parameters or fallback to URL params
   if (routeUsername !== undefined) {
     username = routeUsername;
@@ -232,6 +260,12 @@ function handleMainRoute(routeUsername?: string, routeSession?: string): void {
 let refreshIntervalId: number | null = null;
 /** Track the latest timestamp for delta fetching */
 let latestTimestamp: number | null = null;
+/** Track last request time to prevent excessive API calls */
+let lastRequestTime: number = 0;
+/** Minimum interval between API requests (in ms) */
+const MIN_REQUEST_INTERVAL = 5000; // 5 seconds
+/** Track if initial data has been loaded to prevent multiple initial fetches */
+let isInitialized: boolean = false;
 
 /**
  * Update page header based on current username and session
@@ -276,17 +310,23 @@ function updatePageHeader(): void {
   }
 }
 
-// Initialize authentication
+// Initialize authentication - unified handler
 document.addEventListener('auth-change', (e: Event) => {
   const customEvent = e as CustomEvent<AuthChangeEventDetail>;
   console.log('Auth state changed:', customEvent.detail);
 
-  // You can add logic here to handle authentication state changes
-  // For example, showing/hiding certain features based on login status
   if (customEvent.detail.isAuthenticated) {
     console.log('User logged in:', customEvent.detail.user);
   } else {
     console.log('User logged out');
+
+    // If user logs out from profile or sessions view, show login panel again
+    const currentRoute = router.getCurrentRoute();
+    if (currentRoute === '/profile') {
+      setTimeout(() => checkAuthAndConfigureLogin('profile-login'), 100);
+    } else if (currentRoute === '/profile/sessions') {
+      setTimeout(() => checkAuthAndConfigureLogin('sessions-login'), 100);
+    }
   }
 });
 
@@ -296,6 +336,15 @@ document.addEventListener('auth-change', (e: Event) => {
  * @param useDelta - Whether to use delta fetching for incremental updates
  */
 function fetchData(isInitialLoad: boolean = false, useDelta: boolean = false): void {
+  const now = Date.now();
+
+  // Throttle API requests to prevent rate limiting (except for initial loads)
+  if (!isInitialLoad && now - lastRequestTime < MIN_REQUEST_INTERVAL) {
+    console.log('Throttling API request, too soon since last request');
+    return;
+  }
+
+  lastRequestTime = now;
   let apiUrl: string;
 
   if (!username) {
@@ -372,14 +421,31 @@ function fetchDeltaData(): void {
 }
 
 /**
- * Initialize the main view (map) based on username and session
+ * Clear any existing refresh interval
  */
-function initializeMainView(): void {
-  // Clear any existing refresh intervals
+function clearRefreshInterval(): void {
   if (refreshIntervalId) {
+    console.log('Clearing refresh interval:', refreshIntervalId);
     clearInterval(refreshIntervalId);
     refreshIntervalId = null;
   }
+}
+
+/**
+ * Initialize the main view (map) based on username and session
+ */
+function initializeMainView(): void {
+  // Prevent multiple initializations
+  if (isInitialized) {
+    console.log('MainView already initialized, skipping...');
+    return;
+  }
+
+  console.log('Initializing main view...');
+  isInitialized = true;
+
+  // Clear any existing refresh intervals
+  clearRefreshInterval();
 
   // Update the page header based on the current view
   updatePageHeader();
@@ -430,13 +496,16 @@ function initializeMainView(): void {
 function handleRefreshChange(e: Event): void {
   const customEvent = e as CustomEvent<{ checked: boolean }>;
   if (customEvent.detail.checked) {
-    fetchData(); // Initial fetch
-    refreshIntervalId = setInterval(fetchDeltaData, 30000) as unknown as number; // Use delta fetching for subsequent refreshes
+    // Clear any existing interval first
+    clearRefreshInterval();
+
+    fetchData(true); // Initial fetch
+
+    // Increase interval to 60 seconds to reduce API load
+    console.log('Starting refresh interval (60s)');
+    refreshIntervalId = setInterval(fetchDeltaData, 60000) as unknown as number;
   } else {
-    if (refreshIntervalId) {
-      clearInterval(refreshIntervalId);
-      refreshIntervalId = null;
-    }
+    clearRefreshInterval();
   }
 }
 
@@ -459,26 +528,6 @@ function handleLocationUpdate(e: Event): void {
     locationWidget.update(customEvent.detail);
   }
 }
-
-// Unified authentication handling (consolidating from profile-app and sessions-app)
-document.addEventListener('auth-change', (e: Event) => {
-  const customEvent = e as CustomEvent<AuthChangeEventDetail>;
-  console.log('Auth state changed:', customEvent.detail);
-
-  if (customEvent.detail.isAuthenticated) {
-    console.log('User logged in:', customEvent.detail.user);
-  } else {
-    console.log('User logged out');
-
-    // If user logs out from profile or sessions view, show login panel again
-    const currentRoute = router.getCurrentRoute();
-    if (currentRoute === '/profile') {
-      setTimeout(() => checkAuthAndConfigureLogin('profile-login'), 100);
-    } else if (currentRoute === '/profile/sessions') {
-      setTimeout(() => checkAuthAndConfigureLogin('sessions-login'), 100);
-    }
-  }
-});
 
 // SPA Navigation: Handle clicks on navigation links
 document.addEventListener('click', (e: Event) => {

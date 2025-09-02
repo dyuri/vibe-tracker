@@ -8,9 +8,8 @@ import type {
 } from '@/types';
 import { createMarker } from '@/components/ui';
 import styles from '@/styles/components/widgets/map-widget.css?inline';
-
-// Leaflet global (loaded via script tag)
-declare const L: typeof import('leaflet');
+import * as L from 'leaflet';
+import leafletCSS from 'leaflet/dist/leaflet.css?inline';
 
 /**
  * Map Widget Web Component
@@ -34,7 +33,7 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     this.attachShadow({ mode: 'open' });
 
     this.shadowRoot!.innerHTML = `
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+      <style>${leafletCSS}</style>
       <style>${styles}</style>
       <div id="map"></div>
     `;
@@ -45,18 +44,32 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    * Initializes the Leaflet map and sets up event listeners
    */
   connectedCallback(): void {
-    this.map = L.map(this.shadowRoot!.getElementById('map')!);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(this.map);
-    this.dataLayerGroup = L.layerGroup().addTo(this.map);
-    this.currentPositionLayerGroup = L.layerGroup().addTo(this.map);
+    try {
+      // Fix Leaflet default icon paths for Vite/webpack builds
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).href,
+        iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).href,
+        shadowUrl: new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).href,
+      });
 
-    this.map.on('moveend', () => this.updateUrlHash());
-    this.map.on('zoomend', () => this.updateUrlHash());
+      this.map = L.map(this.shadowRoot!.getElementById('map')!);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(this.map);
+      this.dataLayerGroup = L.layerGroup().addTo(this.map);
+      this.currentPositionLayerGroup = L.layerGroup().addTo(this.map);
 
-    this.setViewFromUrlHash();
+      this.map.on('moveend', () => this.updateUrlHash());
+      this.map.on('zoomend', () => this.updateUrlHash());
+
+      this.setViewFromUrlHash();
+    } catch (error) {
+      console.error('Failed to initialize map widget:', error);
+      this.shadowRoot!.getElementById('map')!.innerHTML =
+        '<div style="padding: 20px; text-align: center; color: #666;">Map initialization failed</div>';
+    }
   }
 
   setViewFromUrlHash(): boolean {
@@ -87,6 +100,11 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    * Displays location data on the map
    */
   displayData(data: LocationResponse | LocationsResponse): void {
+    if (!this.map || !this.dataLayerGroup) {
+      console.warn('Map not initialized, cannot display data');
+      return;
+    }
+
     if (data.type === 'FeatureCollection') {
       this.currentFeatureCollection = data; // Store current data
       this.displayFeatureCollection(data);
@@ -129,7 +147,12 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   }
 
   displayFeatureCollection(data: LocationsResponse): void {
-    this.dataLayerGroup!.clearLayers();
+    if (!this.dataLayerGroup) {
+      console.warn('Map not initialized, cannot display feature collection');
+      return;
+    }
+
+    this.dataLayerGroup.clearLayers();
 
     const points = data.features;
     if (points.length === 0) {
@@ -249,7 +272,12 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   }
 
   displayPoint(data: LocationResponse): void {
-    this.dataLayerGroup!.clearLayers();
+    if (!this.dataLayerGroup) {
+      console.warn('Map not initialized, cannot display point');
+      return;
+    }
+
+    this.dataLayerGroup.clearLayers();
     const [longitude, latitude, _altitude] = data.geometry.coordinates;
 
     if (!this.setViewFromUrlHash()) {
@@ -335,7 +363,12 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    * Shows the current position on the map with accuracy circle
    */
   showCurrentPosition(coords: GeolocationCoordinates): void {
-    this.currentPositionLayerGroup!.clearLayers();
+    if (!this.currentPositionLayerGroup) {
+      console.warn('Map not initialized, cannot show current position');
+      return;
+    }
+
+    this.currentPositionLayerGroup.clearLayers();
     const { latitude, longitude, accuracy } = coords;
     const marker = L.marker([latitude, longitude]);
     const circle = L.circle([latitude, longitude], {
@@ -349,7 +382,12 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   }
 
   hideCurrentPosition(): void {
-    this.currentPositionLayerGroup!.clearLayers();
+    if (!this.currentPositionLayerGroup) {
+      console.warn('Map not initialized, cannot hide current position');
+      return;
+    }
+
+    this.currentPositionLayerGroup.clearLayers();
   }
 }
 
