@@ -1,0 +1,524 @@
+<testsuites id="" name="" tests="32" failures="32" skipped="0" errors="0" time="7.746016999999999">
+<testsuite name="auth.spec.ts" timestamp="2025-09-02T16:29:52.924Z" hostname="chromium" tests="6" failures="6" skipped="0" time="0.034" errors="0">
+<testcase name="Authentication › should display login form when not authenticated" classname="auth.spec.ts" time="0.004">
+<failure message="auth.spec.ts:11:3 should display login form when not authenticated" type="FAILURE">
+<![CDATA[  [chromium] › auth.spec.ts:11:3 › Authentication › should display login form when not authenticated 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Authentication › should login successfully with valid credentials" classname="auth.spec.ts" time="0.005">
+<failure message="auth.spec.ts:29:3 should login successfully with valid credentials" type="FAILURE">
+<![CDATA[  [chromium] › auth.spec.ts:29:3 › Authentication › should login successfully with valid credentials 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Authentication › should show error message with invalid credentials" classname="auth.spec.ts" time="0.004">
+<failure message="auth.spec.ts:45:3 should show error message with invalid credentials" type="FAILURE">
+<![CDATA[  [chromium] › auth.spec.ts:45:3 › Authentication › should show error message with invalid credentials 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Authentication › should logout successfully" classname="auth.spec.ts" time="0.007">
+<failure message="auth.spec.ts:87:3 should logout successfully" type="FAILURE">
+<![CDATA[  [chromium] › auth.spec.ts:87:3 › Authentication › should logout successfully ─────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Authentication › should persist authentication across page reloads" classname="auth.spec.ts" time="0.005">
+<failure message="auth.spec.ts:115:3 should persist authentication across page reloads" type="FAILURE">
+<![CDATA[  [chromium] › auth.spec.ts:115:3 › Authentication › should persist authentication across page reloads 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Authentication › should handle token refresh" classname="auth.spec.ts" time="0.009">
+<failure message="auth.spec.ts:138:3 should handle token refresh" type="FAILURE">
+<![CDATA[  [chromium] › auth.spec.ts:138:3 › Authentication › should handle token refresh ───────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+</testsuite>
+<testsuite name="sessions.spec.ts" timestamp="2025-09-02T16:29:52.924Z" hostname="chromium" tests="6" failures="6" skipped="0" time="0.034" errors="0">
+<testcase name="Session Management › should display session management widget" classname="sessions.spec.ts" time="0.008">
+<failure message="sessions.spec.ts:31:3 should display session management widget" type="FAILURE">
+<![CDATA[  [chromium] › sessions.spec.ts:31:3 › Session Management › should display session management widget 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Session Management › should create a new session" classname="sessions.spec.ts" time="0.004">
+<failure message="sessions.spec.ts:49:3 should create a new session" type="FAILURE">
+<![CDATA[  [chromium] › sessions.spec.ts:49:3 › Session Management › should create a new session ────────────
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Session Management › should edit an existing session" classname="sessions.spec.ts" time="0.005">
+<failure message="sessions.spec.ts:105:3 should edit an existing session" type="FAILURE">
+<![CDATA[  [chromium] › sessions.spec.ts:105:3 › Session Management › should edit an existing session ───────
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Session Management › should delete a session" classname="sessions.spec.ts" time="0.004">
+<failure message="sessions.spec.ts:182:3 should delete a session" type="FAILURE">
+<![CDATA[  [chromium] › sessions.spec.ts:182:3 › Session Management › should delete a session ───────────────
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Session Management › should toggle session visibility (public/private)" classname="sessions.spec.ts" time="0.008">
+<failure message="sessions.spec.ts:274:3 should toggle session visibility (public/private)" type="FAILURE">
+<![CDATA[  [chromium] › sessions.spec.ts:274:3 › Session Management › should toggle session visibility (public/private) 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Session Management › should display session pagination when many sessions exist" classname="sessions.spec.ts" time="0.005">
+<failure message="sessions.spec.ts:334:3 should display session pagination when many sessions exist" type="FAILURE">
+<![CDATA[  [chromium] › sessions.spec.ts:334:3 › Session Management › should display session pagination when many sessions exist 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+</testsuite>
+<testsuite name="tracking.spec.ts" timestamp="2025-09-02T16:29:52.924Z" hostname="chromium" tests="6" failures="6" skipped="0" time="0.027" errors="0">
+<testcase name="Location Tracking › should display map widget" classname="tracking.spec.ts" time="0.005">
+<failure message="tracking.spec.ts:28:3 should display map widget" type="FAILURE">
+<![CDATA[  [chromium] › tracking.spec.ts:28:3 › Location Tracking › should display map widget ───────────────
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Location Tracking › should post location manually" classname="tracking.spec.ts" time="0.004">
+<failure message="tracking.spec.ts:49:3 should post location manually" type="FAILURE">
+<![CDATA[  [chromium] › tracking.spec.ts:49:3 › Location Tracking › should post location manually ───────────
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Location Tracking › should display existing locations on map" classname="tracking.spec.ts" time="0.004">
+<failure message="tracking.spec.ts:94:3 should display existing locations on map" type="FAILURE">
+<![CDATA[  [chromium] › tracking.spec.ts:94:3 › Location Tracking › should display existing locations on map 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Location Tracking › should handle public vs private locations" classname="tracking.spec.ts" time="0.005">
+<failure message="tracking.spec.ts:140:3 should handle public vs private locations" type="FAILURE">
+<![CDATA[  [chromium] › tracking.spec.ts:140:3 › Location Tracking › should handle public vs private locations 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Location Tracking › should display location popup with details" classname="tracking.spec.ts" time="0.004">
+<failure message="tracking.spec.ts:192:3 should display location popup with details" type="FAILURE">
+<![CDATA[  [chromium] › tracking.spec.ts:192:3 › Location Tracking › should display location popup with details 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Location Tracking › should filter locations by session" classname="tracking.spec.ts" time="0.005">
+<failure message="tracking.spec.ts:244:3 should filter locations by session" type="FAILURE">
+<![CDATA[  [chromium] › tracking.spec.ts:244:3 › Location Tracking › should filter locations by session ─────
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+</testsuite>
+<testsuite name="ui.spec.ts" timestamp="2025-09-02T16:29:52.924Z" hostname="chromium" tests="9" failures="9" skipped="0" time="0.039" errors="0">
+<testcase name="User Interface › should load the main page successfully" classname="ui.spec.ts" time="0.004">
+<failure message="ui.spec.ts:9:3 should load the main page successfully" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:9:3 › User Interface › should load the main page successfully ────────────
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="User Interface › should display theme toggle widget" classname="ui.spec.ts" time="0.004">
+<failure message="ui.spec.ts:23:3 should display theme toggle widget" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:23:3 › User Interface › should display theme toggle widget ───────────────
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="User Interface › should handle responsive design - mobile viewport" classname="ui.spec.ts" time="0.004">
+<failure message="ui.spec.ts:67:3 should handle responsive design - mobile viewport" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:67:3 › User Interface › should handle responsive design - mobile viewport 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="User Interface › should handle responsive design - tablet viewport" classname="ui.spec.ts" time="0.006">
+<failure message="ui.spec.ts:89:3 should handle responsive design - tablet viewport" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:89:3 › User Interface › should handle responsive design - tablet viewport 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="User Interface › should display error handling for network failures" classname="ui.spec.ts" time="0.003">
+<failure message="ui.spec.ts:107:3 should display error handling for network failures" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:107:3 › User Interface › should display error handling for network failures 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="User Interface › should provide keyboard navigation support" classname="ui.spec.ts" time="0.004">
+<failure message="ui.spec.ts:168:3 should provide keyboard navigation support" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:168:3 › User Interface › should provide keyboard navigation support ──────
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="User Interface › should display loading states appropriately" classname="ui.spec.ts" time="0.004">
+<failure message="ui.spec.ts:193:3 should display loading states appropriately" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:193:3 › User Interface › should display loading states appropriately ─────
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="User Interface › should maintain consistent styling across components" classname="ui.spec.ts" time="0.005">
+<failure message="ui.spec.ts:253:3 should maintain consistent styling across components" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:253:3 › User Interface › should maintain consistent styling across components 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="User Interface › should handle window resize events" classname="ui.spec.ts" time="0.005">
+<failure message="ui.spec.ts:296:3 should handle window resize events" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:296:3 › User Interface › should handle window resize events ──────────────
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+</testsuite>
+<testsuite name="workflows.spec.ts" timestamp="2025-09-02T16:29:52.924Z" hostname="chromium" tests="5" failures="5" skipped="0" time="0.017" errors="0">
+<testcase name="Integration Workflows › complete user journey: signup → login → create session → track locations → share" classname="workflows.spec.ts" time="0.004">
+<failure message="workflows.spec.ts:21:3 complete user journey: signup → login → create session → track locations → share" type="FAILURE">
+<![CDATA[  [chromium] › workflows.spec.ts:21:3 › Integration Workflows › complete user journey: signup → login → create session → track locations → share 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Integration Workflows › cross-user interaction: user A creates public session, user B views locations" classname="workflows.spec.ts" time="0.004">
+<failure message="workflows.spec.ts:130:3 cross-user interaction: user A creates public session, user B views locations" type="FAILURE">
+<![CDATA[  [chromium] › workflows.spec.ts:130:3 › Integration Workflows › cross-user interaction: user A creates public session, user B views locations 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Integration Workflows › data consistency: UI actions match API state" classname="workflows.spec.ts" time="0.003">
+<failure message="workflows.spec.ts:198:3 data consistency: UI actions match API state" type="FAILURE">
+<![CDATA[  [chromium] › workflows.spec.ts:198:3 › Integration Workflows › data consistency: UI actions match API state 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Integration Workflows › error recovery: handle network failures gracefully" classname="workflows.spec.ts" time="0.003">
+<failure message="workflows.spec.ts:281:3 error recovery: handle network failures gracefully" type="FAILURE">
+<![CDATA[  [chromium] › workflows.spec.ts:281:3 › Integration Workflows › error recovery: handle network failures gracefully 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="Integration Workflows › session workflow: create → edit → add locations → toggle visibility → delete" classname="workflows.spec.ts" time="0.003">
+<failure message="workflows.spec.ts:434:3 session workflow: create → edit → add locations → toggle visibility → delete" type="FAILURE">
+<![CDATA[  [chromium] › workflows.spec.ts:434:3 › Integration Workflows › session workflow: create → edit → add locations → toggle visibility → delete 
+
+    Error: browserType.launch: Executable doesn't exist at /home/dyuri/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+</testsuite>
+</testsuites>

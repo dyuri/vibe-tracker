@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import AuthService from '../public/auth-service.ts';
+import AuthService from '../src/services/auth-service';
 
 // Mock fetch
 global.fetch = vi.fn();

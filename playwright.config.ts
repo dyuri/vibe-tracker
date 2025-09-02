@@ -4,7 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  testDir: './tests/e2e',
+  testDir: './tests-e2e/e2e',
 
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -55,8 +55,8 @@ export default defineConfig({
   ],
 
   /* Global setup and teardown */
-  globalSetup: require.resolve('./tests/global-setup.ts'),
-  globalTeardown: require.resolve('./tests/global-teardown.ts'),
+  globalSetup: './tests-e2e/global-setup.ts',
+  globalTeardown: './tests-e2e/global-teardown.ts',
 
   /* Folder for test artifacts such as screenshots, videos, traces, etc. */
   outputDir: 'test-results/',
@@ -77,7 +77,7 @@ export default defineConfig({
     timeout: 120 * 1000,
     env: {
       TEST_MODE: 'true',
-      DB_PATH: 'tests/fixtures/test.db',
+      DB_PATH: 'tests-e2e/fixtures/test.db',
     },
   },
 });
