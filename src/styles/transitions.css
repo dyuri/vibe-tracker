@@ -2,24 +2,24 @@
  * CSS View Transitions for SPA routing
  */
 
-/* Enable view transitions for the root element */
-:root {
-  view-transition-name: root;
+/* Enable view transitions for the main content area */
+#content {
+  view-transition-name: main-content;
 }
 
-/* Default transition for all elements */
-::view-transition-old(root),
-::view-transition-new(root) {
+/* Default transition for main content */
+::view-transition-old(main-content),
+::view-transition-new(main-content) {
   animation-duration: 0.3s;
   animation-timing-function: ease-in-out;
 }
 
 /* Fade transition between views */
-::view-transition-old(root) {
+::view-transition-old(main-content) {
   animation-name: fade-out;
 }
 
-::view-transition-new(root) {
+::view-transition-new(main-content) {
   animation-name: fade-in;
 }
 
