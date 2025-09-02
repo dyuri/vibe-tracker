@@ -48,14 +48,14 @@ export default class LoginWidget extends HTMLElement implements LoginWidgetEleme
         </div>
         <div id="user-menu" style="display: none;">
           <div class="user-info">
-            <a href="/profile" class="username" id="user-name"></a>
+            <a href="/profile" data-route="/profile" class="username" id="user-name"></a>
             <div class="email" id="user-email"></div>
           </div>
           <ul class="nav-menu">
-            <li><a href="/">Home</a></li>
-            <li><a href="/u/" id="nav-my-map">My Map</a></li>
-            <li><a href="/profile">Profile</a></li>
-            <li><a href="/profile/sessions">Sessions</a></li>
+            <li><a href="/" data-route="/">Home</a></li>
+            <li><a href="/u/" data-route="/u/" id="nav-my-map">My Map</a></li>
+            <li><a href="/profile" data-route="/profile">Profile</a></li>
+            <li><a href="/profile/sessions" data-route="/profile/sessions">Sessions</a></li>
           </ul>
           <button id="logout-button" class="logout-button">Logout</button>
         </div>
@@ -207,6 +207,7 @@ export default class LoginWidget extends HTMLElement implements LoginWidgetEleme
       const navMyMap = this.shadowRoot!.getElementById('nav-my-map') as HTMLAnchorElement;
       if (navMyMap && this.user.username) {
         navMyMap.href = `/u/${this.user.username}`;
+        navMyMap.setAttribute('data-route', `/u/${this.user.username}`);
       }
     } else {
       // Logged out state
