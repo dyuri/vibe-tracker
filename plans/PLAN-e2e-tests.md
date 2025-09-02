@@ -15,75 +15,88 @@ Add comprehensive Playwright E2E tests for the Vibe Tracker application, coverin
 
 ## 2. **Test Environment Setup**
 
-### Database Management
+### Database Management ✅ COMPLETED
 
-- Create `tests/fixtures/template.db` - clean PocketBase database with schema
-- Implement database isolation using temporary files per test run
-- Add database seeding utilities for consistent test data
+- ✅ Create `tests-e2e/fixtures/template.db` - clean PocketBase database with schema
+- ✅ Implement database isolation using temporary files per test run
+- ✅ Add database seeding utilities for consistent test data
+- ✅ Created `tests-e2e/fixtures/sample-data.json` with comprehensive test data
+- ✅ Modified main.go to support custom data directory via `--dir` flag
 
-### Global Setup & Teardown
+### Global Setup & Teardown ✅ COMPLETED
 
-- `tests/global-setup.ts` - Start Go backend with test database, wait for readiness
-- `tests/global-teardown.ts` - Stop backend, cleanup temp files
-- Add health check utility to ensure backend is ready before tests
+- ✅ `tests-e2e/global-setup.ts` - Database preparation, Go backend verification, directory setup
+- ✅ `tests-e2e/global-teardown.ts` - Process cleanup, database removal, temp file cleanup
+- ✅ `tests-e2e/helpers/health-check.ts` - Health check utilities with polling and timeout protection
 
-## 3. **Test Infrastructure**
+## 3. **Test Infrastructure** ✅ COMPLETED
 
-### Authentication Helpers
+### Authentication Helpers ✅ COMPLETED
 
-- `tests/helpers/auth.ts` - Login via API, manage JWT tokens and storageState
-- Support for test credentials from environment variables (`$TEST_EMAIL`, `$TEST_PASSWORD`)
-- Reusable authentication contexts for different user roles
+- ✅ `tests-e2e/helpers/auth.ts` - Login via API, manage JWT tokens and storageState
+- ✅ Support for test credentials from environment variables (`$TEST_EMAIL`, `$TEST_PASSWORD`)
+- ✅ Reusable authentication contexts for different user roles
+- ✅ UI login/logout helper functions
+- ✅ Storage state management for persistent authentication
 
-### Test Data Management
+### Test Data Management ✅ COMPLETED
 
-- `tests/helpers/test-data.ts` - Create users, sessions, locations via API
-- `tests/fixtures/` - Static test data (sample locations, session configs)
-- Cleanup utilities for test isolation
+- ✅ `tests-e2e/helpers/test-data.ts` - Create users, sessions, locations via API
+- ✅ `tests-e2e/fixtures/` - Static test data (sample locations, session configs)
+- ✅ Cleanup utilities for test isolation
+- ✅ Batch data creation and scenario setup utilities
 
-### Custom Fixtures
+### API Client Helper ✅ COMPLETED
 
-- Page object models for major app sections (login, map, profile, sessions)
-- Reusable workflows (login flow, location creation, session management)
-- API request helpers for direct backend interaction
+- ✅ `tests-e2e/helpers/api-client.ts` - Comprehensive API client for PocketBase
+- ✅ Authentication, session, location, and user endpoints
+- ✅ Error handling and response standardization
+- ✅ Utility functions for common operations (batch operations, condition waiting)
 
-## 4. **Test Suites**
+## 4. **Test Suites** ✅ COMPLETED
 
-### Authentication Tests (`tests/e2e/auth.spec.ts`)
+### Authentication Tests ✅ COMPLETED (`tests-e2e/e2e/auth.spec.ts`)
 
-- Login/logout flows
-- Registration process
-- Token validation and refresh
-- Profile management (avatar upload, settings)
+- ✅ Login/logout flows with UI interactions
+- ✅ Invalid credentials error handling
+- ✅ Authentication persistence across reloads
+- ✅ Token validation and refresh
+- ✅ Storage state verification
 
-### Location Tracking Tests (`tests/e2e/tracking.spec.ts`)
+### Location Tracking Tests ✅ COMPLETED (`tests-e2e/e2e/tracking.spec.ts`)
 
-- Manual location posting
-- Map display and interaction
-- Public vs private locations
-- Location history and filtering
+- ✅ Manual location posting via map widget
+- ✅ Map display and marker rendering
+- ✅ Public vs private location visibility
+- ✅ Location popup interactions
+- ✅ Session-based location filtering
 
-### Session Management Tests (`tests/e2e/sessions.spec.ts`)
+### Session Management Tests ✅ COMPLETED (`tests-e2e/e2e/sessions.spec.ts`)
 
-- Create/edit/delete sessions
-- Session visibility settings
-- Session listing and pagination
-- Navigation between sessions
+- ✅ Create/edit/delete sessions via UI
+- ✅ Session visibility toggling (public/private)
+- ✅ Session listing and widget interactions
+- ✅ Pagination handling for multiple sessions
 
-### User Interface Tests (`tests/e2e/ui.spec.ts`)
+### User Interface Tests ✅ COMPLETED (`tests-e2e/e2e/ui.spec.ts`)
 
-- SPA navigation and routing
-- Widget functionality (login, theme toggle)
-- Responsive design testing
-- Error handling and user feedback
+- ✅ Main page loading and widget visibility
+- ✅ Theme toggle functionality
+- ✅ Responsive design testing (mobile/tablet)
+- ✅ Error handling for network failures
+- ✅ Keyboard navigation support
+- ✅ Loading states and consistent styling
+- ✅ Window resize handling
 
-### Integration Workflows (`tests/e2e/workflows.spec.ts`)
+### Integration Workflows ✅ COMPLETED (`tests-e2e/e2e/workflows.spec.ts`)
 
-- Complete user journeys (signup → create session → track locations → share)
-- Cross-user interactions (public location viewing)
-- Data consistency across UI and API
+- ✅ Complete user journeys (login → create session → track locations → share)
+- ✅ Cross-user interactions (public session visibility)
+- ✅ Data consistency between UI and API
+- ✅ Error recovery and network failure handling
+- ✅ Full session lifecycle testing
 
-## 5. **CI/CD Integration**
+## 5. **CI/CD Integration** - SKIP FOR NOW
 
 - Add test environment setup to GitHub Actions
 - Configure test database initialization in CI
@@ -100,7 +113,7 @@ Add comprehensive Playwright E2E tests for the Vibe Tracker application, coverin
 ## File Structure
 
 ```
-tests/
+tests-e2e/                    # E2E tests (separate from Go backend tests in tests/)
 ├── e2e/
 │   ├── auth.spec.ts
 │   ├── tracking.spec.ts
@@ -110,13 +123,14 @@ tests/
 ├── helpers/
 │   ├── auth.ts
 │   ├── test-data.ts
-│   └── api-client.ts
+│   ├── api-client.ts
+│   └── health-check.ts
 ├── fixtures/
 │   ├── template.db
 │   └── sample-data.json
 ├── global-setup.ts
 ├── global-teardown.ts
-└── playwright.config.ts
+└── playwright.config.ts      # Root level
 ```
 
 ## Implementation Notes

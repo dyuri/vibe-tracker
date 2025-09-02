@@ -8,3 +8,4 @@
   - return a promise that resolves when a request can be made, or something like that
 
 - integration tests
+- unit tests (extension)

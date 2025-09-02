@@ -1,0 +1,312 @@
+{
+  "users": [
+    {
+      "username": "testuser1",
+      "email": "testuser1@example.com",
+      "password": "testpassword123",
+      "name": "Test User One",
+      "verified": true
+    },
+    {
+      "username": "testuser2",
+      "email": "testuser2@example.com",
+      "password": "testpassword123",
+      "name": "Test User Two",
+      "verified": true
+    },
+    {
+      "username": "publicuser",
+      "email": "public@example.com",
+      "password": "testpassword123",
+      "name": "Public Test User",
+      "verified": true
+    }
+  ],
+  "sessions": [
+    {
+      "name": "seattle-walk",
+      "title": "Seattle Walking Tour",
+      "description": "A comprehensive walking tour around downtown Seattle, visiting major landmarks and attractions.",
+      "public": true,
+      "user": "@testuser1"
+    },
+    {
+      "name": "private-hike",
+      "title": "Mountain Hike",
+      "description": "Personal hiking session in the mountains. Private tracking for fitness purposes.",
+      "public": false,
+      "user": "@testuser1"
+    },
+    {
+      "name": "cycling-route",
+      "title": "Urban Cycling Route",
+      "description": "City cycling route for daily commute and exercise tracking.",
+      "public": true,
+      "user": "@testuser2"
+    },
+    {
+      "name": "running-track",
+      "title": "Morning Running Track",
+      "description": "Daily morning running routine around the neighborhood.",
+      "public": false,
+      "user": "@testuser2"
+    },
+    {
+      "name": "public-demo",
+      "title": "Public Demo Session",
+      "description": "Demonstration session showing public location sharing features.",
+      "public": true,
+      "user": "@publicuser"
+    }
+  ],
+  "locations": {
+    "seattle-landmarks": [
+      {
+        "latitude": 47.6085,
+        "longitude": -122.3421,
+        "altitude": 56,
+        "timestamp": "2025-01-15T10:00:00Z",
+        "session": "@seattle-walk",
+        "description": "Pike Place Market - Famous public market"
+      },
+      {
+        "latitude": 47.6205,
+        "longitude": -122.3493,
+        "altitude": 184,
+        "timestamp": "2025-01-15T10:30:00Z",
+        "session": "@seattle-walk",
+        "description": "Space Needle - Iconic Seattle landmark"
+      },
+      {
+        "latitude": 47.6062,
+        "longitude": -122.3321,
+        "altitude": 10,
+        "timestamp": "2025-01-15T11:00:00Z",
+        "session": "@seattle-walk",
+        "description": "Seattle Waterfront - Harbor views"
+      },
+      {
+        "latitude": 47.6014,
+        "longitude": -122.332,
+        "altitude": 45,
+        "timestamp": "2025-01-15T11:30:00Z",
+        "session": "@seattle-walk",
+        "description": "Pioneer Square - Historic district"
+      },
+      {
+        "latitude": 47.6097,
+        "longitude": -122.3331,
+        "altitude": 25,
+        "timestamp": "2025-01-15T12:00:00Z",
+        "session": "@seattle-walk",
+        "description": "Ferry Terminal - Transportation hub"
+      }
+    ],
+    "mountain-trail": [
+      {
+        "latitude": 47.4502,
+        "longitude": -121.7626,
+        "altitude": 450,
+        "speed": 3.2,
+        "heart_rate": 125,
+        "timestamp": "2025-01-20T08:00:00Z",
+        "session": "@private-hike",
+        "description": "Trailhead - Starting point"
+      },
+      {
+        "latitude": 47.4512,
+        "longitude": -121.7636,
+        "altitude": 520,
+        "speed": 2.8,
+        "heart_rate": 135,
+        "timestamp": "2025-01-20T08:15:00Z",
+        "session": "@private-hike",
+        "description": "Steep climb section"
+      },
+      {
+        "latitude": 47.4525,
+        "longitude": -121.7645,
+        "altitude": 650,
+        "speed": 2.1,
+        "heart_rate": 145,
+        "timestamp": "2025-01-20T08:30:00Z",
+        "session": "@private-hike",
+        "description": "Ridge viewpoint"
+      },
+      {
+        "latitude": 47.4535,
+        "longitude": -121.7655,
+        "altitude": 780,
+        "speed": 1.5,
+        "heart_rate": 155,
+        "timestamp": "2025-01-20T08:45:00Z",
+        "session": "@private-hike",
+        "description": "Summit approach"
+      }
+    ],
+    "cycling-route": [
+      {
+        "latitude": 47.6149,
+        "longitude": -122.3194,
+        "altitude": 30,
+        "speed": 25.5,
+        "timestamp": "2025-01-18T07:00:00Z",
+        "session": "@cycling-route",
+        "description": "Starting from home"
+      },
+      {
+        "latitude": 47.618,
+        "longitude": -122.315,
+        "altitude": 45,
+        "speed": 28.2,
+        "timestamp": "2025-01-18T07:05:00Z",
+        "session": "@cycling-route",
+        "description": "Capitol Hill climb"
+      },
+      {
+        "latitude": 47.622,
+        "longitude": -122.312,
+        "altitude": 65,
+        "speed": 22.1,
+        "timestamp": "2025-01-18T07:10:00Z",
+        "session": "@cycling-route",
+        "description": "Steep hill section"
+      },
+      {
+        "latitude": 47.625,
+        "longitude": -122.308,
+        "altitude": 85,
+        "speed": 32.5,
+        "timestamp": "2025-01-18T07:15:00Z",
+        "session": "@cycling-route",
+        "description": "Downhill cruise"
+      }
+    ],
+    "running-track": [
+      {
+        "latitude": 47.61,
+        "longitude": -122.32,
+        "altitude": 20,
+        "speed": 12.5,
+        "heart_rate": 140,
+        "timestamp": "2025-01-22T06:30:00Z",
+        "session": "@running-track",
+        "description": "Starting warm-up"
+      },
+      {
+        "latitude": 47.611,
+        "longitude": -122.318,
+        "altitude": 25,
+        "speed": 14.2,
+        "heart_rate": 155,
+        "timestamp": "2025-01-22T06:35:00Z",
+        "session": "@running-track",
+        "description": "Picking up pace"
+      },
+      {
+        "latitude": 47.612,
+        "longitude": -122.316,
+        "altitude": 30,
+        "speed": 16.8,
+        "heart_rate": 165,
+        "timestamp": "2025-01-22T06:40:00Z",
+        "session": "@running-track",
+        "description": "Sprint interval"
+      }
+    ],
+    "demo-locations": [
+      {
+        "latitude": 47.6,
+        "longitude": -122.3,
+        "altitude": 15,
+        "timestamp": "2025-01-25T14:00:00Z",
+        "session": "@public-demo",
+        "description": "Demo location 1 - Public sharing example"
+      },
+      {
+        "latitude": 47.602,
+        "longitude": -122.298,
+        "altitude": 20,
+        "timestamp": "2025-01-25T14:05:00Z",
+        "session": "@public-demo",
+        "description": "Demo location 2 - Real-time tracking"
+      },
+      {
+        "latitude": 47.604,
+        "longitude": -122.296,
+        "altitude": 25,
+        "timestamp": "2025-01-25T14:10:00Z",
+        "session": "@public-demo",
+        "description": "Demo location 3 - End point"
+      }
+    ]
+  },
+  "test_scenarios": {
+    "basic_user_flow": {
+      "description": "Simple user registration, session creation, and location tracking",
+      "user": "@testuser1",
+      "session": "@seattle-walk",
+      "location_count": 5
+    },
+    "privacy_testing": {
+      "description": "Test public vs private session visibility",
+      "public_session": "@seattle-walk",
+      "private_session": "@private-hike",
+      "users": ["@testuser1", "@testuser2"]
+    },
+    "multi_user_scenario": {
+      "description": "Multiple users with different session types",
+      "users": ["@testuser1", "@testuser2", "@publicuser"],
+      "sessions": ["@seattle-walk", "@cycling-route", "@public-demo"]
+    },
+    "performance_testing": {
+      "description": "Large dataset for performance testing",
+      "location_count": 100,
+      "session_count": 10,
+      "user_count": 5
+    }
+  },
+  "api_endpoints": {
+    "authentication": {
+      "login": "/api/auth/login",
+      "refresh": "/api/auth/refresh",
+      "profile": "/api/me"
+    },
+    "sessions": {
+      "list": "/api/sessions/:username",
+      "get": "/api/sessions/:username/:name",
+      "create": "/api/sessions",
+      "update": "/api/sessions/:username/:name",
+      "delete": "/api/sessions/:username/:name"
+    },
+    "locations": {
+      "track_get": "/api/track/:username/:session",
+      "track_post": "/api/track",
+      "public": "/api/public"
+    },
+    "health": {
+      "liveness": "/health/liveness",
+      "readiness": "/health/readiness"
+    }
+  },
+  "test_configuration": {
+    "database": {
+      "template": "tests-e2e/fixtures/template.db",
+      "test": "tests-e2e/fixtures/test.db"
+    },
+    "environment": {
+      "test_email": "TEST_EMAIL",
+      "test_password": "TEST_PASSWORD",
+      "base_url": "http://localhost:8090"
+    },
+    "timeouts": {
+      "default": 5000,
+      "navigation": 30000,
+      "action": 10000
+    },
+    "retry": {
+      "attempts": 3,
+      "delay": 1000
+    }
+  }
+}
