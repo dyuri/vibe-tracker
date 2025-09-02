@@ -18,3 +18,30 @@ body {
   color: var(--text-error);
   font-family: var(--font-family-base);
 }
+
+/* Utility classes for common elements */
+.page-title {
+  margin: 0;
+  font-size: var(--font-size-xlarge, 24px);
+  font-weight: var(--font-weight-bold, 600);
+}
+
+.page-subtitle {
+  margin: var(--spacing-xs, 4px) 0 0 0;
+  font-size: var(--font-size-base, 14px);
+  color: var(--text-secondary, #666);
+}
+
+.error-details {
+  margin: var(--spacing-sm, 0.5rem) 0;
+  text-align: left;
+}
+
+.error-pre {
+  font-size: var(--font-size-sm, 0.875rem);
+  white-space: pre-wrap;
+  margin: var(--spacing-sm, 0.5rem) 0;
+  padding: var(--spacing-sm, 0.5rem);
+  background: var(--bg-muted, #f8f9fa);
+  border-radius: var(--border-radius-sm, 0.125rem);
+}

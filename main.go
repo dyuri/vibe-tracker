@@ -180,12 +180,13 @@ func setupStaticRoutes(router *echo.Echo) {
 		return c.File("dist/index.html")
 	})
 
+	// SPA fallback routes - serve index.html for frontend routes
 	router.GET("/profile", func(c echo.Context) error {
-		return c.File("dist/profile.html")
+		return c.File("dist/index.html")
 	})
 
 	router.GET("/profile/sessions", func(c echo.Context) error {
-		return c.File("dist/sessions.html")
+		return c.File("dist/index.html")
 	})
 
 	router.Static("/", "dist")

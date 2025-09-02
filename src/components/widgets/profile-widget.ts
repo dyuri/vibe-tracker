@@ -118,17 +118,7 @@ export default class ProfileWidget extends HTMLElement implements ProfileWidgetE
           
           <div class="form-group">
             <p>Manage your tracking sessions, create new ones, and organize your location data.</p>
-            <a href="/profile/sessions" style="
-              display: inline-block;
-              background-color: var(--color-primary);
-              color: var(--text-inverse);
-              text-decoration: none;
-              padding: var(--spacing-sm) var(--spacing-lg);
-              border-radius: var(--border-radius-sm);
-              font-size: var(--font-size-base);
-              transition: var(--transition-base);
-            " onmouseover="this.style.backgroundColor='var(--color-primary-hover)'" 
-               onmouseout="this.style.backgroundColor='var(--color-primary)'">
+            <a href="/profile/sessions" class="button-link">
               Manage Sessions →
             </a>
           </div>

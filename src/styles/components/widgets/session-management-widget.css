@@ -189,3 +189,16 @@ button:disabled {
   font-size: 12px;
   font-weight: var(--font-weight-bold);
 }
+
+/* Utility classes for show/hide functionality */
+.hidden {
+  display: none !important;
+}
+
+.show-inline-block {
+  display: inline-block !important;
+}
+
+.form-help-text {
+  color: var(--text-muted);
+}

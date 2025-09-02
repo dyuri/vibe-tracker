@@ -350,16 +350,9 @@ export function withErrorBoundary<T extends new (...args: any[]) => HTMLElement>
         ">
           <h4>Something went wrong</h4>
           <p>This component encountered an error and couldn't render properly.</p>
-          <details style="margin: var(--spacing-sm, 0.5rem) 0; text-align: left;">
+          <details class="error-details">
             <summary>Error Details</summary>
-            <pre style="
-              font-size: var(--font-size-sm, 0.875rem);
-              white-space: pre-wrap;
-              margin: var(--spacing-sm, 0.5rem) 0;
-              padding: var(--spacing-sm, 0.5rem);
-              background: var(--bg-muted, #f8f9fa);
-              border-radius: var(--border-radius-sm, 0.125rem);
-            ">${error.message}</pre>
+            <pre class="error-pre">${error.message}</pre>
           </details>
           ${retryButton}
         </div>

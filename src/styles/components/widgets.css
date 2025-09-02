@@ -12,18 +12,18 @@ location-widget {
   z-index: 1000;
 }
 
-login-widget {
-  position: absolute;
-  bottom: var(--spacing-sm);
-  right: var(--spacing-sm);
-  z-index: 1000;
-}
-
-/* Theme toggle positioning */
-#profile-theme-toggle,
-#sessions-theme-toggle {
+/* Global theme toggle positioning */
+#global-theme-toggle {
   position: fixed;
   bottom: var(--spacing-sm);
   left: var(--spacing-sm);
+  z-index: 1000;
+}
+
+/* Global login widget positioning */
+#global-login {
+  position: fixed;
+  bottom: var(--spacing-sm);
+  right: var(--spacing-sm);
   z-index: 1000;
 }

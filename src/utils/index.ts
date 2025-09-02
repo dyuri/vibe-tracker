@@ -6,6 +6,9 @@
 // Utility functions
 export { generateUserColor } from './utils';
 
+// Router utilities
+export { Router, type Route } from './router';
+
 // Service Worker and PWA utilities
 export {
   registerServiceWorker,

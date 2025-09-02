@@ -28,40 +28,49 @@
     <link rel="stylesheet" href="/src/styles/main.css" />
   </head>
   <body>
-    <header
-      id="page-header"
-      style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background-color: var(--bg-panel, rgba(255, 255, 255, 0.95));
-        color: var(--text-primary, #333);
-        padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
-        box-shadow: var(--shadow-light, 0 2px 4px rgba(0, 0, 0, 0.1));
-        z-index: 1000;
-        backdrop-filter: blur(10px);
-        display: none;
-      "
-    >
-      <h1
-        id="page-title"
-        style="margin: 0; font-size: var(--font-size-xlarge, 24px); font-weight: var(--font-weight-bold, 600)"
-      ></h1>
-      <p
-        id="page-subtitle"
-        style="
-          margin: var(--spacing-xs, 4px) 0 0 0;
-          font-size: var(--font-size-base, 14px);
-          color: var(--text-secondary, #666);
-        "
-      ></p>
+    <header id="page-header" class="page-header">
+      <h1 id="page-title" class="page-title"></h1>
+      <p id="page-subtitle" class="page-subtitle"></p>
     </header>
+    <!-- Global widgets - shared across all views -->
+    <login-widget id="global-login"></login-widget>
+    <theme-toggle id="global-theme-toggle"></theme-toggle>
+
     <div id="content">
-      <map-widget></map-widget>
-      <location-widget></location-widget>
-      <login-widget></login-widget>
-      <div id="error-message" style="display: none; text-align: center; padding: 20px"></div>
+      <!-- Main app view (map, location tracking) - Always visible as background -->
+      <div id="main-view" class="main-view">
+        <map-widget></map-widget>
+        <location-widget></location-widget>
+        <div id="error-message" class="error-message hidden"></div>
+      </div>
+
+      <!-- Profile view overlay -->
+      <div id="profile-view" class="view-overlay hidden">
+        <div class="overlay-container">
+          <header class="profile-header">
+            <h1>User Profile</h1>
+            <nav class="overlay-nav">
+              <a href="/" data-route="/">← Back to Map</a>
+              <a href="/profile/sessions" data-route="/profile/sessions">Sessions</a>
+            </nav>
+          </header>
+          <div id="profile-widget-container"></div>
+        </div>
+      </div>
+
+      <!-- Sessions view overlay -->
+      <div id="sessions-view" class="view-overlay hidden">
+        <div class="overlay-container">
+          <header class="profile-header">
+            <h1>Session Management</h1>
+            <nav class="overlay-nav">
+              <a href="/" data-route="/">← Back to Map</a>
+              <a href="/profile" data-route="/profile">Profile</a>
+            </nav>
+          </header>
+          <div id="session-widget-container"></div>
+        </div>
+      </div>
     </div>
     <script type="module" src="/src/apps/app.ts"></script>
   </body>

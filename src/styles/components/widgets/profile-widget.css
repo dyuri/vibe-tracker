@@ -156,3 +156,19 @@ button:disabled {
   color: var(--text-muted);
   margin-bottom: var(--spacing-sm);
 }
+
+/* Utility classes for profile functionality */
+.button-link {
+  display: inline-block;
+  background-color: var(--color-primary);
+  color: var(--text-inverse);
+  text-decoration: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-base);
+  transition: var(--transition-base);
+}
+
+.button-link:hover {
+  background-color: var(--color-primary-hover);
+}
