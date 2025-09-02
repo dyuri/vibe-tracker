@@ -57,12 +57,15 @@
         "
       ></p>
     </header>
+    <!-- Global widgets - shared across all views -->
+    <login-widget id="global-login"></login-widget>
+    <theme-toggle id="global-theme-toggle"></theme-toggle>
+
     <div id="content">
       <!-- Main app view (map, location tracking) - Always visible as background -->
       <div id="main-view" class="main-view">
         <map-widget></map-widget>
         <location-widget></location-widget>
-        <login-widget></login-widget>
         <div id="error-message" class="error-message hidden"></div>
       </div>
 
@@ -76,9 +79,7 @@
               <a href="/profile/sessions" data-route="/profile/sessions">Sessions</a>
             </nav>
           </header>
-          <login-widget id="profile-login" open-by-default></login-widget>
           <div id="profile-widget-container"></div>
-          <theme-toggle id="profile-theme-toggle"></theme-toggle>
         </div>
       </div>
 
@@ -92,9 +93,7 @@
               <a href="/profile" data-route="/profile">Profile</a>
             </nav>
           </header>
-          <login-widget id="sessions-login" open-by-default></login-widget>
           <div id="session-widget-container"></div>
-          <theme-toggle id="sessions-theme-toggle"></theme-toggle>
         </div>
       </div>
     </div>

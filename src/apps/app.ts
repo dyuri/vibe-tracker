@@ -126,10 +126,10 @@ async function loadSessionWidget(): Promise<void> {
 }
 
 /**
- * Check authentication and configure login widget for profile/sessions views
+ * Check authentication and configure global login widget
  */
-function checkAuthAndConfigureLogin(loginWidgetId: string): void {
-  const loginWidget = document.getElementById(loginWidgetId) as LoginWidgetElement | null;
+function checkAuthAndConfigureLogin(): void {
+  const loginWidget = document.getElementById('global-login') as LoginWidgetElement | null;
   if (!loginWidget) {
     return;
   }
@@ -175,7 +175,7 @@ router.addRoute('/profile', async () => {
 
   try {
     await loadProfileWidget();
-    checkAuthAndConfigureLogin('profile-login');
+    checkAuthAndConfigureLogin();
   } finally {
     if (profileView) {
       profileView.classList.remove('view-transition-loading');
@@ -199,7 +199,7 @@ router.addRoute('/profile/sessions', async () => {
 
   try {
     await loadSessionWidget();
-    checkAuthAndConfigureLogin('sessions-login');
+    checkAuthAndConfigureLogin();
   } finally {
     if (sessionsView) {
       sessionsView.classList.remove('view-transition-loading');
@@ -322,10 +322,8 @@ document.addEventListener('auth-change', (e: Event) => {
 
     // If user logs out from profile or sessions view, show login panel again
     const currentRoute = router.getCurrentRoute();
-    if (currentRoute === '/profile') {
-      setTimeout(() => checkAuthAndConfigureLogin('profile-login'), 100);
-    } else if (currentRoute === '/profile/sessions') {
-      setTimeout(() => checkAuthAndConfigureLogin('sessions-login'), 100);
+    if (currentRoute === '/profile' || currentRoute === '/profile/sessions') {
+      setTimeout(() => checkAuthAndConfigureLogin(), 100);
     }
   }
 });
