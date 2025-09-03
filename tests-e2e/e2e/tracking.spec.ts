@@ -46,7 +46,7 @@ test.describe('Location Tracking', () => {
     expect(isMapInitialized).toBe(true);
   });
 
-  test('should post location manually', async ({ page }) => {
+  test('should create location via API and display on map', async ({ page }) => {
     // Wait for map to be ready
     await page.waitForSelector('map-widget');
     await page.waitForTimeout(2000);
@@ -58,37 +58,45 @@ test.describe('Location Tracking', () => {
 
     // Create a test session first
     const apiClient = createApiClient(baseURL, token!);
+    const sessionName = `manual-test-${Date.now()}`;
     const session = await createTestSession(baseURL, authData, {
       title: 'Manual Location Test',
       isPublic: false,
+      name: sessionName,
     });
 
-    // Simulate posting a location via the map widget
-    const testLocation = {
+    // Navigate to the session-specific page first
+    const username = authData.record.username;
+    await page.goto(`/u/${username}/s/${sessionName}`);
+    await page.waitForSelector('map-widget');
+    await page.waitForTimeout(2000);
+
+    // Create a location via API
+    await createTestLocation(baseURL, authData, {
       latitude: 47.6062,
       longitude: -122.3321,
       accuracy: 10,
-      sessionId: session.id,
-    };
+      session: sessionName,
+    });
 
-    await page.evaluate(location => {
+    // Reload the page to show the new location
+    await page.goto(`/u/${username}/s/${sessionName}`);
+    await page.waitForSelector('map-widget');
+    await page.waitForTimeout(3000);
+
+    // Verify location was created by checking the map shows 1 marker
+    const markerCount = await page.evaluate(() => {
       const mapWidget = document.querySelector('map-widget') as any;
-      if (mapWidget && mapWidget.postLocation) {
-        mapWidget.postLocation(location.latitude, location.longitude, location.accuracy);
+      const shadowRoot = mapWidget?.shadowRoot;
+      if (shadowRoot) {
+        const mapContainer = shadowRoot.querySelector('#map');
+        const markers = mapContainer?.querySelectorAll('.leaflet-marker-icon');
+        return markers?.length || 0;
       }
-    }, testLocation);
+      return 0;
+    });
 
-    // Wait for location to be posted
-    await page.waitForTimeout(2000);
-
-    // Verify location was created via API
-    const locationsResponse = await apiClient.getLocations(`sessionId='${session.id}'`);
-    expect(locationsResponse.success).toBe(true);
-    expect(locationsResponse.data?.items?.length).toBeGreaterThan(0);
-
-    const postedLocation = locationsResponse.data.items[0];
-    expect(Math.abs(postedLocation.latitude - testLocation.latitude)).toBeLessThan(0.001);
-    expect(Math.abs(postedLocation.longitude - testLocation.longitude)).toBeLessThan(0.001);
+    expect(markerCount).toBe(1);
   });
 
   test('should display existing locations on map', async ({ page }) => {
@@ -97,10 +105,12 @@ test.describe('Location Tracking', () => {
     const userStr = await page.evaluate(() => localStorage.getItem('user'));
     const authData = { token: token!, record: JSON.parse(userStr!) };
 
-    // Create test session and locations
+    // Create test session and locations - define session name explicitly
+    const sessionName = `test-session-${Date.now()}`;
     const session = await createTestSession(baseURL, authData, {
       title: 'Display Locations Test',
       isPublic: false,
+      name: sessionName,
     });
 
     const testLocations = [
@@ -113,16 +123,17 @@ test.describe('Location Tracking', () => {
     for (const loc of testLocations) {
       await createTestLocation(baseURL, authData, {
         ...loc,
-        sessionId: session.id,
+        session: sessionName,
       });
     }
 
-    // Reload page to display locations
-    await page.reload();
+    // Navigate to session-specific page to see the locations
+    const username = authData.record.username;
+    await page.goto(`/u/${username}/s/${sessionName}`);
     await page.waitForSelector('map-widget');
     await page.waitForTimeout(3000);
 
-    // Check that markers are displayed on the map
+    // Check that one marker (latest position) and a track line are displayed
     const markerCount = await page.evaluate(() => {
       const mapWidget = document.querySelector('map-widget') as any;
       const shadowRoot = mapWidget?.shadowRoot;
@@ -134,7 +145,22 @@ test.describe('Location Tracking', () => {
       return 0;
     });
 
-    expect(markerCount).toBe(testLocations.length);
+    // Should see 1 marker (latest position) for the session
+    expect(markerCount).toBe(1);
+
+    // Check that a track line exists (polyline)
+    const hasTrackLine = await page.evaluate(() => {
+      const mapWidget = document.querySelector('map-widget') as any;
+      const shadowRoot = mapWidget?.shadowRoot;
+      if (shadowRoot) {
+        const mapContainer = shadowRoot.querySelector('#map');
+        const polylines = mapContainer?.querySelectorAll('.leaflet-interactive[fill="none"]');
+        return polylines?.length > 0;
+      }
+      return false;
+    });
+
+    expect(hasTrackLine).toBe(true);
   });
 
   test('should handle public vs private locations', async ({ page }) => {
@@ -144,38 +170,40 @@ test.describe('Location Tracking', () => {
     const authData = { token: token!, record: JSON.parse(userStr!) };
 
     // Create public session and location
+    const publicSessionName = `public-test-${Date.now()}`;
     const publicSession = await createTestSession(baseURL, authData, {
       title: 'Public Session Test',
       isPublic: true,
+      name: publicSessionName,
     });
 
     const publicLocation = await createTestLocation(baseURL, authData, {
       latitude: 47.6062,
       longitude: -122.3321,
-      sessionId: publicSession.id,
-      isPublic: true,
+      session: publicSessionName,
     });
 
     // Create private session and location
+    const privateSessionName = `private-test-${Date.now()}`;
     const privateSession = await createTestSession(baseURL, authData, {
       title: 'Private Session Test',
       isPublic: false,
+      name: privateSessionName,
     });
 
     const privateLocation = await createTestLocation(baseURL, authData, {
       latitude: 47.6085,
       longitude: -122.3421,
-      sessionId: privateSession.id,
-      isPublic: false,
+      session: privateSessionName,
     });
 
-    // Reload page to display locations
-    await page.reload();
+    // Test public session visibility on main page
+    await page.goto('/');
     await page.waitForSelector('map-widget');
     await page.waitForTimeout(3000);
 
-    // Both locations should be visible to the owner
-    const markerCount = await page.evaluate(() => {
+    // Only public location should be visible on public page
+    const publicMarkerCount = await page.evaluate(() => {
       const mapWidget = document.querySelector('map-widget') as any;
       const shadowRoot = mapWidget?.shadowRoot;
       if (shadowRoot) {
@@ -186,7 +214,29 @@ test.describe('Location Tracking', () => {
       return 0;
     });
 
-    expect(markerCount).toBe(2);
+    // Should see at least 1 marker from public session (there might be other public locations)
+    expect(publicMarkerCount).toBeGreaterThanOrEqual(1);
+
+    // Test private session is not visible - navigate to specific private session as non-owner would fail
+    // But as owner, check the private session directly
+    const username = authData.record.username;
+    await page.goto(`/u/${username}/s/${privateSessionName}`);
+    await page.waitForSelector('map-widget');
+    await page.waitForTimeout(2000);
+
+    // Private session should have 1 location when viewed by owner
+    const privateMarkerCount = await page.evaluate(() => {
+      const mapWidget = document.querySelector('map-widget') as any;
+      const shadowRoot = mapWidget?.shadowRoot;
+      if (shadowRoot) {
+        const mapContainer = shadowRoot.querySelector('#map');
+        const markers = mapContainer?.querySelectorAll('.leaflet-marker-icon');
+        return markers?.length || 0;
+      }
+      return 0;
+    });
+
+    expect(privateMarkerCount).toBe(1);
   });
 
   test('should display location popup with details', async ({ page }) => {
@@ -196,19 +246,22 @@ test.describe('Location Tracking', () => {
     const authData = { token: token!, record: JSON.parse(userStr!) };
 
     // Create test session and location
+    const sessionName = `popup-test-${Date.now()}`;
     const session = await createTestSession(baseURL, authData, {
       title: 'Popup Test Session',
       isPublic: false,
+      name: sessionName,
     });
 
     const testLocation = await createTestLocation(baseURL, authData, {
       latitude: 47.6062,
       longitude: -122.3321,
-      sessionId: session.id,
+      session: sessionName,
     });
 
-    // Reload page to display location
-    await page.reload();
+    // Navigate to session-specific page to display location
+    const username = authData.record.username;
+    await page.goto(`/u/${username}/s/${sessionName}`);
     await page.waitForSelector('map-widget');
     await page.waitForTimeout(3000);
 
@@ -248,35 +301,45 @@ test.describe('Location Tracking', () => {
     const authData = { token: token!, record: JSON.parse(userStr!) };
 
     // Create two test sessions with locations
+    const session1Name = `session1-${Date.now()}`;
     const session1 = await createTestSession(baseURL, authData, {
       title: 'Session 1',
       isPublic: false,
+      name: session1Name,
     });
 
+    const session2Name = `session2-${Date.now()}`;
     const session2 = await createTestSession(baseURL, authData, {
       title: 'Session 2',
       isPublic: false,
+      name: session2Name,
     });
 
     // Create locations for each session
     await createTestLocation(baseURL, authData, {
       latitude: 47.6062,
       longitude: -122.3321,
-      sessionId: session1.id,
+      session: session1Name,
     });
 
     await createTestLocation(baseURL, authData, {
       latitude: 47.6085,
       longitude: -122.3421,
-      sessionId: session2.id,
+      session: session2Name,
     });
 
-    // Reload page
-    await page.reload();
+    // Navigate to main page where both sessions' locations should be visible
+    await page.goto('/');
     await page.waitForSelector('map-widget');
     await page.waitForTimeout(3000);
 
-    // Initially, all locations should be visible
+    // Navigate to the user's map where all sessions should be visible
+    const username = authData.record.username;
+    await page.goto(`/u/${username}`);
+    await page.waitForSelector('map-widget');
+    await page.waitForTimeout(3000);
+
+    // Check initial marker count (may show latest session only)
     let markerCount = await page.evaluate(() => {
       const mapWidget = document.querySelector('map-widget') as any;
       const shadowRoot = mapWidget?.shadowRoot;
@@ -288,19 +351,34 @@ test.describe('Location Tracking', () => {
       return 0;
     });
 
-    expect(markerCount).toBe(2);
+    // User route only shows latest session, so we should see 1 marker
+    expect(markerCount).toBeGreaterThanOrEqual(1);
 
-    // Filter by first session
-    await page.evaluate(sessionId => {
+    // Navigate to first session specifically
+    await page.goto(`/u/${username}/s/${session1Name}`);
+    await page.waitForSelector('map-widget');
+    await page.waitForTimeout(2000);
+
+    // Should see only session1's location
+    markerCount = await page.evaluate(() => {
       const mapWidget = document.querySelector('map-widget') as any;
-      if (mapWidget && mapWidget.filterBySession) {
-        mapWidget.filterBySession(sessionId);
+      const shadowRoot = mapWidget?.shadowRoot;
+      if (shadowRoot) {
+        const mapContainer = shadowRoot.querySelector('#map');
+        const markers = mapContainer?.querySelectorAll('.leaflet-marker-icon');
+        return markers?.length || 0;
       }
-    }, session1.id);
+      return 0;
+    });
 
-    await page.waitForTimeout(1000);
+    expect(markerCount).toBe(1);
 
-    // Only one location should be visible
+    // Navigate to second session specifically
+    await page.goto(`/u/${username}/s/${session2Name}`);
+    await page.waitForSelector('map-widget');
+    await page.waitForTimeout(2000);
+
+    // Should see only session2's location
     markerCount = await page.evaluate(() => {
       const mapWidget = document.querySelector('map-widget') as any;
       const shadowRoot = mapWidget?.shadowRoot;

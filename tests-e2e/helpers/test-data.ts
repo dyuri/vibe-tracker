@@ -24,6 +24,7 @@ export interface TestLocation {
   heading?: number;
   timestamp?: string;
   sessionId?: string;
+  session?: string;
   userId?: string;
   isPublic?: boolean;
   created?: string;
@@ -183,10 +184,10 @@ export async function createTestLocation(
 export async function createTestLocationsForSession(
   baseURL: string,
   authData: AuthTokenResponse,
-  sessionId: string,
+  sessionName: string,
   count: number = 5
 ): Promise<TestLocation[]> {
-  console.log(`Creating ${count} test locations for session ${sessionId}`);
+  console.log(`Creating ${count} test locations for session ${sessionName}`);
 
   const locations: TestLocation[] = [];
   const baseLatitude = 47.6062;
@@ -196,7 +197,7 @@ export async function createTestLocationsForSession(
     const locationData: Partial<TestLocation> = {
       latitude: baseLatitude + i * 0.001 + (Math.random() - 0.5) * 0.0005,
       longitude: baseLongitude + i * 0.001 + (Math.random() - 0.5) * 0.0005,
-      sessionId: sessionId,
+      session: sessionName,
       timestamp: new Date(Date.now() + i * 60000).toISOString(), // 1 minute intervals
     };
 
@@ -316,7 +317,7 @@ export async function createTestScenario(
     const sessionLocations = await createTestLocationsForSession(
       baseURL,
       authData,
-      session.id!,
+      session.name!,
       locationsPerSession
     );
     locations.push(...sessionLocations);
