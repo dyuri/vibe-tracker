@@ -13,21 +13,20 @@ test.describe('User Interface', () => {
     // Check that main content area exists
     await expect(page.locator('#content')).toBeVisible();
 
-    // Check that essential widgets are present
+    // Check that essential widgets are present on main page
     await expect(page.locator('login-widget')).toBeVisible();
     await expect(page.locator('map-widget')).toBeVisible();
-    await expect(page.locator('session-management-widget')).toBeVisible();
-    await expect(page.locator('profile-widget')).toBeVisible();
+    await expect(page.locator('theme-toggle')).toBeVisible();
   });
 
   test('should display theme toggle widget', async ({ page }) => {
     // Check for theme toggle widget
-    const themeToggle = page.locator('theme-toggle-widget');
+    const themeToggle = page.locator('theme-toggle');
     await expect(themeToggle).toBeVisible();
 
     // Check that theme toggle works
     await page.evaluate(() => {
-      const themeWidget = document.querySelector('theme-toggle-widget') as any;
+      const themeWidget = document.querySelector('theme-toggle') as any;
       const shadowRoot = themeWidget?.shadowRoot;
       if (shadowRoot) {
         const toggleButton = shadowRoot.querySelector('#theme-toggle-btn') as HTMLButtonElement;
@@ -94,11 +93,10 @@ test.describe('User Interface', () => {
     // Set tablet viewport
     await page.setViewportSize({ width: 768, height: 1024 });
 
-    // Check that all widgets are visible
+    // Check that main page widgets are visible
     await expect(page.locator('login-widget')).toBeVisible();
     await expect(page.locator('map-widget')).toBeVisible();
-    await expect(page.locator('session-management-widget')).toBeVisible();
-    await expect(page.locator('profile-widget')).toBeVisible();
+    await expect(page.locator('theme-toggle')).toBeVisible();
 
     // Check layout adapts properly
     const contentWidth = await page

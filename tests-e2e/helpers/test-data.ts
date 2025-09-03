@@ -78,14 +78,16 @@ export async function createTestSession(
   authData: AuthTokenResponse,
   sessionData?: Partial<TestSession>
 ): Promise<TestSession> {
-  const defaultSessionData: Omit<TestSession, 'id'> = {
+  const sessionName = `test-session-${Date.now()}`;
+  const defaultSessionData = {
+    name: sessionName,
     title: `Test Session ${Date.now()}`,
     description: 'A test session created for E2E testing',
-    isPublic: false,
+    public: false,
     ...sessionData,
   };
 
-  const response = await fetch(`${baseURL}/api/collections/sessions/records`, {
+  const response = await fetch(`${baseURL}/api/sessions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -99,7 +101,8 @@ export async function createTestSession(
     throw new Error(`Failed to create test session with status ${response.status}: ${errorText}`);
   }
 
-  const session: TestSession = await response.json();
+  const responseData = await response.json();
+  const session: TestSession = responseData.data || responseData;
   console.log(`Created test session: ${session.title} (${session.id})`);
   return session;
 }
@@ -112,25 +115,41 @@ export async function createTestLocation(
   authData: AuthTokenResponse,
   locationData?: Partial<TestLocation>
 ): Promise<TestLocation> {
-  const defaultLocationData: Omit<TestLocation, 'id'> = {
+  const defaultLocationData = {
     latitude: 47.6062 + (Math.random() - 0.5) * 0.01, // Seattle area with small random offset
     longitude: -122.3321 + (Math.random() - 0.5) * 0.01,
-    accuracy: 10,
     altitude: 50,
     speed: 0,
-    heading: 0,
-    timestamp: new Date().toISOString(),
-    isPublic: false,
+    timestamp: Date.now(),
+    session: locationData?.session || undefined,
     ...locationData,
   };
 
-  const response = await fetch(`${baseURL}/api/collections/locations/records`, {
+  // Format as GeoJSON LocationRequest
+  const geoJsonData = {
+    type: 'Feature',
+    geometry: {
+      type: 'Point',
+      coordinates: [
+        defaultLocationData.longitude,
+        defaultLocationData.latitude,
+        defaultLocationData.altitude,
+      ],
+    },
+    properties: {
+      timestamp: defaultLocationData.timestamp,
+      speed: defaultLocationData.speed,
+      session: defaultLocationData.session,
+    },
+  };
+
+  const response = await fetch(`${baseURL}/api/track`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${authData.token}`,
     },
-    body: JSON.stringify(defaultLocationData),
+    body: JSON.stringify(geoJsonData),
   });
 
   if (!response.ok) {
@@ -138,7 +157,20 @@ export async function createTestLocation(
     throw new Error(`Failed to create test location with status ${response.status}: ${errorText}`);
   }
 
-  const location: TestLocation = await response.json();
+  const responseData = await response.json();
+  // Convert API response back to TestLocation format
+  const location: TestLocation = {
+    id: responseData.id || 'test-location',
+    latitude: defaultLocationData.latitude,
+    longitude: defaultLocationData.longitude,
+    altitude: defaultLocationData.altitude,
+    speed: defaultLocationData.speed,
+    heading: 0,
+    accuracy: 10,
+    timestamp: new Date(defaultLocationData.timestamp).toISOString(),
+    isPublic: false,
+    session: defaultLocationData.session,
+  };
   console.log(
     `Created test location: ${location.latitude}, ${location.longitude} (${location.id})`
   );

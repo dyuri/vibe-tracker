@@ -2,6 +2,7 @@ import type { User, SessionManagementWidgetElement } from '@/types';
 import styles from '@/styles/components/widgets/session-management-widget.css?inline';
 
 interface Session {
+  id: string;
   name: string;
   title?: string;
   description?: string;
@@ -293,7 +294,7 @@ export default class SessionManagementWidget
     this.sessionList.innerHTML = this.sessions
       .map(
         session => `
-      <div class="session-item">
+      <div class="session-item" data-session-id="${session.id}">
         <div class="session-info">
           <div class="session-name">${this.escapeHtml(session.name)}</div>
           ${session.title ? `<div class="session-title">${this.escapeHtml(session.title)}</div>` : ''}
@@ -306,8 +307,8 @@ export default class SessionManagementWidget
           </div>
         </div>
         <div class="session-actions">
-          <button onclick="this.getRootNode().host.editSession('${session.name}')">Edit</button>
-          <button class="btn-danger" onclick="this.getRootNode().host.deleteSession('${session.name}')">Delete</button>
+          <button class="edit-btn" data-session-id="${session.id}" onclick="this.getRootNode().host.editSession('${session.name}')">Edit</button>
+          <button class="delete-btn btn-danger" data-session-id="${session.id}" onclick="this.getRootNode().host.deleteSession('${session.name}')">Delete</button>
         </div>
       </div>
     `
@@ -513,6 +514,24 @@ export default class SessionManagementWidget
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  findSessionById(sessionId: string): Session | null {
+    return this.sessions.find(s => s.id === sessionId) || null;
+  }
+
+  editSessionById(sessionId: string): void {
+    const session = this.findSessionById(sessionId);
+    if (session) {
+      this.editSession(session.name);
+    }
+  }
+
+  deleteSessionById(sessionId: string): void {
+    const session = this.findSessionById(sessionId);
+    if (session) {
+      this.deleteSession(session.name);
+    }
   }
 }
 
