@@ -169,21 +169,7 @@ test.describe('Location Tracking', () => {
     const userStr = await page.evaluate(() => localStorage.getItem('user'));
     const authData = { token: token!, record: JSON.parse(userStr!) };
 
-    // Create public session and location
-    const publicSessionName = `public-test-${Date.now()}`;
-    const publicSession = await createTestSession(baseURL, authData, {
-      title: 'Public Session Test',
-      isPublic: true,
-      name: publicSessionName,
-    });
-
-    const publicLocation = await createTestLocation(baseURL, authData, {
-      latitude: 47.6062,
-      longitude: -122.3321,
-      session: publicSessionName,
-    });
-
-    // Create private session and location
+    // First, create a private session and location
     const privateSessionName = `private-test-${Date.now()}`;
     const privateSession = await createTestSession(baseURL, authData, {
       title: 'Private Session Test',
@@ -191,19 +177,18 @@ test.describe('Location Tracking', () => {
       name: privateSessionName,
     });
 
-    const privateLocation = await createTestLocation(baseURL, authData, {
+    await createTestLocation(baseURL, authData, {
       latitude: 47.6085,
       longitude: -122.3421,
       session: privateSessionName,
     });
 
-    // Test public session visibility on main page
+    // Check main page - private location should NOT update main map
     await page.goto('/');
     await page.waitForSelector('map-widget');
     await page.waitForTimeout(3000);
 
-    // Only public location should be visible on public page
-    const publicMarkerCount = await page.evaluate(() => {
+    let mainPageMarkerCount = await page.evaluate(() => {
       const mapWidget = document.querySelector('map-widget') as any;
       const shadowRoot = mapWidget?.shadowRoot;
       if (shadowRoot) {
@@ -214,17 +199,58 @@ test.describe('Location Tracking', () => {
       return 0;
     });
 
-    // Should see at least 1 marker from public session (there might be other public locations)
-    expect(publicMarkerCount).toBeGreaterThanOrEqual(1);
+    const markersBeforePublic = mainPageMarkerCount;
 
-    // Test private session is not visible - navigate to specific private session as non-owner would fail
-    // But as owner, check the private session directly
+    // Now create a public session and location
+    const publicSessionName = `public-test-${Date.now()}`;
+    const publicSession = await createTestSession(baseURL, authData, {
+      title: 'Public Session Test',
+      isPublic: true,
+      name: publicSessionName,
+    });
+
+    await createTestLocation(baseURL, authData, {
+      latitude: 47.6062,
+      longitude: -122.3321,
+      session: publicSessionName,
+    });
+
+    // Check main page again - public location should now update main map
+    await page.goto('/');
+    await page.waitForSelector('map-widget');
+    await page.waitForTimeout(3000);
+
+    mainPageMarkerCount = await page.evaluate(() => {
+      const mapWidget = document.querySelector('map-widget') as any;
+      const shadowRoot = mapWidget?.shadowRoot;
+      if (shadowRoot) {
+        const mapContainer = shadowRoot.querySelector('#map');
+        const markers = mapContainer?.querySelectorAll('.leaflet-marker-icon');
+        return markers?.length || 0;
+      }
+      return 0;
+    });
+
+    // Verify that public location appears on main page (ONE per user)
+    // Since we're the only user and added a public location, should have exactly 1 marker
+    expect(mainPageMarkerCount).toBe(1);
+
+    // Verify the public-locations API returns the public location
+    const publicLocationsResponse = await page.evaluate(() =>
+      fetch('/api/public-locations').then(r => r.json())
+    );
+
+    expect(publicLocationsResponse.status).toBe('success');
+    expect(publicLocationsResponse.data.type).toBe('FeatureCollection');
+    expect(publicLocationsResponse.data.features).toHaveLength(1);
+    expect(publicLocationsResponse.data.features[0].properties.session).toBe(publicSessionName);
+
+    // Verify private session page still works (owner can see private sessions)
     const username = authData.record.username;
     await page.goto(`/u/${username}/s/${privateSessionName}`);
     await page.waitForSelector('map-widget');
     await page.waitForTimeout(2000);
 
-    // Private session should have 1 location when viewed by owner
     const privateMarkerCount = await page.evaluate(() => {
       const mapWidget = document.querySelector('map-widget') as any;
       const shadowRoot = mapWidget?.shadowRoot;

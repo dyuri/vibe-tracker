@@ -80,12 +80,14 @@ export async function createTestSession(
   sessionData?: Partial<TestSession>
 ): Promise<TestSession> {
   const sessionName = `test-session-${Date.now()}`;
+  // Extract isPublic from sessionData and map to public field
+  const { isPublic, ...restSessionData } = sessionData || {};
   const defaultSessionData = {
     name: sessionName,
     title: `Test Session ${Date.now()}`,
     description: 'A test session created for E2E testing',
-    public: false,
-    ...sessionData,
+    public: isPublic || false,
+    ...restSessionData,
   };
 
   const response = await fetch(`${baseURL}/api/sessions`, {
