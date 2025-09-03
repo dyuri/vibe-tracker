@@ -124,7 +124,9 @@ export class ApiClient {
   }
 
   async refreshAuth(): Promise<ApiResponse<AuthTokenResponse>> {
-    return this.makeRequest<AuthTokenResponse>('/api/collections/users/auth-refresh');
+    return this.makeRequest<AuthTokenResponse>('/api/auth/refresh', {
+      method: 'POST',
+    });
   }
 
   /**

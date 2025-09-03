@@ -132,7 +132,7 @@ func setupAPIRoutes(router *echo.Echo, di *container.Container) {
 	}
 
 	api.POST(constants.EndpointLogin, di.AuthHandler.Login, append(authMiddleware, di.ValidationMiddleware.ValidateJSON(&models.LoginRequest{}))...)
-	api.POST("/auth/refresh", di.AuthHandler.RefreshToken, append(authMiddleware, di.ValidationMiddleware.ValidateJSON(&models.RefreshTokenRequest{}))...)
+	api.POST("/auth/refresh", di.AuthHandler.RefreshToken, authMiddleware...)
 	api.GET("/me", di.AuthHandler.GetMe, di.AuthMiddleware.RequireJWTAuth())
 	api.PUT("/profile", di.AuthHandler.UpdateProfile, di.AuthMiddleware.RequireJWTAuth(), di.ValidationMiddleware.ValidateJSON(&models.UpdateProfileRequest{}))
 	api.POST("/profile/avatar", di.AuthHandler.UploadAvatar, di.AuthMiddleware.RequireJWTAuth())
