@@ -71,13 +71,15 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'go run . serve --dev',
-    url: 'http://localhost:8090/health/liveness',
+    command: 'go run . serve --dir=tests-e2e/fixtures --dev',
+    url: 'http://localhost:8090/health/live',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
     env: {
       TEST_MODE: 'true',
-      DB_PATH: 'tests-e2e/fixtures/test.db',
+      ENABLE_RATE_LIMITING: 'false',
+      TEST_EMAIL: 'testuser@example.com',
+      TEST_PASSWORD: 'testpassword123',
     },
   },
 });

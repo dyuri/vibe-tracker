@@ -11,6 +11,10 @@ coverage.html
 *.test
 *.prof
 .playwright-mcp
+test-results/**
+playwright-report/**
+tests-e2e/fixtures/data.db*
+tests-e2e/fixtures/logs.db*
 
 # Build artifacts
 /dist/
