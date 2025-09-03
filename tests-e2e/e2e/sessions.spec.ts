@@ -12,7 +12,10 @@ test.describe('Session Management', () => {
     const credentials = getTestCredentials();
     await loginViaUI(page, credentials);
 
-    // Wait for page to fully load
+    // Navigate to sessions page
+    await page.goto('/profile/sessions');
+
+    // Wait for session management widget to load
     await page.waitForSelector('session-management-widget');
   });
 
@@ -132,7 +135,7 @@ test.describe('Session Management', () => {
       const shadowRoot = sessionWidget?.shadowRoot;
       if (shadowRoot) {
         const editButton = shadowRoot.querySelector(
-          `[data-session-id="${sessionId}"] .edit-btn`
+          `.edit-btn[data-session-id="${sessionId}"]`
         ) as HTMLButtonElement;
         if (editButton) editButton.click();
       }
@@ -223,46 +226,26 @@ test.describe('Session Management', () => {
 
     expect(sessionExists).toBe(true);
 
+    // Set up dialog handler to accept browser confirmation dialog
+    page.on('dialog', async dialog => {
+      console.log('Dialog message:', dialog.message());
+      await dialog.accept();
+    });
+
     // Click delete button for the session
     await page.evaluate(sessionId => {
       const sessionWidget = document.querySelector('session-management-widget') as any;
       const shadowRoot = sessionWidget?.shadowRoot;
       if (shadowRoot) {
         const deleteButton = shadowRoot.querySelector(
-          `[data-session-id="${sessionId}"] .delete-btn`
+          `.delete-btn[data-session-id="${sessionId}"]`
         ) as HTMLButtonElement;
         if (deleteButton) deleteButton.click();
       }
     }, testSession.id);
 
-    // Confirm deletion if there's a confirmation dialog
-    await page.waitForTimeout(500);
-
-    const hasConfirmDialog = await page.evaluate(() => {
-      const sessionWidget = document.querySelector('session-management-widget') as any;
-      const shadowRoot = sessionWidget?.shadowRoot;
-      if (shadowRoot) {
-        const confirmButton = shadowRoot.querySelector('#confirm-delete-btn');
-        return confirmButton !== null;
-      }
-      return false;
-    });
-
-    if (hasConfirmDialog) {
-      await page.evaluate(() => {
-        const sessionWidget = document.querySelector('session-management-widget') as any;
-        const shadowRoot = sessionWidget?.shadowRoot;
-        if (shadowRoot) {
-          const confirmButton = shadowRoot.querySelector(
-            '#confirm-delete-btn'
-          ) as HTMLButtonElement;
-          if (confirmButton) confirmButton.click();
-        }
-      });
-    }
-
     // Wait for deletion to complete
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Verify session no longer exists
     sessionExists = await page.evaluate(title => {
