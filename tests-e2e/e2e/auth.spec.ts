@@ -156,14 +156,15 @@ test.describe('Authentication', () => {
     const apiClient = createApiClient(baseURL, initialToken!);
     const refreshResponse = await apiClient.refreshAuth();
 
+    console.log('Refresh response after fix:', JSON.stringify(refreshResponse, null, 2));
     expect(refreshResponse.success).toBe(true);
-    expect(refreshResponse.data?.token).toBeTruthy();
+    expect(refreshResponse.data?.data?.token).toBeTruthy();
 
     // Update token in localStorage
-    if (refreshResponse.data?.token) {
+    if (refreshResponse.data?.data?.token) {
       await page.evaluate(newToken => {
         localStorage.setItem('auth_token', newToken);
-      }, refreshResponse.data.token);
+      }, refreshResponse.data.data.token);
     }
 
     // Verify user is still authenticated with new token
