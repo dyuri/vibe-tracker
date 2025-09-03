@@ -97,10 +97,15 @@ export async function loginViaUI(page: Page, credentials?: TestUser): Promise<vo
   // Wait for login widget to be available
   await page.waitForSelector('login-widget', { timeout: 10000 });
 
-  // Check if we're already logged in
-  const loginWidget = await page.locator('login-widget').first();
-  const isLoggedIn = await loginWidget.evaluate((widget: any) => {
-    return widget.shadowRoot?.querySelector('#login-form')?.style.display === 'none';
+  // Check if we're already logged in by looking for the toggle button state
+  const isLoggedIn = await page.evaluate(() => {
+    const loginWidget = document.querySelector('login-widget') as any;
+    const shadowRoot = loginWidget?.shadowRoot;
+    if (shadowRoot) {
+      const toggleButton = shadowRoot.querySelector('#toggle-button');
+      return toggleButton && !toggleButton.classList.contains('logged-out');
+    }
+    return false;
   });
 
   if (isLoggedIn) {
@@ -108,29 +113,63 @@ export async function loginViaUI(page: Page, credentials?: TestUser): Promise<vo
     return;
   }
 
-  // Fill login form
+  // Click the toggle button to open the login panel
+  await page.evaluate(() => {
+    const loginWidget = document.querySelector('login-widget') as any;
+    const shadowRoot = loginWidget?.shadowRoot;
+    if (shadowRoot) {
+      const toggleButton = shadowRoot.querySelector('#toggle-button') as HTMLElement;
+      if (toggleButton) toggleButton.click();
+    }
+  });
+
+  // Wait for the login form to become visible
+  await page.waitForFunction(
+    () => {
+      const loginWidget = document.querySelector('login-widget') as any;
+      const shadowRoot = loginWidget?.shadowRoot;
+      if (shadowRoot) {
+        const authPanel = shadowRoot.querySelector('#auth-panel') as HTMLElement;
+        return authPanel && !authPanel.classList.contains('hidden');
+      }
+      return false;
+    },
+    { timeout: 5000 }
+  );
+
+  // Fill login form (with small delays to avoid rate limiting)
   await page.evaluate(credentials => {
     const loginWidget = document.querySelector('login-widget') as any;
     const shadowRoot = loginWidget?.shadowRoot;
     if (shadowRoot) {
       const emailInput = shadowRoot.querySelector('#email') as HTMLInputElement;
       const passwordInput = shadowRoot.querySelector('#password') as HTMLInputElement;
-      const loginButton = shadowRoot.querySelector('#login-btn') as HTMLButtonElement;
 
       if (emailInput) emailInput.value = credentials.email;
       if (passwordInput) passwordInput.value = credentials.password;
-      if (loginButton) loginButton.click();
     }
   }, testCredentials);
 
-  // Wait for login to complete
+  // Small delay before clicking login button
+  await page.waitForTimeout(500);
+
+  await page.evaluate(() => {
+    const loginWidget = document.querySelector('login-widget') as any;
+    const shadowRoot = loginWidget?.shadowRoot;
+    if (shadowRoot) {
+      const loginButton = shadowRoot.querySelector('#login-button') as HTMLButtonElement;
+      if (loginButton) loginButton.click();
+    }
+  });
+
+  // Wait for login to complete - check if toggle button changes from 'logged-out' state
   await page.waitForFunction(
     () => {
       const loginWidget = document.querySelector('login-widget') as any;
       const shadowRoot = loginWidget?.shadowRoot;
       if (shadowRoot) {
-        const loginForm = shadowRoot.querySelector('#login-form') as HTMLElement;
-        return loginForm?.style.display === 'none';
+        const toggleButton = shadowRoot.querySelector('#toggle-button');
+        return toggleButton && !toggleButton.classList.contains('logged-out');
       }
       return false;
     },
@@ -144,23 +183,37 @@ export async function loginViaUI(page: Page, credentials?: TestUser): Promise<vo
  * Logout via UI
  */
 export async function logoutViaUI(page: Page): Promise<void> {
+  // Click toggle button to open the user menu first
   await page.evaluate(() => {
     const loginWidget = document.querySelector('login-widget') as any;
     const shadowRoot = loginWidget?.shadowRoot;
     if (shadowRoot) {
-      const logoutButton = shadowRoot.querySelector('#logout-btn') as HTMLButtonElement;
+      const toggleButton = shadowRoot.querySelector('#toggle-button') as HTMLElement;
+      if (toggleButton) toggleButton.click();
+    }
+  });
+
+  // Wait for panel to open
+  await page.waitForTimeout(500);
+
+  // Click logout button
+  await page.evaluate(() => {
+    const loginWidget = document.querySelector('login-widget') as any;
+    const shadowRoot = loginWidget?.shadowRoot;
+    if (shadowRoot) {
+      const logoutButton = shadowRoot.querySelector('#logout-button') as HTMLButtonElement;
       if (logoutButton) logoutButton.click();
     }
   });
 
-  // Wait for logout to complete
+  // Wait for logout to complete - toggle button should have 'logged-out' class
   await page.waitForFunction(
     () => {
       const loginWidget = document.querySelector('login-widget') as any;
       const shadowRoot = loginWidget?.shadowRoot;
       if (shadowRoot) {
-        const loginForm = shadowRoot.querySelector('#login-form') as HTMLElement;
-        return loginForm?.style.display !== 'none';
+        const toggleButton = shadowRoot.querySelector('#toggle-button');
+        return toggleButton && toggleButton.classList.contains('logged-out');
       }
       return false;
     },
@@ -178,8 +231,8 @@ export async function isAuthenticated(page: Page): Promise<boolean> {
     const loginWidget = document.querySelector('login-widget') as any;
     const shadowRoot = loginWidget?.shadowRoot;
     if (shadowRoot) {
-      const loginForm = shadowRoot.querySelector('#login-form') as HTMLElement;
-      return loginForm?.style.display === 'none';
+      const toggleButton = shadowRoot.querySelector('#toggle-button');
+      return toggleButton && !toggleButton.classList.contains('logged-out');
     }
     return false;
   });
