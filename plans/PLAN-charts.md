@@ -64,12 +64,23 @@ Create an interactive chart widget positioned at bottom center that visualizes t
 - **Consistent UX**: Matches location-widget pattern with toggle/close buttons
 - **Responsive design**: Adapts from full panel to compact toggle button
 
-#### Phase 2: Data Integration
+#### Phase 2: Data Integration ✅ COMPLETED
 
-1. Connect to `LocationsResponse` GeoJSON data
-2. Multi-metric display with separate Y-axes
-3. Time/distance axis switching
-4. Metric visibility controls
+1. ✅ Connect to `LocationsResponse` GeoJSON data
+2. ✅ Multi-metric display with separate Y-axes
+3. ✅ Time/distance axis switching
+4. ✅ Metric visibility controls
+
+**Completed:**
+
+- Connected chart widget to app's location data flow
+- Added chart widget reference to main app (app.ts)
+- Chart receives same data as map widget via `displayData()` method
+- Handles both initial data loads and delta updates (merges new data)
+- Stores current chart data for incremental updates
+- Added basic chart-map event synchronization (hover/click handlers)
+- Chart click updates location widget with selected point data
+- Ready to receive and display real track data from the API
 
 #### Phase 3: Interactivity
 

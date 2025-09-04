@@ -8,6 +8,7 @@ import type {
   LoginWidgetElement,
   ProfileWidgetElement,
   SessionManagementWidgetElement,
+  ChartWidgetElement,
 } from '@/types';
 
 // Import modules
@@ -150,6 +151,7 @@ function checkAuthAndConfigureLogin(): void {
 const mapWidget = document.querySelector('map-widget') as MapWidgetElement | null;
 const errorMessage = document.getElementById('error-message') as HTMLDivElement | null;
 const locationWidget = document.querySelector('location-widget') as LocationWidgetElement | null;
+const chartWidget = document.querySelector('chart-widget') as ChartWidgetElement | null;
 const pageHeader = document.getElementById('page-header') as HTMLElement | null;
 const pageTitle = document.getElementById('page-title') as HTMLElement | null;
 const pageSubtitle = document.getElementById('page-subtitle') as HTMLElement | null;
@@ -267,6 +269,8 @@ let lastRequestTime: number = 0;
 const MIN_REQUEST_INTERVAL = 5000; // 5 seconds
 /** Track if initial data has been loaded to prevent multiple initial fetches */
 let isInitialized: boolean = false;
+/** Store current chart data for delta updates */
+let currentChartData: LocationsResponse | null = null;
 
 /**
  * Update page header based on current username and session
@@ -385,6 +389,17 @@ function fetchData(isInitialLoad: boolean = false, useDelta: boolean = false): v
         if (mapWidget) {
           mapWidget.appendData(data);
         }
+        // For chart widget, merge new data with existing data and refresh
+        if (chartWidget && currentChartData) {
+          // Merge new features with existing ones
+          const mergedFeatures = [...currentChartData.features, ...data.features];
+          const mergedData: LocationsResponse = {
+            type: 'FeatureCollection',
+            features: mergedFeatures,
+          };
+          currentChartData = mergedData;
+          chartWidget.displayData(mergedData);
+        }
         // Update latest timestamp
         const timestamps = data.features.map(f => f.properties.timestamp);
         latestTimestamp = Math.max(...timestamps);
@@ -392,6 +407,11 @@ function fetchData(isInitialLoad: boolean = false, useDelta: boolean = false): v
         // Initial load or full refresh - display all data
         if (mapWidget) {
           mapWidget.displayData(data);
+        }
+        // Update chart widget with the same data and store it
+        if (chartWidget && data.features && data.features.length > 0) {
+          currentChartData = data;
+          chartWidget.displayData(data);
         }
         // Extract and store the latest timestamp (only for user-specific views)
         if (username && data.features && data.features.length > 0) {
@@ -461,12 +481,16 @@ function initializeMainView(): void {
     locationWidget?.removeEventListener('show-current-position', handleShowCurrentPosition);
     locationWidget?.removeEventListener('hide-current-position', handleHideCurrentPosition);
     mapWidget?.removeEventListener('location-update', handleLocationUpdate);
+    chartWidget?.removeEventListener('chart-hover', handleChartHover);
+    chartWidget?.removeEventListener('chart-click', handleChartClick);
 
     // Add event listeners
     locationWidget?.addEventListener('refresh-change', handleRefreshChange);
     locationWidget?.addEventListener('show-current-position', handleShowCurrentPosition);
     locationWidget?.addEventListener('hide-current-position', handleHideCurrentPosition);
     mapWidget?.addEventListener('location-update', handleLocationUpdate);
+    chartWidget?.addEventListener('chart-hover', handleChartHover);
+    chartWidget?.addEventListener('chart-click', handleChartClick);
 
     // Only do initial fetch if refresh is not already enabled (to avoid duplicate fetches)
     const savedRefresh = localStorage.getItem('refresh-enabled');
@@ -525,6 +549,33 @@ function handleLocationUpdate(e: Event): void {
   const customEvent = e as CustomEvent<LocationUpdateEventDetail>;
   if (locationWidget) {
     locationWidget.update(customEvent.detail);
+  }
+}
+
+function handleChartHover(e: Event): void {
+  const customEvent = e as CustomEvent<{ feature: any; index: number }>;
+  // TODO: Show temporary marker on map at the hovered point
+  // For now, just log the event
+  console.log('Chart hover:', customEvent.detail);
+}
+
+function handleChartClick(e: Event): void {
+  const customEvent = e as CustomEvent<{ feature: any; index: number }>;
+  const feature = customEvent.detail.feature;
+
+  if (feature && feature.geometry && feature.geometry.coordinates) {
+    const [longitude, latitude] = feature.geometry.coordinates;
+
+    // Center map on the clicked point
+    if (mapWidget) {
+      // TODO: Add a method to center map on coordinates
+      console.log('Chart click - center map on:', latitude, longitude);
+    }
+
+    // Update location widget with the selected point data
+    if (locationWidget) {
+      locationWidget.update(feature);
+    }
   }
 }
 
