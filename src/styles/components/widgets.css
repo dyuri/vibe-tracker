@@ -37,7 +37,8 @@ location-widget {
   width: 80%;
   max-width: 1200px;
   min-width: 40px; /* Minimum width for collapsed state (circular button) */
-  height: 200px;
+  height: 40dvh;
+  min-height: 300px;
   z-index: 999;
   transition: all 0.3s ease;
 }
@@ -52,14 +53,16 @@ location-widget {
 #global-chart.expanded {
   width: 80%;
   max-width: 1200px;
-  height: 200px;
+  height: 40dvh;
+  min-height: 300px;
 }
 
 /* Responsive chart positioning */
 @media (max-width: 768px) {
   #global-chart {
     width: 90%;
-    height: 180px;
+    height: 50dvh;
+    min-height: 250px;
     left: 50%;
     transform: translateX(-50%);
   }
@@ -68,7 +71,8 @@ location-widget {
 @media (max-width: 480px) {
   #global-chart {
     width: 95%;
-    height: 160px;
+    height: 60dvh;
+    min-height: 220px;
     bottom: calc(var(--spacing-sm) + 60px); /* Above login/theme buttons */
   }
 

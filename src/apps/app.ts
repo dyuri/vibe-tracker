@@ -481,7 +481,9 @@ function initializeMainView(): void {
     locationWidget?.removeEventListener('show-current-position', handleShowCurrentPosition);
     locationWidget?.removeEventListener('hide-current-position', handleHideCurrentPosition);
     mapWidget?.removeEventListener('location-update', handleLocationUpdate);
+    mapWidget?.removeEventListener('map-point-click', handleMapPointClick);
     chartWidget?.removeEventListener('chart-hover', handleChartHover);
+    chartWidget?.removeEventListener('chart-hover-out', handleChartHoverOut);
     chartWidget?.removeEventListener('chart-click', handleChartClick);
 
     // Add event listeners
@@ -489,7 +491,9 @@ function initializeMainView(): void {
     locationWidget?.addEventListener('show-current-position', handleShowCurrentPosition);
     locationWidget?.addEventListener('hide-current-position', handleHideCurrentPosition);
     mapWidget?.addEventListener('location-update', handleLocationUpdate);
+    mapWidget?.addEventListener('map-point-click', handleMapPointClick);
     chartWidget?.addEventListener('chart-hover', handleChartHover);
+    chartWidget?.addEventListener('chart-hover-out', handleChartHoverOut);
     chartWidget?.addEventListener('chart-click', handleChartClick);
 
     // Only do initial fetch if refresh is not already enabled (to avoid duplicate fetches)
@@ -554,9 +558,20 @@ function handleLocationUpdate(e: Event): void {
 
 function handleChartHover(e: Event): void {
   const customEvent = e as CustomEvent<{ feature: any; index: number }>;
-  // TODO: Show temporary marker on map at the hovered point
-  // For now, just log the event
-  console.log('Chart hover:', customEvent.detail);
+  const feature = customEvent.detail.feature;
+
+  if (feature && feature.geometry && feature.geometry.coordinates && mapWidget) {
+    const [longitude, latitude] = feature.geometry.coordinates;
+    mapWidget.showHoverMarker(latitude, longitude);
+    console.log('Chart hover - showing marker at:', latitude, longitude);
+  }
+}
+
+function handleChartHoverOut(_e: Event): void {
+  if (mapWidget) {
+    mapWidget.hideHoverMarker();
+    console.log('Chart hover out - hiding marker');
+  }
 }
 
 function handleChartClick(e: Event): void {
@@ -568,14 +583,30 @@ function handleChartClick(e: Event): void {
 
     // Center map on the clicked point
     if (mapWidget) {
-      // TODO: Add a method to center map on coordinates
-      console.log('Chart click - center map on:', latitude, longitude);
+      mapWidget.centerOnCoordinates(latitude, longitude);
+      console.log('Chart click - centered map on:', latitude, longitude);
     }
 
     // Update location widget with the selected point data
     if (locationWidget) {
       locationWidget.update(feature);
     }
+  }
+}
+
+function handleMapPointClick(e: Event): void {
+  const customEvent = e as CustomEvent<{ feature: any; index: number }>;
+  const { feature, index } = customEvent.detail;
+
+  // Highlight the corresponding point on the chart
+  if (chartWidget) {
+    chartWidget.highlightPoint(index);
+    console.log('Map point click - highlighted chart point at index:', index);
+  }
+
+  // Update location widget with the selected point data
+  if (locationWidget) {
+    locationWidget.update(feature);
   }
 }
 

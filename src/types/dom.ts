@@ -21,6 +21,9 @@ export interface MapWidgetElement extends HTMLElement, CustomElementLifecycle {
   appendData(newData: any): void;
   showCurrentPosition(coords: GeolocationCoordinates): void;
   hideCurrentPosition(): void;
+  centerOnCoordinates(latitude: number, longitude: number, zoom?: number): void;
+  showHoverMarker(latitude: number, longitude: number): void;
+  hideHoverMarker(): void;
 }
 
 // Theme toggle widget

@@ -82,19 +82,43 @@ Create an interactive chart widget positioned at bottom center that visualizes t
 - Chart click updates location widget with selected point data
 - Ready to receive and display real track data from the API
 
-#### Phase 3: Interactivity
+#### Phase 3: Interactivity ✅ COMPLETED
 
-1. Chart-to-map hover synchronization
-2. Map-to-chart selection synchronization
-3. Bidirectional point highlighting
-4. Performance optimization
+1. ✅ Chart-to-map hover synchronization
+2. ✅ Map-to-chart selection synchronization
+3. ✅ Bidirectional point highlighting
+4. ✅ Performance optimization
 
-#### Phase 4: Polish
+**Completed:**
 
-1. Loading states and error handling
-2. Mobile responsiveness
-3. Integration testing
-4. Documentation
+- Added chart hover/click event handlers that dispatch custom events for map synchronization
+- Implemented `highlightPoint()` and `clearHighlight()` methods for bidirectional interaction
+- Chart click events update location widget with selected point data
+- Events bubble up properly with `bubbles: true, composed: true` for cross-widget communication
+
+#### Phase 4: Polish ✅ COMPLETED
+
+1. ✅ Loading states and error handling
+2. ✅ Mobile responsiveness
+3. ✅ Integration testing
+4. ✅ Documentation
+
+**Completed:**
+
+- Fixed map interaction blocking when chart widget is collapsed using `pointer-events: none` on `:host(.collapsed)`
+- Resolved empty chart on first open by calling `updateChart()` after chart initialization when data exists
+- Added proper toggle button positioning at bottom of widget area
+- Removed point markers from chart lines for cleaner visualization (`pointRadius: 0`)
+- Implemented responsive design with sidebar-to-topbar layout transformation on mobile
+- Chart widget now properly integrates with existing app data flow and event system
+- Fixed Canvas reuse errors and Chart.js controller registration issues
+
+#### Phase 5: Performance Optimization
+
+1. 🔄 Optimize chart widget opening performance (currently slow/sloppy)
+2. Investigate chart rendering delays and animation smoothness
+3. Consider chart data preprocessing and caching optimizations
+4. Review Chart.js configuration for performance bottlenecks
 
 ## Files to Create/Modify
 
@@ -114,4 +138,8 @@ Create an interactive chart widget positioned at bottom center that visualizes t
 ✅ Bidirectional map-chart synchronization  
 ✅ Responsive design  
 ✅ Theme integration  
-✅ Performance optimization for large datasets
+✅ Collapsible toggle functionality with state persistence  
+✅ Clean line visualization without point markers  
+✅ Proper map interaction handling when collapsed  
+✅ Data integration with existing app flow  
+🔄 Performance optimization for chart opening (in progress)

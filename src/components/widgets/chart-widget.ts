@@ -6,13 +6,23 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  LineController,
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
 
 // Register Chart.js components
-Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+Chart.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  LineController,
+  Title,
+  Tooltip,
+  Legend
+);
 
 /**
  * Chart Widget for displaying track data visualization
@@ -44,38 +54,46 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
             <span class="chart-title">Track Data</span>
             <span id="close-button" class="close-button">×</span>
           </div>
-          <div id="chart-controls" class="chart-controls">
-            <div class="axis-toggle">
-              <label>
-                <input type="radio" name="axis" value="time" checked>
-                Time
-              </label>
-              <label>
-                <input type="radio" name="axis" value="distance">
-                Distance
-              </label>
+          <div class="chart-content">
+            <div id="chart-controls" class="chart-controls">
+              <div class="control-group">
+                <div class="control-label">Axis:</div>
+                <div class="axis-toggle">
+                  <label>
+                    <input type="radio" name="axis" value="time" checked>
+                    Time
+                  </label>
+                  <label>
+                    <input type="radio" name="axis" value="distance">
+                    Distance
+                  </label>
+                </div>
+              </div>
+              <div class="control-group">
+                <div class="control-label">Metrics:</div>
+                <div class="metric-toggles">
+                  <label>
+                    <input type="checkbox" name="metric" value="elevation" checked>
+                    Elevation
+                  </label>
+                  <label>
+                    <input type="checkbox" name="metric" value="speed" checked>
+                    Speed
+                  </label>
+                  <label>
+                    <input type="checkbox" name="metric" value="pace" checked>
+                    Pace
+                  </label>
+                  <label>
+                    <input type="checkbox" name="metric" value="heartRate" checked>
+                    Heart Rate
+                  </label>
+                </div>
+              </div>
             </div>
-            <div class="metric-toggles">
-              <label>
-                <input type="checkbox" name="metric" value="elevation" checked>
-                Elevation
-              </label>
-              <label>
-                <input type="checkbox" name="metric" value="speed" checked>
-                Speed
-              </label>
-              <label>
-                <input type="checkbox" name="metric" value="pace" checked>
-                Pace
-              </label>
-              <label>
-                <input type="checkbox" name="metric" value="heartRate" checked>
-                Heart Rate
-              </label>
+            <div id="chart-wrapper" class="chart-wrapper">
+              <canvas id="chart-canvas"></canvas>
             </div>
-          </div>
-          <div id="chart-wrapper" class="chart-wrapper">
-            <canvas id="chart-canvas"></canvas>
           </div>
         </div>
       </div>
@@ -86,7 +104,8 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
   }
 
   connectedCallback(): void {
-    this.initChart();
+    // Don't initialize chart here - only when first expanded
+    // This prevents the canvas reuse error
   }
 
   disconnectedCallback(): void {
@@ -139,6 +158,12 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
   private initChart(): void {
     if (!this.canvas) {
       return;
+    }
+
+    // Destroy existing chart if it exists
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
     }
 
     const ctx = this.canvas.getContext('2d');
@@ -243,6 +268,14 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
                 })
               );
             }
+          } else {
+            // Dispatch hover-out event when no elements are active
+            this.dispatchEvent(
+              new CustomEvent('chart-hover-out', {
+                bubbles: true,
+                composed: true,
+              })
+            );
           }
         },
         onClick: (event, activeElements) => {
@@ -358,6 +391,9 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
         yAxisID: 'elevation',
         fill: false,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        borderWidth: 2,
       });
     }
 
@@ -369,6 +405,9 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
         backgroundColor: 'rgba(255, 99, 132, 0.2)',
         yAxisID: 'speed',
         fill: false,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        borderWidth: 2,
       });
     }
 
@@ -380,6 +419,9 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
         yAxisID: 'pace',
         fill: false,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        borderWidth: 2,
       });
     }
 
@@ -391,6 +433,9 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
         backgroundColor: 'rgba(255, 206, 86, 0.2)',
         yAxisID: 'heartRate',
         fill: false,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        borderWidth: 2,
       });
     }
 
@@ -463,6 +508,10 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
     // Initialize chart when first expanded
     if (!this.chart) {
       this.initChart();
+      // If we have data, update the chart immediately
+      if (this.data) {
+        this.updateChart();
+      }
     }
 
     // Save state to localStorage
