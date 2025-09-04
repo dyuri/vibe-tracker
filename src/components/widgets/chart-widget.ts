@@ -351,6 +351,7 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
     const heartRateData: (number | null)[] = [];
 
     let totalDistance = 0;
+    const startTimestamp = features.length > 0 ? features[0].properties.timestamp : 0;
 
     features.forEach((feature, index) => {
       const { timestamp, speed, heart_rate } = feature.properties;
@@ -370,7 +371,8 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
 
       // Set label based on axis type
       if (this.axisType === 'time') {
-        labels.push(new Date(timestamp * 1000).toLocaleTimeString());
+        const deltaSeconds = timestamp - startTimestamp;
+        labels.push(this.formatTimeDelta(deltaSeconds));
       } else {
         labels.push((totalDistance / 1000).toFixed(2)); // Convert to km
       }
@@ -455,6 +457,18 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c;
+  }
+
+  private formatTimeDelta(seconds: number): string {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
   }
 
   /**
