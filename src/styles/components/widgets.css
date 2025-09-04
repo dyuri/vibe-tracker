@@ -27,3 +27,59 @@ location-widget {
   right: var(--spacing-sm);
   z-index: 1000;
 }
+
+/* Global chart widget positioning */
+#global-chart {
+  position: fixed;
+  bottom: var(--spacing-sm);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  max-width: 1200px;
+  min-width: 40px; /* Minimum width for collapsed state (circular button) */
+  height: 200px;
+  z-index: 999;
+  transition: all 0.3s ease;
+}
+
+/* Collapsed state - show only toggle button */
+#global-chart.collapsed {
+  width: 40px;
+  height: 40px;
+}
+
+/* Expanded state */
+#global-chart.expanded {
+  width: 80%;
+  max-width: 1200px;
+  height: 200px;
+}
+
+/* Responsive chart positioning */
+@media (max-width: 768px) {
+  #global-chart {
+    width: 90%;
+    height: 180px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 480px) {
+  #global-chart {
+    width: 95%;
+    height: 160px;
+    bottom: calc(var(--spacing-sm) + 60px); /* Above login/theme buttons */
+  }
+
+  /* Adjust other widgets on mobile to avoid overlap */
+  #global-login {
+    bottom: var(--spacing-sm);
+    right: var(--spacing-sm);
+  }
+
+  #global-theme-toggle {
+    bottom: var(--spacing-sm);
+    left: var(--spacing-sm);
+  }
+}

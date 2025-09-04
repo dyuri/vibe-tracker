@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -63,8 +64,20 @@ func main() {
 				v.Set("session", *session)
 				v.Set("latitude", fmt.Sprintf("%f", point.Latitude))
 				v.Set("longitude", fmt.Sprintf("%f", point.Longitude))
-				v.Set("altitude", fmt.Sprintf("%f", point.Elevation))
+				if point.Elevation.NotNull() {
+					v.Set("altitude", fmt.Sprintf("%f", point.Elevation.Value()))
+				}
 				v.Set("timestamp", fmt.Sprintf("%d", point.Timestamp.Unix()))
+				
+				// Extract heart rate from extensions if available
+				if hrValue := extractHeartRate(point); validateHeartRate(hrValue) {
+					v.Set("heart_rate", hrValue)
+				}
+				
+				// Extract speed from extensions if available
+				if speedValue := extractSpeed(point); validateSpeed(speedValue) {
+					v.Set("speed", speedValue)
+				}
 
 				fullURL := fmt.Sprintf("%s?%s", u, v.Encode())
 				req, err := http.NewRequest("GET", fullURL, nil)
@@ -92,4 +105,68 @@ func main() {
 	}
 
 	fmt.Println("GPX data uploaded successfully")
+}
+
+// extractHeartRate extracts heart rate from GPX TrackPointExtension
+func extractHeartRate(point gpx.GPXPoint) string {
+	// Try Garmin TrackPointExtension format
+	if tpeNode, found := point.Extensions.GetNode("http://www.garmin.com/xmlschemas/TrackPointExtension/v1", "TrackPointExtension"); found {
+		if hrNode, found := tpeNode.GetNode("hr"); found {
+			return hrNode.Data
+		}
+	}
+	
+	// Try alternative namespace (some devices use different schemas)
+	if tpeNode, found := point.Extensions.GetNode("http://www.garmin.com/xmlschemas/TrackPointExtension/v2", "TrackPointExtension"); found {
+		if hrNode, found := tpeNode.GetNode("hr"); found {
+			return hrNode.Data
+		}
+	}
+	
+	return ""
+}
+
+// extractSpeed extracts speed from GPX TrackPointExtension
+func extractSpeed(point gpx.GPXPoint) string {
+	// Try Garmin TrackPointExtension format
+	if tpeNode, found := point.Extensions.GetNode("http://www.garmin.com/xmlschemas/TrackPointExtension/v1", "TrackPointExtension"); found {
+		if speedNode, found := tpeNode.GetNode("speed"); found {
+			return speedNode.Data
+		}
+	}
+	
+	// Try alternative namespace (some devices use different schemas)
+	if tpeNode, found := point.Extensions.GetNode("http://www.garmin.com/xmlschemas/TrackPointExtension/v2", "TrackPointExtension"); found {
+		if speedNode, found := tpeNode.GetNode("speed"); found {
+			return speedNode.Data
+		}
+	}
+	
+	// If no speed in extensions, calculate it from GPS data if possible
+	// Note: This would require access to previous point for calculation
+	return ""
+}
+
+// validateHeartRate validates heart rate value is reasonable (0-300 bpm)
+func validateHeartRate(hrStr string) bool {
+	if hrStr == "" {
+		return false
+	}
+	hr, err := strconv.Atoi(hrStr)
+	if err != nil {
+		return false
+	}
+	return hr > 0 && hr <= 300
+}
+
+// validateSpeed validates speed value is reasonable (>= 0 m/s)
+func validateSpeed(speedStr string) bool {
+	if speedStr == "" {
+		return false
+	}
+	speed, err := strconv.ParseFloat(speedStr, 64)
+	if err != nil {
+		return false
+	}
+	return speed >= 0
 }

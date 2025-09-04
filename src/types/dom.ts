@@ -42,6 +42,13 @@ export interface ProfileWidgetElement extends HTMLElement, CustomElementLifecycl
 // Session management widget
 export interface SessionManagementWidgetElement extends HTMLElement, CustomElementLifecycle {}
 
+// Chart widget
+export interface ChartWidgetElement extends HTMLElement, CustomElementLifecycle {
+  displayData(data: any): void;
+  highlightPoint(index: number): void;
+  clearHighlight(): void;
+}
+
 // Geolocation coordinates (extending built-in types)
 export interface GeolocationCoordinates {
   latitude: number;
@@ -67,6 +74,7 @@ declare global {
     'login-widget': LoginWidgetElement;
     'profile-widget': ProfileWidgetElement;
     'session-management-widget': SessionManagementWidgetElement;
+    'chart-widget': ChartWidgetElement;
   }
 
   interface WindowEventMap {
