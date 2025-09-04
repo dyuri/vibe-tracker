@@ -98,8 +98,9 @@
 
 .chart-content {
   display: flex;
-  height: 100%;
+  flex: 1;
   gap: var(--spacing-sm, 8px);
+  min-height: 0; /* Important for flex child with overflow */
 }
 
 .chart-controls {
@@ -157,11 +158,14 @@
   padding: var(--spacing-sm, 8px);
   min-height: 0; /* Important for flex child with overflow */
   min-width: 0; /* Important for flex child to shrink */
+  display: flex;
+  flex-direction: column;
 }
 
 #chart-canvas {
   width: 100% !important;
   height: 100% !important;
+  flex: 1;
 }
 
 /* Dark theme support */

@@ -113,7 +113,38 @@ Create an interactive chart widget positioned at bottom center that visualizes t
 - Chart widget now properly integrates with existing app data flow and event system
 - Fixed Canvas reuse errors and Chart.js controller registration issues
 
-#### Phase 5: Performance Optimization
+#### Phase 5: Advanced Interactivity ✅ COMPLETED
+
+1. ✅ Chart-to-map click synchronization with map centering
+2. ✅ Map-to-chart click synchronization with point highlighting
+3. ✅ Chart hover markers on map (temporary red circle markers)
+4. ✅ Bidirectional event system integration
+
+**Completed:**
+
+- Added `centerOnCoordinates()` method to MapWidget for chart-to-map click synchronization
+- Implemented `map-point-click` event dispatch from map widget to chart widget
+- Added chart hover markers on map using dedicated hover marker layer
+- Created `showHoverMarker()` and `hideHoverMarker()` methods in MapWidget
+- Enhanced chart hover events to dispatch both hover-in and hover-out events
+- Added proper event handlers for all chart-map interactions in app.ts
+- Updated MapWidgetElement interface with new interaction methods
+
+#### Phase 6: User Experience Enhancements ✅ COMPLETED
+
+1. ✅ Relative time axis labels (delta from start instead of full timestamps)
+2. ✅ Fixed chart height overflow and layout issues
+3. ✅ Proper container sizing and responsive behavior
+
+**Completed:**
+
+- Implemented `formatTimeDelta()` method for relative time display (MM:SS or HH:MM:SS format)
+- Changed time axis to show elapsed time from track start (e.g., "0:00", "15:23", "1:42:15")
+- Fixed chart height overflow by using flexbox layout in chart-content area
+- Resolved chart cropping issues by properly accounting for header height
+- Optimized space usage on time axis with more meaningful time labels
+
+#### Phase 7: Performance Optimization (Future Work)
 
 1. 🔄 Optimize chart widget opening performance (currently slow/sloppy)
 2. Investigate chart rendering delays and animation smoothness
@@ -133,13 +164,17 @@ Create an interactive chart widget positioned at bottom center that visualizes t
 ## Key Features
 
 ✅ Multi-metric visualization (elevation, speed, pace, heart rate)  
-✅ Time/distance axis switching  
+✅ Time/distance axis switching with relative time labels  
 ✅ Metric visibility toggles  
-✅ Bidirectional map-chart synchronization  
-✅ Responsive design  
-✅ Theme integration  
+✅ Bidirectional map-chart synchronization (click & hover)  
+✅ Responsive design with mobile optimization  
+✅ Theme integration (dark/light mode)  
 ✅ Collapsible toggle functionality with state persistence  
 ✅ Clean line visualization without point markers  
 ✅ Proper map interaction handling when collapsed  
 ✅ Data integration with existing app flow  
-🔄 Performance optimization for chart opening (in progress)
+✅ Chart hover markers on map (red circle indicators)  
+✅ Chart-to-map centering on point selection  
+✅ Map-to-chart point highlighting  
+✅ Proper height calculations and layout management  
+🔄 Performance optimization for chart opening (future work)
