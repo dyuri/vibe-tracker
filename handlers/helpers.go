@@ -8,32 +8,14 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/daos"
 	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/tools/security"
 
 	"vibe-tracker/utils"
 )
 
 func getAuthRecordFromToken(app *pocketbase.PocketBase, token string) (*models.Record, error) {
-	// Parse and verify the JWT token using PocketBase's method
-	claims, err := security.ParseJWT(token, app.Settings().RecordAuthToken.Secret)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get the record ID from claims
-	recordId, ok := claims["id"].(string)
-	if !ok {
-		return nil, errors.New("invalid token: missing record id")
-	}
-
-	// Get the collection ID from claims
-	collectionId, ok := claims["collectionId"].(string)
-	if !ok {
-		return nil, errors.New("invalid token: missing collection id")
-	}
-
-	// Find and return the record
-	record, err := app.Dao().FindRecordById(collectionId, recordId)
+	// Use PocketBase's built-in method for finding auth records by token
+	// This properly handles JWT verification and record lookup
+	record, err := app.Dao().FindAuthRecordByToken(token, app.Settings().RecordAuthToken.Secret)
 	if err != nil {
 		return nil, err
 	}

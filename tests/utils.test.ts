@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateUserColor } from '../public/utils.ts';
+import { generateUserColor } from '../src/utils/utils';
 
 describe('Utils', () => {
   describe('generateUserColor', () => {

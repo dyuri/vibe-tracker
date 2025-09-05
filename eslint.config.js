@@ -5,7 +5,15 @@ import typescriptParser from '@typescript-eslint/parser';
 export default [
   js.configs.recommended,
   {
-    ignores: ['dist/**', 'node_modules/**', 'pb_data/**', '**/*.min.js', 'build/**', 'coverage/**'],
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      'pb_data/**',
+      '**/*.min.js',
+      'build/**',
+      'coverage/**',
+      'tests-e2e/**',
+    ],
   },
   {
     files: ['**/*.{js,ts}'],
