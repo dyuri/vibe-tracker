@@ -80,7 +80,7 @@ export default class SessionManagementWidget
           <form id="session-form">
             <div class="form-group">
               <label for="session-name">Session Name *</label>
-              <input type="text" id="session-name" placeholder="e.g., morning-run-2024" pattern="^[a-zA-Z0-9_-]+$" required>
+              <input type="text" id="session-name" placeholder="e.g., morning-run-2024" pattern="^[a-zA-Z0-9_\\-]+$" required>
               <small class="form-help-text">Only letters, numbers, hyphens, and underscores allowed</small>
             </div>
             
