@@ -36,7 +36,7 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
   private isExpanded: boolean = false;
   private visibleMetrics = {
     elevation: true,
-    speed: true,
+    speed: false,
     pace: true,
     heartRate: true,
   };
@@ -77,16 +77,16 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
                     Elevation
                   </label>
                   <label>
-                    <input type="checkbox" name="metric" value="speed" checked>
-                    Speed
+                    <input type="checkbox" name="metric" value="heartRate" checked>
+                    Heart Rate
                   </label>
                   <label>
                     <input type="checkbox" name="metric" value="pace" checked>
                     Pace
                   </label>
                   <label>
-                    <input type="checkbox" name="metric" value="heartRate" checked>
-                    Heart Rate
+                    <input type="checkbox" name="metric" value="speed">
+                    Speed
                   </label>
                 </div>
               </div>

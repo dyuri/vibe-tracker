@@ -74,15 +74,31 @@
   height: 100vh;
 }
 
-/* Error message styling */
+/* Error message styling - positioned over map center */
 .error-message {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   text-align: center;
   padding: var(--spacing-lg);
   background-color: var(--bg-error, #fee);
   border: 1px solid var(--border-error, #fcc);
   border-radius: var(--border-radius-md);
-  margin: var(--spacing-md);
   color: var(--text-error, #c33);
+  z-index: 1001; /* Above widgets */
+  max-width: 90%;
+  min-width: 300px;
+  box-shadow: var(--shadow-heavy, 0 4px 8px rgba(0, 0, 0, 0.2));
+  backdrop-filter: blur(2px);
+}
+
+/* Dark theme support for error message */
+[data-theme='dark'] .error-message {
+  background-color: var(--bg-error-dark, #4a1a1a);
+  border-color: var(--border-error-dark, #661a1a);
+  color: var(--text-error-dark, #ff6b6b);
+  box-shadow: var(--shadow-heavy-dark, 0 4px 8px rgba(0, 0, 0, 0.4));
 }
 
 /* Overlay views for profile and sessions */
