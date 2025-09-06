@@ -160,6 +160,7 @@
   min-width: 0; /* Important for flex child to shrink */
   display: flex;
   flex-direction: column;
+  transition: opacity 0.2s ease;
 }
 
 #chart-canvas {

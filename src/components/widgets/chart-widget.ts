@@ -507,13 +507,20 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
   /**
    * Expand the chart panel
    */
+  /**
+   * Expand the chart panel
+   */
   private expandChart(): void {
     const toggleButton = this.shadowRoot!.getElementById('toggle-button') as HTMLElement;
     const chartPanel = this.shadowRoot!.getElementById('chart-panel') as HTMLElement;
+    const chartWrapper = this.shadowRoot!.getElementById('chart-wrapper') as HTMLElement;
 
     this.isExpanded = true;
     toggleButton.style.display = 'none';
     chartPanel.style.display = 'flex';
+
+    // Hide chart during opening animation to prevent Chart.js rendering issues
+    chartWrapper.style.opacity = '0';
 
     // Update host element CSS class
     this.classList.remove('collapsed');
@@ -527,6 +534,15 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
         this.updateChart();
       }
     }
+
+    // Show chart after opening animation completes
+    setTimeout(() => {
+      chartWrapper.style.opacity = '1';
+      // Force chart resize after container is fully expanded
+      if (this.chart) {
+        this.chart.resize();
+      }
+    }, 300); // Match the transition duration from CSS
 
     // Save state to localStorage
     localStorage.setItem('chart-widget-expanded', 'true');

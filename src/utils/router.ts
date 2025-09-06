@@ -16,7 +16,7 @@ export class Router {
   constructor() {
     // Feature detection
     this.supportsNavigationAPI = 'navigation' in window;
-    this.supportsViewTransitions = 'startViewTransition' in document;
+    this.supportsViewTransitions = false; // Disabled for SPA performance
 
     console.log(
       `Router initialized: Navigation API=${this.supportsNavigationAPI}, View Transitions=${this.supportsViewTransitions}`
@@ -192,22 +192,11 @@ export class Router {
   /**
    * Handle route with optional view transitions
    */
+  /**
+   * Handle route without view transitions (disabled for SPA performance)
+   */
   private async handleRouteWithTransition(path: string): Promise<void> {
-    if (this.supportsViewTransitions) {
-      // Use view transitions for smooth animations
-      const transition = (document as any).startViewTransition(() => {
-        this.handleRoute(path);
-      });
-
-      // Optionally wait for transition to complete
-      try {
-        await transition.finished;
-      } catch (error) {
-        console.warn('View transition failed:', error);
-      }
-    } else {
-      // Fallback to direct route handling
-      this.handleRoute(path);
-    }
+    // View transitions disabled for performance - just handle route directly
+    this.handleRoute(path);
   }
 }

@@ -10,6 +10,8 @@ location-widget {
   top: var(--spacing-sm);
   right: var(--spacing-sm);
   z-index: 1000;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 /* Global theme toggle positioning */
@@ -18,6 +20,8 @@ location-widget {
   bottom: var(--spacing-sm);
   left: var(--spacing-sm);
   z-index: 1000;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 /* Global login widget positioning */
@@ -26,6 +30,8 @@ location-widget {
   bottom: var(--spacing-sm);
   right: var(--spacing-sm);
   z-index: 1000;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 /* Global chart widget positioning */
@@ -41,6 +47,8 @@ location-widget {
   min-height: 300px;
   z-index: 999;
   transition: all 0.3s ease;
+  will-change: transform, width, height;
+  backface-visibility: hidden;
 }
 
 /* Collapsed state - show only toggle button */
