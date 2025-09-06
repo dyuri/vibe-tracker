@@ -21,6 +21,9 @@ export interface MapWidgetElement extends HTMLElement, CustomElementLifecycle {
   appendData(newData: any): void;
   showCurrentPosition(coords: GeolocationCoordinates): void;
   hideCurrentPosition(): void;
+  centerOnCoordinates(latitude: number, longitude: number, zoom?: number): void;
+  showHoverMarker(latitude: number, longitude: number): void;
+  hideHoverMarker(): void;
 }
 
 // Theme toggle widget
@@ -41,6 +44,13 @@ export interface ProfileWidgetElement extends HTMLElement, CustomElementLifecycl
 
 // Session management widget
 export interface SessionManagementWidgetElement extends HTMLElement, CustomElementLifecycle {}
+
+// Chart widget
+export interface ChartWidgetElement extends HTMLElement, CustomElementLifecycle {
+  displayData(data: any): void;
+  highlightPoint(index: number): void;
+  clearHighlight(): void;
+}
 
 // Geolocation coordinates (extending built-in types)
 export interface GeolocationCoordinates {
@@ -67,6 +77,7 @@ declare global {
     'login-widget': LoginWidgetElement;
     'profile-widget': ProfileWidgetElement;
     'session-management-widget': SessionManagementWidgetElement;
+    'chart-widget': ChartWidgetElement;
   }
 
   interface WindowEventMap {

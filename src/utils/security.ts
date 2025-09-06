@@ -154,16 +154,27 @@ class SecurityManager {
     if ('MutationObserver' in window) {
       const observer = new MutationObserver(mutations => {
         mutations.forEach(mutation => {
+          // Skip mutations in map containers to avoid performance issues during panning
+          if (this.isMapRelatedNode(mutation.target)) {
+            return;
+          }
+
           // Check added nodes for dangerous content
           mutation.addedNodes.forEach(node => {
             if (node.nodeType === Node.ELEMENT_NODE) {
-              this.scanElementForDangerousContent(node as Element);
+              // Skip map-related elements
+              if (!this.isMapRelatedNode(node)) {
+                this.scanElementForDangerousContent(node as Element);
+              }
             }
           });
 
           // Check modified attributes
           if (mutation.type === 'attributes' && mutation.target.nodeType === Node.ELEMENT_NODE) {
-            this.checkElementAttributes(mutation.target as Element);
+            // Skip map-related elements
+            if (!this.isMapRelatedNode(mutation.target)) {
+              this.checkElementAttributes(mutation.target as Element);
+            }
           }
         });
       });
@@ -176,11 +187,61 @@ class SecurityManager {
         attributeFilter: ['onclick', 'onload', 'onerror', 'href', 'src'],
       });
 
-      console.log('🔍 DOM mutation observer initialized');
+      console.log('🔍 DOM mutation observer initialized with map optimization');
     }
 
-    // Also scan existing DOM on initialization
+    // Also scan existing DOM on initialization (excluding map)
     this.scanElementForDangerousContent(document.body);
+  }
+
+  /**
+   * Check if a node is part of the map widget to avoid performance issues
+   */
+  private isMapRelatedNode(node: Node): boolean {
+    if (!node || node.nodeType !== Node.ELEMENT_NODE) {
+      return false;
+    }
+
+    const element = node as Element;
+
+    // Check if it's the map widget itself or inside it
+    if (element.tagName === 'MAP-WIDGET') {
+      return true;
+    }
+
+    // Check if it has map-related classes or IDs
+    const mapSelectors = [
+      'leaflet-', // Leaflet CSS classes
+      'map-', // Map-related CSS classes
+      'tile', // Map tiles
+      'marker', // Map markers
+      'popup', // Map popups
+    ];
+
+    const className = element.className || '';
+    const id = element.id || '';
+
+    if (mapSelectors.some(selector => className.includes(selector) || id.includes(selector))) {
+      return true;
+    }
+
+    // Check if any parent is a map widget
+    let parent = element.parentElement;
+    while (parent) {
+      if (parent.tagName === 'MAP-WIDGET') {
+        return true;
+      }
+      const parentClass = parent.className || '';
+      const parentId = parent.id || '';
+      if (
+        mapSelectors.some(selector => parentClass.includes(selector) || parentId.includes(selector))
+      ) {
+        return true;
+      }
+      parent = parent.parentElement;
+    }
+
+    return false;
   }
 
   /**

@@ -19,6 +19,7 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   private map: L.Map | null = null;
   private dataLayerGroup: L.LayerGroup | null = null;
   private currentPositionLayerGroup: L.LayerGroup | null = null;
+  private hoverMarkerLayerGroup: L.LayerGroup | null = null;
   private currentFeatureCollection: LocationsResponse | null = null;
   private colorScale: Array<Array<number>> = [
     [0, 0, 255], // Blue
@@ -60,6 +61,7 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       }).addTo(this.map);
       this.dataLayerGroup = L.layerGroup().addTo(this.map);
       this.currentPositionLayerGroup = L.layerGroup().addTo(this.map);
+      this.hoverMarkerLayerGroup = L.layerGroup().addTo(this.map);
 
       this.map.on('moveend', () => this.updateUrlHash());
       this.map.on('zoomend', () => this.updateUrlHash());
@@ -241,6 +243,19 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
               : (closestPoint.geometry.coordinates as [number, number, number]);
           const popupContent = this.createPopupContent(closestPoint.properties, coords);
           L.popup().setLatLng(e.latlng).setContent(popupContent).openOn(this.map!);
+
+          // Dispatch event for chart synchronization
+          const pointIndex =
+            this.currentFeatureCollection?.features.findIndex(f => f === closestPoint) ?? -1;
+          if (pointIndex !== -1) {
+            this.dispatchEvent(
+              new CustomEvent('map-point-click', {
+                detail: { feature: closestPoint, index: pointIndex },
+                bubbles: true,
+                composed: true,
+              })
+            );
+          }
         }
       });
       this.dataLayerGroup!.addLayer(clickableLine);
@@ -388,6 +403,55 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     }
 
     this.currentPositionLayerGroup.clearLayers();
+  }
+
+  /**
+   * Center map on specific coordinates
+   */
+  centerOnCoordinates(latitude: number, longitude: number, zoom?: number): void {
+    if (!this.map) {
+      console.warn('Map not initialized, cannot center on coordinates');
+      return;
+    }
+
+    this.map.setView([latitude, longitude], zoom || this.map.getZoom());
+  }
+
+  /**
+   * Show temporary hover marker at specific coordinates
+   */
+  showHoverMarker(latitude: number, longitude: number): void {
+    if (!this.hoverMarkerLayerGroup) {
+      console.warn('Map not initialized, cannot show hover marker');
+      return;
+    }
+
+    // Clear any existing hover marker
+    this.hoverMarkerLayerGroup.clearLayers();
+
+    // Create a distinctive hover marker
+    const hoverMarker = L.circleMarker([latitude, longitude], {
+      radius: 8,
+      fillColor: '#ff0000',
+      color: '#ffffff',
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.8,
+    });
+
+    this.hoverMarkerLayerGroup.addLayer(hoverMarker);
+  }
+
+  /**
+   * Hide hover marker
+   */
+  hideHoverMarker(): void {
+    if (!this.hoverMarkerLayerGroup) {
+      console.warn('Map not initialized, cannot hide hover marker');
+      return;
+    }
+
+    this.hoverMarkerLayerGroup.clearLayers();
   }
 }
 

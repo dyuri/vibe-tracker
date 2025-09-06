@@ -1,88 +1,9 @@
 /**
- * CSS View Transitions for SPA routing
+ * CSS Transitions disabled for SPA performance
+ * View transitions were causing performance issues during map interactions
  */
 
-/* Enable view transitions for the main content area */
-#content {
-  view-transition-name: main-content;
-}
-
-/* Default transition for main content */
-::view-transition-old(main-content),
-::view-transition-new(main-content) {
-  animation-duration: 0.3s;
-  animation-timing-function: ease-in-out;
-}
-
-/* Fade transition between views */
-::view-transition-old(main-content) {
-  animation-name: fade-out;
-}
-
-::view-transition-new(main-content) {
-  animation-name: fade-in;
-}
-
-@keyframes fade-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Specific transitions for view overlays */
-.view-overlay {
-  view-transition-name: overlay;
-}
-
-::view-transition-old(overlay),
-::view-transition-new(overlay) {
-  animation-duration: 0.25s;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-::view-transition-old(overlay) {
-  animation-name: slide-out-up;
-}
-
-::view-transition-new(overlay) {
-  animation-name: slide-in-down;
-}
-
-@keyframes slide-out-up {
-  from {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateY(-20px);
-    opacity: 0;
-  }
-}
-
-@keyframes slide-in-down {
-  from {
-    transform: translateY(-20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* Loading states during transitions */
+/* Simple loading indicator for when needed (without view transitions) */
 .view-transition-loading {
   position: relative;
 }
@@ -108,65 +29,5 @@
   }
   100% {
     transform: rotate(360deg);
-  }
-}
-
-/* Enhance existing overlay animations with view transitions */
-@media (prefers-reduced-motion: no-preference) {
-  /* Only apply complex transitions for users who don't prefer reduced motion */
-
-  /* Profile/sessions overlay slide animations */
-  .view-overlay.hidden {
-    view-transition-name: overlay-hidden;
-  }
-
-  .view-overlay:not(.hidden) {
-    view-transition-name: overlay-visible;
-  }
-}
-
-/* Respect user's motion preferences */
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation-duration: 0.1s !important;
-    animation-timing-function: linear !important;
-  }
-
-  /* Remove complex animations for accessibility */
-  @keyframes fade-out {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0.9;
-    }
-  }
-
-  @keyframes fade-in {
-    from {
-      opacity: 0.9;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes slide-out-up {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes slide-in-down {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 1;
-    }
   }
 }

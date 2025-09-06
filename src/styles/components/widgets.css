@@ -10,6 +10,8 @@ location-widget {
   top: var(--spacing-sm);
   right: var(--spacing-sm);
   z-index: 1000;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 /* Global theme toggle positioning */
@@ -18,6 +20,8 @@ location-widget {
   bottom: var(--spacing-sm);
   left: var(--spacing-sm);
   z-index: 1000;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 /* Global login widget positioning */
@@ -26,4 +30,75 @@ location-widget {
   bottom: var(--spacing-sm);
   right: var(--spacing-sm);
   z-index: 1000;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Global chart widget positioning */
+#global-chart {
+  position: fixed;
+  bottom: var(--spacing-sm);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  max-width: 1200px;
+  min-width: 40px; /* Minimum width for collapsed state (circular button) */
+  height: 40dvh;
+  min-height: 300px;
+  z-index: 999;
+  transition: all 0.3s ease;
+  will-change: transform, width, height;
+  backface-visibility: hidden;
+}
+
+/* Collapsed state - show only toggle button */
+#global-chart.collapsed {
+  width: 40px;
+  height: 40px;
+}
+
+/* Expanded state */
+#global-chart.expanded {
+  width: 80%;
+  max-width: 1200px;
+  height: 40dvh;
+  min-height: 300px;
+}
+
+/* Responsive chart positioning - drawer style on mobile */
+@media (max-width: 768px) {
+  #global-chart {
+    width: 100%;
+    height: 50dvh;
+    min-height: 300px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+    transition: none !important; /* Disable transitions on mobile */
+  }
+
+  #global-chart.collapsed {
+    width: 40px;
+    height: 40px;
+    left: 50%;
+    right: auto;
+    bottom: var(--spacing-sm);
+    transform: translateX(-50%);
+    border-radius: var(--border-radius-full, 50%);
+    transition: none !important; /* Disable transitions on mobile */
+  }
+
+  #global-chart.expanded {
+    width: 100%;
+    height: 50dvh;
+    min-height: 300px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+    transition: none !important; /* Disable transitions on mobile */
+  }
 }
