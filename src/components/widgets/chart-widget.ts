@@ -90,6 +90,9 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
                   </label>
                 </div>
               </div>
+              <div class="control-group mobile-close-group">
+                <button id="mobile-close-button" class="mobile-close-button">×</button>
+              </div>
             </div>
             <div id="chart-wrapper" class="chart-wrapper">
               <canvas id="chart-canvas"></canvas>
@@ -119,12 +122,18 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
     // Toggle button functionality
     const toggleButton = this.shadowRoot!.getElementById('toggle-button') as HTMLElement;
     const closeButton = this.shadowRoot!.getElementById('close-button') as HTMLElement;
+    const mobileCloseButton = this.shadowRoot!.getElementById('mobile-close-button') as HTMLElement;
 
     toggleButton.addEventListener('click', () => {
       this.expandChart();
     });
 
     closeButton.addEventListener('click', () => {
+      this.collapseChart();
+    });
+
+    // Mobile close button (same functionality as regular close button)
+    mobileCloseButton.addEventListener('click', () => {
       this.collapseChart();
     });
 

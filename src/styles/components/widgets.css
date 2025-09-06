@@ -65,33 +65,40 @@ location-widget {
   min-height: 300px;
 }
 
-/* Responsive chart positioning */
+/* Responsive chart positioning - drawer style on mobile */
 @media (max-width: 768px) {
   #global-chart {
-    width: 90%;
+    width: 100%;
     height: 50dvh;
-    min-height: 250px;
+    min-height: 300px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+    transition: none !important; /* Disable transitions on mobile */
+  }
+
+  #global-chart.collapsed {
+    width: 40px;
+    height: 40px;
     left: 50%;
+    right: auto;
+    bottom: var(--spacing-sm);
     transform: translateX(-50%);
-  }
-}
-
-@media (max-width: 480px) {
-  #global-chart {
-    width: 95%;
-    height: 60dvh;
-    min-height: 220px;
-    bottom: calc(var(--spacing-sm) + 60px); /* Above login/theme buttons */
+    border-radius: var(--border-radius-full, 50%);
+    transition: none !important; /* Disable transitions on mobile */
   }
 
-  /* Adjust other widgets on mobile to avoid overlap */
-  #global-login {
-    bottom: var(--spacing-sm);
-    right: var(--spacing-sm);
-  }
-
-  #global-theme-toggle {
-    bottom: var(--spacing-sm);
-    left: var(--spacing-sm);
+  #global-chart.expanded {
+    width: 100%;
+    height: 50dvh;
+    min-height: 300px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+    transition: none !important; /* Disable transitions on mobile */
   }
 }
