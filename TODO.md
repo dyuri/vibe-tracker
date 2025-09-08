@@ -7,7 +7,6 @@
 - tracking events
   - start/stop/pause/resume tracking via companion app
   - don't draw route while stopped/paused (connect pause-resume, but do not connect stop-start)
-  - `event`, `status` fields in tracking data
 
 - request throttling improvements
   - return a promise that resolves when a request can be made, or something like that
