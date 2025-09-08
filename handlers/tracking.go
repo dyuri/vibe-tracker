@@ -44,6 +44,8 @@ func NewTrackingHandler(app *pocketbase.PocketBase, locationService *services.Lo
 //	@Param			speed		query		float64	false	"Speed in m/s"
 //	@Param			timestamp	query		int64	false	"Unix timestamp"
 //	@Param			session		query		string	false	"Session name"
+//	@Param			status		query		string	false	"Status information"
+//	@Param			event		query		string	false	"Event information"
 //	@Success		200			{object}	models.SuccessResponse	"Location tracked successfully"
 //	@Failure		400			{object}	models.ErrorResponse		"Invalid request"
 //	@Failure		401			{object}	models.ErrorResponse		"Authentication required"
@@ -84,6 +86,12 @@ func (h *TrackingHandler) TrackLocationGET(c echo.Context) error {
 	}
 	if params.HeartRate != nil {
 		record.Set("heart_rate", *params.HeartRate)
+	}
+	if params.Status != "" {
+		record.Set("status", params.Status)
+	}
+	if params.Event != "" {
+		record.Set("event", params.Event)
 	}
 	// Handle session - create if doesn't exist
 	sessionName := params.Session
@@ -156,6 +164,12 @@ func (h *TrackingHandler) TrackLocationPOST(c echo.Context) error {
 	}
 	if data.Properties.HeartRate != nil {
 		record.Set("heart_rate", *data.Properties.HeartRate)
+	}
+	if data.Properties.Status != "" {
+		record.Set("status", data.Properties.Status)
+	}
+	if data.Properties.Event != "" {
+		record.Set("event", data.Properties.Event)
 	}
 	// Handle session - create if doesn't exist
 	sessionName := data.Properties.Session

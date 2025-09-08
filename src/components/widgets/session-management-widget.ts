@@ -296,7 +296,9 @@ export default class SessionManagementWidget
         session => `
       <div class="session-item" data-session-id="${session.id}">
         <div class="session-info">
-          <div class="session-name">${this.escapeHtml(session.name)}</div>
+          <div class="session-name">
+            <a href="/u/${this.user!.username}/s/${session.name}" data-route="/u/${this.user!.username}/s/${session.name}">${this.escapeHtml(session.name)}</a>
+          </div>
           ${session.title ? `<div class="session-title">${this.escapeHtml(session.title)}</div>` : ''}
           <div class="session-meta">
             <span class="${session.public ? 'public-indicator' : 'private-indicator'}">
