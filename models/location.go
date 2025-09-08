@@ -19,6 +19,8 @@ type LocationProperties struct {
 	Session   string   `json:"session,omitempty" validate:"omitempty,session_name,max=100"`
 	Username  string   `json:"username,omitempty"`
 	Title     string   `json:"session_title,omitempty"`
+	Status    string   `json:"status,omitempty" validate:"omitempty,max=100"`
+	Event     string   `json:"event,omitempty" validate:"omitempty,max=100"`
 }
 
 // LocationRequest represents a GeoJSON feature for tracking location
@@ -51,6 +53,8 @@ type TrackingQueryParams struct {
 	Speed     *float64 `query:"speed,omitempty" validate:"omitempty,gte=0"`
 	HeartRate *float64 `query:"heart_rate,omitempty" validate:"omitempty,gte=0,lte=300"`
 	Session   string   `query:"session,omitempty" validate:"omitempty,session_name,max=100"`
+	Status    string   `query:"status,omitempty" validate:"omitempty,max=100"`
+	Event     string   `query:"event,omitempty" validate:"omitempty,max=100"`
 }
 
 // Location represents a stored location record
@@ -63,6 +67,8 @@ type Location struct {
 	Speed     float64   `json:"speed,omitempty"`
 	HeartRate float64   `json:"heart_rate,omitempty"`
 	Session   string    `json:"session,omitempty"`
+	Status    string    `json:"status,omitempty"`
+	Event     string    `json:"event,omitempty"`
 	Timestamp int64     `json:"timestamp"`
 	Created   time.Time `json:"created"`
 	Updated   time.Time `json:"updated"`
