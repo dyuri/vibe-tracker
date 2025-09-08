@@ -21,6 +21,8 @@ export interface LocationProperties {
   session_title?: string;
   user_id?: string;
   avatar?: string;
+  status?: string;
+  event?: string;
 }
 
 // GeoJSON feature for location requests/responses
@@ -69,6 +71,8 @@ export interface TrackingQueryParams {
   speed?: number;
   heart_rate?: number;
   session?: string;
+  status?: string;
+  event?: string;
 }
 
 // Stored location record (from database)
@@ -81,6 +85,8 @@ export interface Location {
   speed?: number;
   heart_rate?: number;
   session?: string;
+  status?: string;
+  event?: string;
   timestamp: number;
   created: string;
   updated: string;
