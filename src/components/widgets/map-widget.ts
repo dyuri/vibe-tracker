@@ -212,18 +212,20 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
         const heartRate = startPoint.properties.heart_rate;
         const status = startPoint.properties.status;
 
-        // Determine line color - use status-specific colors for stopped/paused, otherwise heart rate
+        // Determine line color - use status-specific colors only if both points have the same status
+        const endStatus = endPoint.properties.status;
         let color: string;
-        if (status === 'stopped') {
+        let statusStyle: { dashArray?: string; opacity?: number } = {};
+
+        if (status === 'stopped' && endStatus === 'stopped') {
           color = '#dc3545'; // Red for stopped
-        } else if (status === 'paused') {
+          statusStyle = this.getLineStyleForStatus('stopped');
+        } else if (status === 'paused' && endStatus === 'paused') {
           color = '#fd7e14'; // Orange for paused
+          statusStyle = this.getLineStyleForStatus('paused');
         } else {
           color = this.getHeartRateColor(heartRate, minHeartRate, maxHeartRate);
         }
-
-        // Get status-based styling
-        const statusStyle = this.getLineStyleForStatus(status);
 
         const lineOptions = {
           color: color,
