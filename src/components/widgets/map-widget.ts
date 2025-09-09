@@ -424,7 +424,7 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       stop: { color: '#dc3545', icon: '⏹' },
       pause: { color: '#fd7e14', icon: '⏸' },
       resume: { color: '#007bff', icon: '▶' },
-      lap: { color: '#ffc107', icon: '🏁' },
+      lap: { color: '#ffc107', icon: '⚑' },
       reset: { color: '#6c757d', icon: '↻' },
     };
 
