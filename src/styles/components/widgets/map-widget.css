@@ -64,3 +64,82 @@
   color: var(--color-primary);
   text-decoration: none;
 }
+
+/* Event marker styles */
+.event-marker {
+  border: none;
+  background: transparent;
+}
+
+.event-marker-content {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+}
+
+.event-marker-content:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+}
+
+.event-marker-icon {
+  font-size: 8px;
+  line-height: 1;
+}
+
+/* Event-specific marker styles */
+.event-marker-start .event-marker-content {
+  background-color: #28a745;
+}
+
+.event-marker-stop .event-marker-content {
+  background-color: #dc3545;
+}
+
+.event-marker-pause .event-marker-content {
+  background-color: #fd7e14;
+}
+
+.event-marker-resume .event-marker-content {
+  background-color: #007bff;
+}
+
+.event-marker-lap .event-marker-content {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.event-marker-reset .event-marker-content {
+  background-color: #6c757d;
+}
+
+/* Generic event marker */
+.event-marker:not(.event-marker-start):not(.event-marker-stop):not(.event-marker-pause):not(
+    .event-marker-resume
+  ):not(.event-marker-lap):not(.event-marker-reset)
+  .event-marker-content {
+  background-color: #6f42c1;
+}
+
+/* Event popup styles */
+.event-popup {
+  min-width: 200px;
+}
+
+.event-title {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--color-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 4px;
+}

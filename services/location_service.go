@@ -74,6 +74,14 @@ func (s *LocationService) TrackLocationFromGeoJSON(req appmodels.LocationRequest
 		}
 	}
 
+	// Set status and event if provided
+	if req.Properties.Status != "" {
+		record.Set("status", req.Properties.Status)
+	}
+	if req.Properties.Event != "" {
+		record.Set("event", req.Properties.Event)
+	}
+
 	return s.locationRepo.Create(record)
 }
 
@@ -108,6 +116,14 @@ func (s *LocationService) TrackLocationFromParams(params appmodels.TrackingQuery
 		if session != nil {
 			record.Set("session", session.Id)
 		}
+	}
+
+	// Set status and event if provided
+	if params.Status != "" {
+		record.Set("status", params.Status)
+	}
+	if params.Event != "" {
+		record.Set("event", params.Event)
 	}
 
 	return s.locationRepo.Create(record)
@@ -249,6 +265,14 @@ func (s *LocationService) recordToGeoJSON(record *models.Record, user *models.Re
 			properties.Session = session.GetString("name")
 			properties.Title = session.GetString("title")
 		}
+	}
+
+	// Get status and event if available
+	if status := record.GetString("status"); status != "" {
+		properties.Status = status
+	}
+	if event := record.GetString("event"); event != "" {
+		properties.Event = event
 	}
 
 	return &appmodels.LocationResponse{

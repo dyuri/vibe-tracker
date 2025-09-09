@@ -572,6 +572,14 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
     this.classList.remove('expanded');
     this.classList.add('collapsed');
 
+    // Clear any hover markers when chart is collapsed
+    this.dispatchEvent(
+      new CustomEvent('chart-hover-out', {
+        bubbles: true,
+        composed: true,
+      })
+    );
+
     // Save state to localStorage
     localStorage.setItem('chart-widget-expanded', 'false');
   }

@@ -299,6 +299,14 @@ func (h *PublicHandler) GetSessionData(c echo.Context) error {
 			"session_title": sessionTitle,
 		}
 
+		// Add status and event if available
+		if status := record.GetString("status"); status != "" {
+			pointProperties["status"] = status
+		}
+		if event := record.GetString("event"); event != "" {
+			pointProperties["event"] = event
+		}
+
 		// Add username and avatar only for the latest point (last in array)
 		if i == len(records)-1 {
 			pointProperties["username"] = user.Username()
