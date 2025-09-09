@@ -20,6 +20,7 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   private dataLayerGroup: L.LayerGroup | null = null;
   private currentPositionLayerGroup: L.LayerGroup | null = null;
   private hoverMarkerLayerGroup: L.LayerGroup | null = null;
+  private eventMarkerLayerGroup: L.LayerGroup | null = null;
   private currentFeatureCollection: LocationsResponse | null = null;
   private colorScale: Array<Array<number>> = [
     [0, 0, 255], // Blue
@@ -62,6 +63,7 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       this.dataLayerGroup = L.layerGroup().addTo(this.map);
       this.currentPositionLayerGroup = L.layerGroup().addTo(this.map);
       this.hoverMarkerLayerGroup = L.layerGroup().addTo(this.map);
+      this.eventMarkerLayerGroup = L.layerGroup().addTo(this.map);
 
       this.map.on('moveend', () => this.updateUrlHash());
       this.map.on('zoomend', () => this.updateUrlHash());
@@ -149,12 +151,13 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   }
 
   displayFeatureCollection(data: LocationsResponse): void {
-    if (!this.dataLayerGroup) {
+    if (!this.dataLayerGroup || !this.eventMarkerLayerGroup) {
       console.warn('Map not initialized, cannot display feature collection');
       return;
     }
 
     this.dataLayerGroup.clearLayers();
+    this.eventMarkerLayerGroup.clearLayers();
 
     const points = data.features;
     if (points.length === 0) {
@@ -207,16 +210,44 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
         const startPoint = points[i];
         const endPoint = points[i + 1];
         const heartRate = startPoint.properties.heart_rate;
-        const color = this.getHeartRateColor(heartRate, minHeartRate, maxHeartRate);
+        const status = startPoint.properties.status;
+
+        // Determine line color - use status-specific colors for stopped/paused, otherwise heart rate
+        let color: string;
+        if (status === 'stopped') {
+          color = '#dc3545'; // Red for stopped
+        } else if (status === 'paused') {
+          color = '#fd7e14'; // Orange for paused
+        } else {
+          color = this.getHeartRateColor(heartRate, minHeartRate, maxHeartRate);
+        }
+
+        // Get status-based styling
+        const statusStyle = this.getLineStyleForStatus(status);
+
+        const lineOptions = {
+          color: color,
+          weight: 5,
+          ...statusStyle,
+        };
+
         const line = L.polyline(
           [
             [startPoint.geometry.coordinates[1], startPoint.geometry.coordinates[0]],
             [endPoint.geometry.coordinates[1], endPoint.geometry.coordinates[0]],
           ],
-          { color: color, weight: 5 }
+          lineOptions
         );
         this.dataLayerGroup!.addLayer(line);
       }
+
+      // Add event markers for points with events
+      points.forEach(point => {
+        if (point.properties.event) {
+          const eventMarker = this.createEventMarker(point, point.properties.event);
+          this.eventMarkerLayerGroup!.addLayer(eventMarker);
+        }
+      });
 
       // Create a transparent, clickable line
       const clickableLine = L.polyline(
@@ -345,12 +376,68 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     return [r, g, b];
   }
 
-  createPopupContent(
+  /**
+   * Creates an event marker for a specific event type
+   */
+  createEventMarker(feature: GeoJSONFeature, eventType: string): L.Marker {
+    const [longitude, latitude] = feature.geometry.coordinates;
+    const icon = this.getEventMarkerIcon(eventType);
+
+    const marker = L.marker([latitude, longitude], { icon });
+
+    // Create popup content for the event
+    const coords: [number, number, number] =
+      feature.geometry.coordinates.length === 2
+        ? ([...feature.geometry.coordinates, 0] as [number, number, number])
+        : (feature.geometry.coordinates as [number, number, number]);
+    const popupContent = this.createEventPopupContent(feature.properties, coords, eventType);
+    marker.bindPopup(popupContent);
+
+    return marker;
+  }
+
+  /**
+   * Returns appropriate icon for event type
+   */
+  getEventMarkerIcon(eventType: string): L.DivIcon {
+    const eventConfig = this.getEventConfig(eventType);
+
+    return L.divIcon({
+      className: `event-marker event-marker-${eventType}`,
+      html: `<div class="event-marker-content" style="background-color: ${eventConfig.color}">
+               <span class="event-marker-icon">${eventConfig.icon}</span>
+             </div>`,
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+      popupAnchor: [0, -10],
+    });
+  }
+
+  /**
+   * Returns configuration for different event types
+   */
+  getEventConfig(eventType: string): { color: string; icon: string } {
+    const configs: Record<string, { color: string; icon: string }> = {
+      start: { color: '#28a745', icon: '▶' },
+      stop: { color: '#dc3545', icon: '⏹' },
+      pause: { color: '#fd7e14', icon: '⏸' },
+      resume: { color: '#007bff', icon: '▶' },
+      lap: { color: '#ffc107', icon: '🏁' },
+      reset: { color: '#6c757d', icon: '↻' },
+    };
+
+    return configs[eventType] || { color: '#6f42c1', icon: '●' }; // Default purple for unknown events
+  }
+
+  /**
+   * Creates popup content specifically for events
+   */
+  createEventPopupContent(
     properties: LocationProperties,
-    coordinates: [number, number, number]
+    coordinates: [number, number, number],
+    eventType: string
   ): string {
-    const { speed, heart_rate, timestamp, session, session_title, username } = properties;
-    const altitude = coordinates[2];
+    const { timestamp, session, session_title, username } = properties;
 
     const sessionDisplay =
       session_title && session_title !== session
@@ -366,9 +453,62 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       : '';
 
     return `
+      <div class="event-popup">
+        <h4 class="event-title">Event: ${eventType.charAt(0).toUpperCase() + eventType.slice(1)}</h4>
+        ${userLine}<b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>
+        <b>Session:</b> ${sessionLink}
+      </div>
+    `;
+  }
+
+  /**
+   * Returns line style configuration based on status
+   */
+  getLineStyleForStatus(status: string | null | undefined): {
+    dashArray?: string;
+    opacity?: number;
+  } {
+    const statusConfig: Record<string, { dashArray?: string; opacity?: number }> = {
+      stopped: { dashArray: '10, 5', opacity: 0.6 }, // Dashed red lines with reduced opacity
+      paused: { dashArray: '5, 5', opacity: 0.7 }, // Dotted lines with reduced opacity
+    };
+
+    return statusConfig[status || ''] || {}; // Default/active - no special styling
+  }
+
+  createPopupContent(
+    properties: LocationProperties,
+    coordinates: [number, number, number]
+  ): string {
+    const { speed, heart_rate, timestamp, session, session_title, username, status, event } =
+      properties;
+    const altitude = coordinates[2];
+
+    const sessionDisplay =
+      session_title && session_title !== session
+        ? `${session_title} (${session})`
+        : session || 'N/A';
+    const sessionLink =
+      session && username
+        ? `<a href="/u/${username}/s/${session}" class="popup-link">${sessionDisplay}</a>`
+        : sessionDisplay;
+
+    const userLine = username
+      ? `<b>User:</b> <a href="/u/${username}" class="popup-link">${username}</a><br>`
+      : '';
+
+    const statusLine = status
+      ? `<b>Status:</b> ${status.charAt(0).toUpperCase() + status.slice(1)}<br>`
+      : '';
+
+    const eventLine = event
+      ? `<b>Event:</b> ${event.charAt(0).toUpperCase() + event.slice(1)}<br>`
+      : '';
+
+    return `
       ${userLine}<b>Time:</b> ${new Date(timestamp * 1000).toLocaleString()}<br>
       <b>Session:</b> ${sessionLink}<br>
-      <b>Altitude:</b> ${altitude} m<br>
+      ${statusLine}${eventLine}<b>Altitude:</b> ${altitude} m<br>
       <b>Speed:</b> ${speed} km/h<br>
       <b>Heart Rate:</b> ${heart_rate} bpm
     `;
