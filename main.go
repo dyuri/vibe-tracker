@@ -85,6 +85,11 @@ func setupGlobalMiddleware(router *echo.Echo, di *container.Container, cfg *conf
 	router.Use(di.ErrorHandler.CORSMiddleware(cfg.Security.CORSAllowedOrigins, cfg.Security.CORSAllowAll))
 	router.Use(di.InjectMiddleware())
 
+	// 404 Protection middleware - should be early in the chain
+	if di.NotFoundProtection != nil {
+		router.Use(di.NotFoundProtection.Middleware())
+	}
+
 	if di.SecurityMiddleware != nil {
 		router.Use(di.SecurityMiddleware.RequestSizeLimit())
 		router.Use(di.SecurityMiddleware.RequestTimeout())

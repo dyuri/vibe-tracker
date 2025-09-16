@@ -54,6 +54,14 @@ type SecurityConfig struct {
 	EnableSecurityHeaders bool
 	HSTSEnabled           bool
 	CSPEnabled            bool
+
+	// 404 Attack Protection
+	Enable404Protection   bool
+	Max404PerMinute       int
+	Max404PerHour         int
+	IP404BlockDuration    time.Duration
+	NotFound404LogEnabled bool
+	Whitelisted404IPs     []string
 }
 
 // HealthConfig holds health check configuration
@@ -94,6 +102,11 @@ func newSecurityConfig(isProduction bool) SecurityConfig {
 		corsOrigins = strings.Split(originsEnv, ",")
 	}
 
+	whitelisted404IPs := []string{}
+	if ipsEnv := os.Getenv("WHITELISTED_404_IPS"); ipsEnv != "" {
+		whitelisted404IPs = strings.Split(ipsEnv, ",")
+	}
+
 	return SecurityConfig{
 		EnableRateLimiting: getBoolEnvOrDefault("ENABLE_RATE_LIMITING", true),
 		RateLimitStrict:    isProduction,
@@ -112,6 +125,13 @@ func newSecurityConfig(isProduction bool) SecurityConfig {
 		EnableSecurityHeaders: getBoolEnvOrDefault("ENABLE_SECURITY_HEADERS", true),
 		HSTSEnabled:           getBoolEnvOrDefault("HSTS_ENABLED", isProduction),
 		CSPEnabled:            getBoolEnvOrDefault("CSP_ENABLED", true),
+
+		Enable404Protection:   getBoolEnvOrDefault("ENABLE_404_PROTECTION", true),
+		Max404PerMinute:       getIntEnvOrDefault("MAX_404_PER_MINUTE", 10),
+		Max404PerHour:         getIntEnvOrDefault("MAX_404_PER_HOUR", 100),
+		IP404BlockDuration:    getDurationEnvOrDefault("IP_404_BLOCK_DURATION", time.Hour),
+		NotFound404LogEnabled: getBoolEnvOrDefault("ENABLE_404_LOGS", !isProduction),
+		Whitelisted404IPs:     whitelisted404IPs,
 	}
 }
 

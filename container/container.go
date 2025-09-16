@@ -45,6 +45,7 @@ type Container struct {
 	RateLimitMiddleware    *middleware.RateLimitMiddleware
 	SecurityMiddleware     *middleware.SecurityMiddleware
 	AuthSecurityMiddleware *middleware.AuthSecurityMiddleware
+	NotFoundProtection     *middleware.NotFoundProtection
 }
 
 // NewContainer creates a new dependency injection container
@@ -130,6 +131,19 @@ func (c *Container) initMiddleware() {
 			c.Config.Security.EnableRequestLogs,
 		)
 	}
+
+	// 404 Protection middleware
+	if c.Config.Security.Enable404Protection {
+		c.NotFoundProtection = middleware.NewNotFoundProtection(middleware.NotFoundProtectionConfig{
+			Enabled:               c.Config.Security.Enable404Protection,
+			Max404PerMinute:       c.Config.Security.Max404PerMinute,
+			Max404PerHour:         c.Config.Security.Max404PerHour,
+			BlockDuration:         c.Config.Security.IP404BlockDuration,
+			WhitelistedIPs:        c.Config.Security.Whitelisted404IPs,
+			LogBlocked:            c.Config.Security.NotFound404LogEnabled,
+			LogSuspiciousPatterns: c.Config.Security.NotFound404LogEnabled,
+		})
+	}
 }
 
 // GetRepositories returns all repositories for testing purposes
@@ -148,8 +162,8 @@ func (c *Container) GetHandlers() (*handlers.AuthHandler, *handlers.SessionHandl
 }
 
 // GetMiddleware returns all middleware for testing purposes
-func (c *Container) GetMiddleware() (*middleware.AuthMiddleware, *middleware.UserMiddleware, *middleware.ErrorHandler, *middleware.ValidationMiddleware, *middleware.RateLimitMiddleware, *middleware.SecurityMiddleware, *middleware.AuthSecurityMiddleware) {
-	return c.AuthMiddleware, c.UserMiddleware, c.ErrorHandler, c.ValidationMiddleware, c.RateLimitMiddleware, c.SecurityMiddleware, c.AuthSecurityMiddleware
+func (c *Container) GetMiddleware() (*middleware.AuthMiddleware, *middleware.UserMiddleware, *middleware.ErrorHandler, *middleware.ValidationMiddleware, *middleware.RateLimitMiddleware, *middleware.SecurityMiddleware, *middleware.AuthSecurityMiddleware, *middleware.NotFoundProtection) {
+	return c.AuthMiddleware, c.UserMiddleware, c.ErrorHandler, c.ValidationMiddleware, c.RateLimitMiddleware, c.SecurityMiddleware, c.AuthSecurityMiddleware, c.NotFoundProtection
 }
 
 // InjectMiddleware returns middleware that injects the container into the Echo context
