@@ -29,14 +29,14 @@ type BlockedIP struct {
 
 // NotFoundProtectionConfig defines configuration for 404 protection
 type NotFoundProtectionConfig struct {
-	Enabled                bool
-	Max404PerMinute        int
-	Max404PerHour          int
-	BlockDuration          time.Duration
-	CleanupInterval        time.Duration
-	WhitelistedIPs         []string
-	LogBlocked             bool
-	LogSuspiciousPatterns  bool
+	Enabled               bool
+	Max404PerMinute       int
+	Max404PerHour         int
+	BlockDuration         time.Duration
+	CleanupInterval       time.Duration
+	WhitelistedIPs        []string
+	LogBlocked            bool
+	LogSuspiciousPatterns bool
 }
 
 // NotFoundProtection provides protection against 404 scanning attacks
@@ -147,7 +147,7 @@ func (nfp *NotFoundProtection) recordNotFoundAttempt(ip string, c echo.Context) 
 	defer nfp.mu.Unlock()
 
 	now := time.Now()
-	
+
 	// Get or create attempt record
 	attempt, exists := nfp.attempts[ip]
 	if !exists {
@@ -204,7 +204,7 @@ func (nfp *NotFoundProtection) recordNotFoundAttempt(ip string, c echo.Context) 
 // blockIP adds an IP to the blocked list
 func (nfp *NotFoundProtection) blockIP(ip, reason string, blockedAt time.Time) {
 	until := blockedAt.Add(nfp.config.BlockDuration)
-	
+
 	nfp.blocked[ip] = &BlockedIP{
 		IP:        ip,
 		BlockedAt: blockedAt,

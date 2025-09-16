@@ -79,10 +79,10 @@ func enhanceSessionsCollection(dao *daos.Dao) error {
 		return fmt.Errorf("sessions collection not found: %v", err)
 	}
 
-	schema := collection.Schema
+	collectionSchema := collection.Schema
 
 	// Check if fields already exist to avoid duplicates
-	if schema.GetFieldByName("gpx_track") != nil {
+	if collectionSchema.GetFieldByName("gpx_track") != nil {
 		log.Println("Sessions collection already enhanced with GPX fields")
 		return nil
 	}
@@ -93,8 +93,8 @@ func enhanceSessionsCollection(dao *daos.Dao) error {
 		Type:     schema.FieldTypeFile,
 		Required: false,
 		Options: &schema.FileOptions{
-			MaxSelect: types.Pointer(1),
-			MaxSize:   types.Pointer(5242880), // 5MB limit
+			MaxSelect: 1,
+			MaxSize:   5242880, // 5MB limit
 			MimeTypes: []string{"application/gpx+xml", "text/xml", "application/xml"},
 		},
 	}
@@ -119,9 +119,9 @@ func enhanceSessionsCollection(dao *daos.Dao) error {
 		},
 	}
 
-	schema.AddField(gpxTrackField)
-	schema.AddField(trackNameField)
-	schema.AddField(trackDescField)
+	collectionSchema.AddField(gpxTrackField)
+	collectionSchema.AddField(trackNameField)
+	collectionSchema.AddField(trackDescField)
 
 	return dao.SaveCollection(collection)
 }
@@ -278,8 +278,8 @@ func createWaypointsCollection(dao *daos.Dao) error {
 				Type:     schema.FieldTypeFile,
 				Required: false,
 				Options: &schema.FileOptions{
-					MaxSelect: types.Pointer(1),
-					MaxSize:   types.Pointer(10485760), // 10MB limit
+					MaxSelect: 1,
+					MaxSize:   10485760, // 10MB limit
 					MimeTypes: []string{"image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"},
 				},
 			},
