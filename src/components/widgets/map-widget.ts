@@ -64,14 +64,21 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       });
 
       this.map = L.map(this.shadowRoot!.getElementById('map')!);
+
+      // Create custom map panes for proper layering control
+      this.map.createPane('gpxPane');
+      this.map.getPane('gpxPane')!.style.zIndex = '400'; // Lower z-index for GPX tracks
+      this.map.getPane('overlayPane')!.style.zIndex = '600'; // Higher z-index for main tracks
+
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(this.map);
-      // Initialize GPX and waypoint layer groups first (bottom layers)
+
+      // Initialize GPX and waypoint layer groups with custom pane (bottom layers)
       this.gpxTrackLayerGroup = L.layerGroup().addTo(this.map);
       this.waypointsLayerGroup = L.layerGroup().addTo(this.map);
-      // Initialize main data layers on top
+      // Initialize main data layers on top (uses default overlay pane with zIndex 600)
       this.dataLayerGroup = L.layerGroup().addTo(this.map);
       this.currentPositionLayerGroup = L.layerGroup().addTo(this.map);
       this.hoverMarkerLayerGroup = L.layerGroup().addTo(this.map);
@@ -161,6 +168,7 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       weight: 4,
       opacity: 0.8,
       dashArray: '10, 15', // Dashed line with bigger gaps to distinguish from actual track
+      pane: 'gpxPane', // Use custom GPX pane with lower z-index
     });
 
     // Add popup to show track information
