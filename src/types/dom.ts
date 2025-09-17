@@ -2,6 +2,13 @@
  * DOM and Web Components types for custom elements
  */
 
+import type {
+  LocationResponse,
+  LocationsResponse,
+  WaypointsResponse,
+  GpxTrackPointsResponse,
+} from '@/types';
+
 // Base class for all custom elements
 export interface CustomElementConstructor {
   new (): HTMLElement;
@@ -19,6 +26,7 @@ export interface CustomElementLifecycle {
 export interface MapWidgetElement extends HTMLElement, CustomElementLifecycle {
   displayData(data: any): void;
   appendData(newData: any): void;
+  displayGpxTrack(data: GpxTrackPointsResponse): void;
   showCurrentPosition(coords: GeolocationCoordinates): void;
   hideCurrentPosition(): void;
   centerOnCoordinates(latitude: number, longitude: number, zoom?: number): void;
@@ -44,6 +52,26 @@ export interface ProfileWidgetElement extends HTMLElement, CustomElementLifecycl
 
 // Session management widget
 export interface SessionManagementWidgetElement extends HTMLElement, CustomElementLifecycle {}
+
+export interface TrackComparisonWidgetElement extends HTMLElement {
+  setPlannedTrack(track: GpxTrackPointsResponse): void;
+  setActualTrack(track: LocationsResponse): void;
+}
+
+export interface GpxUploadWidgetElement extends HTMLElement {
+  onFileSelected(callback: (file: File) => void): void;
+  showUploadProgress(progress: number): void;
+  showUploadSuccess(message: string): void;
+  showUploadError(error: string): void;
+  reset(): void;
+}
+
+export interface WaypointManagerWidgetElement extends HTMLElement {
+  loadWaypoints(sessionId: string): void;
+  refreshWaypoints(): void;
+  showCreateForm(): void;
+  hideCreateForm(): void;
+}
 
 // Chart widget
 export interface ChartWidgetElement extends HTMLElement, CustomElementLifecycle {

@@ -407,6 +407,11 @@ function fetchData(isInitialLoad: boolean = false, useDelta: boolean = false): v
         // Initial load or full refresh - display all data
         if (mapWidget) {
           mapWidget.displayData(data);
+
+          // Display GPX track if available
+          if (data.gpx && data.gpx.track_points) {
+            mapWidget.displayGpxTrack(data.gpx.track_points);
+          }
         }
         // Update chart widget with the same data and store it
         if (chartWidget && data.features && data.features.length > 0) {

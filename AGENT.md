@@ -6,6 +6,8 @@ Leaflet.js for the frontend.
 ## Generic rules
 
 - Always **PLAN** first, and only start coding when I approved the plan.
+- If the plan is saved into a file, update it as you proceed.
+- If gemini-bridge is available, use it for web search, or when you have to find something in the codebase.
 
 ## Build & Commands
 

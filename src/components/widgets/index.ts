@@ -11,3 +11,8 @@ export { default as MapWidget } from './map-widget';
 export { default as ProfileWidget } from './profile-widget';
 export { default as SessionManagementWidget } from './session-management-widget';
 export { default as ThemeToggle } from './theme-toggle';
+
+// New GPX and waypoint widgets
+export { default as TrackComparisonWidget } from './track-comparison-widget';
+export { default as WaypointManagerWidget } from './waypoint-manager-widget';
+export { default as GpxUploadWidget } from './gpx-upload-widget';

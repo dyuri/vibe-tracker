@@ -111,7 +111,7 @@ func newSecurityConfig(isProduction bool) SecurityConfig {
 		EnableRateLimiting: getBoolEnvOrDefault("ENABLE_RATE_LIMITING", true),
 		RateLimitStrict:    isProduction,
 
-		MaxRequestSize:    getInt64EnvOrDefault("MAX_REQUEST_SIZE", constants.MaxJSONRequestSize),
+		MaxRequestSize:    getInt64EnvOrDefault("MAX_REQUEST_SIZE", constants.MaxFileUploadSize),
 		RequestTimeout:    getDurationEnvOrDefault("REQUEST_TIMEOUT", time.Duration(constants.RequestTimeout)*time.Second),
 		EnableRequestLogs: getBoolEnvOrDefault("ENABLE_REQUEST_LOGS", !isProduction),
 

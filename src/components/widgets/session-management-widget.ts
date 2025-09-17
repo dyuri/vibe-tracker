@@ -1,5 +1,9 @@
 import type { User, SessionManagementWidgetElement } from '@/types';
 import styles from '@/styles/components/widgets/session-management-widget.css?inline';
+// Import widgets to ensure they are registered
+import './gpx-upload-widget';
+import './waypoint-manager-widget';
+import './track-comparison-widget';
 
 interface Session {
   id: string;
@@ -9,6 +13,9 @@ interface Session {
   public: boolean;
   created: string;
   updated: string;
+  gpx_track?: string;
+  track_name?: string;
+  track_description?: string;
 }
 
 interface SessionData {
@@ -35,6 +42,8 @@ export default class SessionManagementWidget
   private perPage: number = 20;
   private totalPages: number = 1;
   private editingSession: Session | null = null;
+  private currentSessionView: string | null = null; // 'details', 'gpx', 'waypoints'
+  private currentSession: Session | null = null; // Currently viewed session
 
   // Auth state elements
   private notAuthenticated!: HTMLElement;
@@ -60,6 +69,12 @@ export default class SessionManagementWidget
   private prevBtn!: HTMLButtonElement;
   private nextBtn!: HTMLButtonElement;
 
+  // Session detail elements
+  private sessionDetailView!: HTMLElement;
+  private sessionDetailTabs!: HTMLElement;
+  private sessionDetailContent!: HTMLElement;
+  private backToListBtn!: HTMLButtonElement;
+
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -73,60 +88,137 @@ export default class SessionManagementWidget
       </div>
       
       <div class="session-content" id="session-content">
-        <!-- Session Form Section -->
-        <div class="profile-section">
-          <div class="section-title" id="form-title">Create New Session</div>
-          
-          <form id="session-form">
-            <div class="form-group">
-              <label for="session-name">Session Name *</label>
-              <input type="text" id="session-name" placeholder="e.g., morning-run-2024" pattern="^[a-zA-Z0-9_\\-]+$" required>
-              <small class="form-help-text">Only letters, numbers, hyphens, and underscores allowed</small>
-            </div>
+        <!-- Session List View -->
+        <div class="session-list-view" id="session-list-view">
+          <!-- Session Form Section -->
+          <div class="profile-section">
+            <div class="section-title" id="form-title">Create New Session</div>
             
-            <div class="form-group">
-              <label for="session-title">Session Title</label>
-              <input type="text" id="session-title" placeholder="e.g., Morning Run 2024">
-            </div>
-            
-            <div class="form-group">
-              <label for="session-description">Description</label>
-              <textarea id="session-description" placeholder="Optional description of this session..."></textarea>
-            </div>
-            
-            <div class="form-group">
-              <div class="checkbox-group">
-                <input type="checkbox" id="session-public">
-                <label for="session-public">Make this session public</label>
+            <form id="session-form">
+              <div class="form-group">
+                <label for="session-name">Session Name *</label>
+                <input type="text" id="session-name" placeholder="e.g., morning-run-2024" pattern="^[a-zA-Z0-9_\\\\-]+$" required>
+                <small class="form-help-text">Only letters, numbers, hyphens, and underscores allowed</small>
               </div>
-              <small class="form-help-text">Public sessions can be viewed by anyone</small>
+              
+              <div class="form-group">
+                <label for="session-title">Session Title</label>
+                <input type="text" id="session-title" placeholder="e.g., Morning Run 2024">
+              </div>
+              
+              <div class="form-group">
+                <label for="session-description">Description</label>
+                <textarea id="session-description" placeholder="Optional description of this session..."></textarea>
+              </div>
+              
+              <div class="form-group">
+                <div class="checkbox-group">
+                  <input type="checkbox" id="session-public">
+                  <label for="session-public">Make this session public</label>
+                </div>
+                <small class="form-help-text">Public sessions can be viewed by anyone</small>
+              </div>
+              
+              <button type="submit" id="submit-btn">Create Session</button>
+              <button type="button" id="cancel-btn" class="btn-secondary hidden">Cancel</button>
+              <div id="form-message"></div>
+            </form>
+          </div>
+          
+          <!-- Sessions List Section -->
+          <div class="profile-section">
+            <div class="section-title">Your Sessions</div>
+            
+            <div id="loading" class="loading hidden">
+              Loading sessions...
             </div>
             
-            <button type="submit" id="submit-btn">Create Session</button>
-            <button type="button" id="cancel-btn" class="btn-secondary hidden">Cancel</button>
-            <div id="form-message"></div>
-          </form>
+            <div id="empty-state" class="empty-state hidden">
+              <h3>No sessions yet</h3>
+              <p>Create your first session above to start organizing your tracking data.</p>
+            </div>
+            
+            <div class="session-list" id="session-list"></div>
+            
+            <div class="pagination hidden" id="pagination">
+              <div class="pagination-info" id="pagination-info"></div>
+              <button id="prev-btn" class="btn-secondary">← Previous</button>
+              <button id="next-btn" class="btn-secondary">Next →</button>
+            </div>
+          </div>
         </div>
-        
-        <!-- Sessions List Section -->
-        <div class="profile-section">
-          <div class="section-title">Your Sessions</div>
-          
-          <div id="loading" class="loading hidden">
-            Loading sessions...
+
+        <!-- Session Detail View -->
+        <div class="session-detail-view hidden" id="session-detail-view">
+          <div class="session-detail-header">
+            <button id="back-to-list-btn" class="btn-secondary">← Back to Sessions</button>
+            <div class="session-detail-title">
+              <h2 id="detail-session-name"></h2>
+              <p id="detail-session-description"></p>
+            </div>
           </div>
-          
-          <div id="empty-state" class="empty-state hidden">
-            <h3>No sessions yet</h3>
-            <p>Create your first session above to start organizing your tracking data.</p>
+
+          <div class="session-detail-tabs" id="session-detail-tabs">
+            <button class="tab-btn active" data-tab="overview">Overview</button>
+            <button class="tab-btn" data-tab="gpx">GPX Track</button>
+            <button class="tab-btn" data-tab="waypoints">Waypoints</button>
+            <button class="tab-btn" data-tab="comparison">Track Comparison</button>
           </div>
-          
-          <div class="session-list" id="session-list"></div>
-          
-          <div class="pagination hidden" id="pagination">
-            <div class="pagination-info" id="pagination-info"></div>
-            <button id="prev-btn" class="btn-secondary">← Previous</button>
-            <button id="next-btn" class="btn-secondary">Next →</button>
+
+          <div class="session-detail-content" id="session-detail-content">
+            <!-- Overview Tab -->
+            <div class="tab-content active" data-tab="overview">
+              <div class="overview-stats">
+                <div class="stat-card">
+                  <h4>Session Details</h4>
+                  <div class="session-details-info">
+                    <div class="detail-row">
+                      <span class="label">Created:</span>
+                      <span id="detail-created">-</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="label">Updated:</span>
+                      <span id="detail-updated">-</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="label">Visibility:</span>
+                      <span id="detail-visibility">-</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="label">GPX Track:</span>
+                      <span id="detail-has-gpx">-</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="label">Waypoints:</span>
+                      <span id="detail-waypoint-count">-</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="stat-card">
+                  <h4>Quick Actions</h4>
+                  <div class="quick-actions">
+                    <button class="action-btn" id="edit-session-btn">Edit Session</button>
+                    <button class="action-btn" id="view-tracking-btn">View Tracking</button>
+                    <button class="action-btn btn-danger" id="delete-session-btn">Delete Session</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- GPX Track Tab -->
+            <div class="tab-content" data-tab="gpx">
+              <gpx-upload-widget id="gpx-upload"></gpx-upload-widget>
+            </div>
+
+            <!-- Waypoints Tab -->
+            <div class="tab-content" data-tab="waypoints">
+              <waypoint-manager-widget id="waypoint-manager"></waypoint-manager-widget>
+            </div>
+
+            <!-- Track Comparison Tab -->
+            <div class="tab-content" data-tab="comparison">
+              <track-comparison-widget id="track-comparison"></track-comparison-widget>
+            </div>
           </div>
         </div>
       </div>
@@ -176,6 +268,12 @@ export default class SessionManagementWidget
     this.paginationInfo = this.shadowRoot!.getElementById('pagination-info')!;
     this.prevBtn = this.shadowRoot!.getElementById('prev-btn')! as HTMLButtonElement;
     this.nextBtn = this.shadowRoot!.getElementById('next-btn')! as HTMLButtonElement;
+
+    // Session detail elements
+    this.sessionDetailView = this.shadowRoot!.getElementById('session-detail-view')!;
+    this.sessionDetailTabs = this.shadowRoot!.getElementById('session-detail-tabs')!;
+    this.sessionDetailContent = this.shadowRoot!.getElementById('session-detail-content')!;
+    this.backToListBtn = this.shadowRoot!.getElementById('back-to-list-btn')! as HTMLButtonElement;
   }
 
   setupEventListeners(): void {
@@ -183,6 +281,15 @@ export default class SessionManagementWidget
     this.cancelBtn.addEventListener('click', () => this.cancelEdit());
     this.prevBtn.addEventListener('click', () => this.previousPage());
     this.nextBtn.addEventListener('click', () => this.nextPage());
+    this.backToListBtn.addEventListener('click', () => this.showSessionList());
+
+    // Tab switching
+    this.sessionDetailTabs.addEventListener('click', (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains('tab-btn')) {
+        this.switchTab(target.dataset.tab!);
+      }
+    });
 
     // Auto-generate title from name
     this.sessionNameInput.addEventListener('input', () => {
@@ -190,6 +297,11 @@ export default class SessionManagementWidget
         this.sessionTitleInput.value = this.generateTitle(this.sessionNameInput.value);
       }
     });
+
+    // Listen for GPX upload success
+    this.shadowRoot!.addEventListener('gpx-uploaded', ((e: CustomEvent) => {
+      this.handleGpxUploaded(e.detail);
+    }) as EventListener);
   }
 
   connectedCallback(): void {
@@ -216,6 +328,103 @@ export default class SessionManagementWidget
     } else {
       this.notAuthenticated.classList.remove('hidden');
       this.sessionContent.classList.remove('show');
+    }
+  }
+
+  showSessionList(): void {
+    this.shadowRoot!.querySelector('.session-list-view')!.classList.remove('hidden');
+    this.sessionDetailView.classList.add('hidden');
+    this.currentSessionView = null;
+    this.currentSession = null; // Clear current session
+  }
+
+  showSessionDetails(session: Session): void {
+    this.currentSession = session; // Store current session
+    this.shadowRoot!.querySelector('.session-list-view')!.classList.add('hidden');
+    this.sessionDetailView.classList.remove('hidden');
+    this.currentSessionView = 'details';
+
+    // Update detail view with session info
+    this.shadowRoot!.getElementById('detail-session-name')!.textContent =
+      session.title || session.name;
+    this.shadowRoot!.getElementById('detail-session-description')!.textContent =
+      session.description || '';
+    this.shadowRoot!.getElementById('detail-created')!.textContent = new Date(
+      session.created
+    ).toLocaleDateString();
+    this.shadowRoot!.getElementById('detail-updated')!.textContent = new Date(
+      session.updated
+    ).toLocaleDateString();
+    this.shadowRoot!.getElementById('detail-visibility')!.textContent = session.public
+      ? 'Public'
+      : 'Private';
+
+    // Update GPX track information
+    const hasGpx = session.gpx_track && session.gpx_track.trim() !== '';
+    const gpxElement = this.shadowRoot!.getElementById('detail-has-gpx')!;
+    if (hasGpx && session.track_name) {
+      gpxElement.textContent = `✅ ${session.track_name}`;
+      gpxElement.style.color = 'var(--color-success)';
+    } else if (hasGpx) {
+      gpxElement.textContent = '✅ GPX Track Uploaded';
+      gpxElement.style.color = 'var(--color-success)';
+    } else {
+      gpxElement.textContent = '❌ No GPX Track';
+      gpxElement.style.color = 'var(--text-muted)';
+    }
+
+    // Initialize widgets with session data
+    const waypointManager = this.shadowRoot!.getElementById('waypoint-manager') as any;
+
+    if (waypointManager && waypointManager.loadWaypoints) {
+      waypointManager.loadWaypoints(session.id);
+    }
+
+    // Set up session actions
+    this.setupSessionActions(session);
+
+    // Switch to overview tab by default
+    this.switchTab('overview');
+  }
+
+  setupSessionActions(session: Session): void {
+    const editBtn = this.shadowRoot!.getElementById('edit-session-btn')!;
+    const viewBtn = this.shadowRoot!.getElementById('view-tracking-btn')!;
+    const deleteBtn = this.shadowRoot!.getElementById('delete-session-btn')!;
+
+    editBtn.onclick = () => {
+      this.showSessionList();
+      this.editSession(session.name);
+    };
+
+    viewBtn.onclick = () => {
+      window.location.href = `/u/${this.user!.username}/s/${session.name}`;
+    };
+
+    deleteBtn.onclick = () => {
+      this.deleteSession(session.name);
+    };
+  }
+
+  switchTab(tabName: string): void {
+    // Update active tab button
+    this.sessionDetailTabs.querySelectorAll('.tab-btn').forEach(btn => {
+      const htmlBtn = btn as HTMLElement;
+      btn.classList.toggle('active', htmlBtn.dataset.tab === tabName);
+    });
+
+    // Update active tab content
+    this.sessionDetailContent.querySelectorAll('.tab-content').forEach(content => {
+      const htmlContent = content as HTMLElement;
+      content.classList.toggle('active', htmlContent.dataset.tab === tabName);
+    });
+  }
+
+  handleGpxUploaded(detail: { file: File }): void {
+    // Refresh session data to show updated GPX info
+    if (this.currentSessionView === 'details') {
+      // You could reload session details here
+      console.log('GPX uploaded successfully:', detail.file.name);
     }
   }
 
@@ -304,11 +513,13 @@ export default class SessionManagementWidget
             <span class="${session.public ? 'public-indicator' : 'private-indicator'}">
               ${session.public ? 'Public' : 'Private'}
             </span>
+            ${session.gpx_track && session.gpx_track.trim() !== '' ? '<span class="gpx-indicator" title="Has GPX Track">📍 GPX</span>' : ''}
             <span>Created: ${new Date(session.created).toLocaleDateString()}</span>
             ${session.updated !== session.created ? `<span>Updated: ${new Date(session.updated).toLocaleDateString()}</span>` : ''}
           </div>
         </div>
         <div class="session-actions">
+          <button class="manage-btn" data-session-id="${session.id}" onclick="this.getRootNode().host.showSessionDetailsById('${session.id}')">Manage</button>
           <button class="edit-btn" data-session-id="${session.id}" onclick="this.getRootNode().host.editSession('${session.name}')">Edit</button>
           <button class="delete-btn btn-danger" data-session-id="${session.id}" onclick="this.getRootNode().host.deleteSession('${session.name}')">Delete</button>
         </div>
@@ -456,6 +667,11 @@ export default class SessionManagementWidget
 
       this.loadSessions();
       this.showMessage(this.formMessage, 'Session deleted successfully!', 'success');
+
+      // If we're in detail view of the deleted session, go back to list
+      if (this.currentSessionView === 'details') {
+        this.showSessionList();
+      }
     } catch (error: any) {
       this.showMessage(this.formMessage, error.message || 'Failed to delete session', 'error');
     }
@@ -522,11 +738,33 @@ export default class SessionManagementWidget
     return this.sessions.find(s => s.id === sessionId) || null;
   }
 
+  showSessionDetailsById(sessionId: string): void {
+    const session = this.findSessionById(sessionId);
+    if (session) {
+      this.showSessionDetails(session);
+    }
+  }
+
   editSessionById(sessionId: string): void {
     const session = this.findSessionById(sessionId);
     if (session) {
       this.editSession(session.name);
     }
+  }
+
+  /**
+   * Gets the current session information for child widgets
+   */
+  getCurrentSession(): { username: string; sessionName: string; sessionId: string } | null {
+    if (!this.currentSession || !this.user) {
+      return null;
+    }
+
+    return {
+      username: this.user.username,
+      sessionName: this.currentSession.name,
+      sessionId: this.currentSession.id,
+    };
   }
 
   deleteSessionById(sessionId: string): void {

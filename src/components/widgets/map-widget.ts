@@ -5,6 +5,11 @@ import type {
   GeolocationCoordinates,
   GeoJSONFeature,
   LocationProperties,
+  GpxTrackPointsResponse,
+  WaypointsResponse,
+  WaypointFeature,
+  WaypointType,
+  PositionConfidence,
 } from '@/types';
 import { createMarker } from '@/components/ui';
 import styles from '@/styles/components/widgets/map-widget.css?inline';
@@ -21,6 +26,9 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   private currentPositionLayerGroup: L.LayerGroup | null = null;
   private hoverMarkerLayerGroup: L.LayerGroup | null = null;
   private eventMarkerLayerGroup: L.LayerGroup | null = null;
+  // New layer groups for GPX tracks and waypoints
+  private gpxTrackLayerGroup: L.LayerGroup | null = null;
+  private waypointsLayerGroup: L.LayerGroup | null = null;
   private currentFeatureCollection: LocationsResponse | null = null;
   private colorScale: Array<Array<number>> = [
     [0, 0, 255], // Blue
@@ -60,6 +68,10 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(this.map);
+      // Initialize GPX and waypoint layer groups first (bottom layers)
+      this.gpxTrackLayerGroup = L.layerGroup().addTo(this.map);
+      this.waypointsLayerGroup = L.layerGroup().addTo(this.map);
+      // Initialize main data layers on top
       this.dataLayerGroup = L.layerGroup().addTo(this.map);
       this.currentPositionLayerGroup = L.layerGroup().addTo(this.map);
       this.hoverMarkerLayerGroup = L.layerGroup().addTo(this.map);
@@ -115,6 +127,185 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     } else {
       this.currentFeatureCollection = null; // Single point mode
       this.displayPoint(data);
+    }
+  }
+
+  /**
+   * Displays GPX track data as a planned route
+   */
+  displayGpxTrack(data: GpxTrackPointsResponse): void {
+    if (!this.map || !this.gpxTrackLayerGroup) {
+      console.warn('Map not initialized, cannot display GPX track');
+      return;
+    }
+
+    this.gpxTrackLayerGroup.clearLayers();
+
+    if (!data.features || data.features.length === 0) {
+      return;
+    }
+
+    // Sort track points by sequence
+    const sortedPoints = [...data.features].sort(
+      (a, b) => a.properties.sequence - b.properties.sequence
+    );
+
+    // Create the planned track polyline (dashed blue)
+    const trackCoordinates: [number, number][] = sortedPoints.map(point => [
+      point.geometry.coordinates[1], // latitude
+      point.geometry.coordinates[0], // longitude
+    ]);
+
+    const plannedTrack = L.polyline(trackCoordinates, {
+      color: 'hsl(320, 100%, 60%)', // Bright pink color for planned track
+      weight: 4,
+      opacity: 0.8,
+      dashArray: '10, 15', // Dashed line with bigger gaps to distinguish from actual track
+    });
+
+    // Add popup to show track information
+    plannedTrack.bindPopup(`
+      <div class="gpx-track-popup">
+        <h4>Planned Track</h4>
+        <b>Points:</b> ${sortedPoints.length}<br>
+        <b>Type:</b> GPX Track
+      </div>
+    `);
+
+    this.gpxTrackLayerGroup.addLayer(plannedTrack);
+  }
+
+  /**
+   * Displays waypoints on the map
+   */
+  displayWaypoints(data: WaypointsResponse): void {
+    if (!this.map || !this.waypointsLayerGroup) {
+      console.warn('Map not initialized, cannot display waypoints');
+      return;
+    }
+
+    this.waypointsLayerGroup.clearLayers();
+
+    if (!data.features || data.features.length === 0) {
+      return;
+    }
+
+    data.features.forEach(waypoint => {
+      const marker = this.createWaypointMarker(waypoint);
+
+      const popupContent = this.createWaypointPopupContent(waypoint);
+      marker.bindPopup(popupContent);
+
+      this.waypointsLayerGroup!.addLayer(marker);
+    });
+  }
+
+  /**
+   * Creates a marker for a waypoint with appropriate icon
+   */
+  createWaypointMarker(waypoint: WaypointFeature): L.Marker {
+    const [longitude, latitude] = waypoint.geometry.coordinates;
+    const icon = this.getWaypointIcon(
+      waypoint.properties.type,
+      waypoint.properties.position_confidence
+    );
+
+    return L.marker([latitude, longitude], { icon });
+  }
+
+  /**
+   * Returns appropriate icon for waypoint type and confidence
+   */
+  getWaypointIcon(type: WaypointType, confidence: PositionConfidence): L.DivIcon {
+    const config = this.getWaypointConfig(type);
+    const confidenceStyle = this.getConfidenceStyle(confidence);
+
+    return L.divIcon({
+      className: `waypoint-marker waypoint-marker-${type}`,
+      html: `<div class="waypoint-marker-content" style="background-color: ${config.color}; ${confidenceStyle}">
+               <span class="waypoint-marker-icon">${config.icon}</span>
+             </div>`,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+      popupAnchor: [0, -12],
+    });
+  }
+
+  /**
+   * Returns configuration for different waypoint types
+   */
+  getWaypointConfig(type: WaypointType): { color: string; icon: string } {
+    const configs: Record<WaypointType, { color: string; icon: string }> = {
+      generic: { color: '#6c757d', icon: '📍' },
+      food: { color: '#fd7e14', icon: '🍽️' },
+      water: { color: '#0dcaf0', icon: '💧' },
+      shelter: { color: '#198754', icon: '🏠' },
+      transition: { color: '#6f42c1', icon: '🚌' },
+      viewpoint: { color: '#e83e8c', icon: '👁️' },
+      camping: { color: '#20c997', icon: '⛺' },
+      parking: { color: '#495057', icon: '🅿️' },
+      danger: { color: '#dc3545', icon: '⚠️' },
+      medical: { color: '#0d6efd', icon: '🏥' },
+      fuel: { color: '#ffc107', icon: '⛽' },
+    };
+
+    return configs[type] || configs.generic;
+  }
+
+  /**
+   * Returns style adjustments based on position confidence
+   */
+  getConfidenceStyle(confidence: PositionConfidence): string {
+    const styles: Record<PositionConfidence, string> = {
+      gps: 'opacity: 1; border: 2px solid #28a745;', // Green border for GPS
+      time_matched: 'opacity: 0.9; border: 2px solid #007bff;', // Blue border
+      tracked: 'opacity: 0.8; border: 2px solid #17a2b8;', // Cyan border
+      gpx_track: 'opacity: 0.7; border: 2px solid #6f42c1;', // Purple border
+      last_known: 'opacity: 0.6; border: 2px solid #fd7e14;', // Orange border
+      manual: 'opacity: 0.5; border: 2px dashed #6c757d;', // Gray dashed border
+    };
+
+    return styles[confidence] || styles.manual;
+  }
+
+  /**
+   * Creates popup content for waypoints
+   */
+  createWaypointPopupContent(waypoint: WaypointFeature): string {
+    const { name, type, description, altitude, source, position_confidence } = waypoint.properties;
+    const coords = waypoint.geometry.coordinates;
+
+    const altitudeText = altitude ? `<b>Altitude:</b> ${altitude} m<br>` : '';
+    const descriptionText = description ? `<b>Description:</b> ${description}<br>` : '';
+
+    return `
+      <div class="waypoint-popup">
+        <h4>${name}</h4>
+        <b>Type:</b> ${type.charAt(0).toUpperCase() + type.slice(1)}<br>
+        ${descriptionText}
+        <b>Coordinates:</b> ${coords[1].toFixed(6)}, ${coords[0].toFixed(6)}<br>
+        ${altitudeText}
+        <b>Source:</b> ${source}<br>
+        <b>Confidence:</b> ${position_confidence.replace('_', ' ')}
+      </div>
+    `;
+  }
+
+  /**
+   * Clears GPX track from the map
+   */
+  clearGpxTrack(): void {
+    if (this.gpxTrackLayerGroup) {
+      this.gpxTrackLayerGroup.clearLayers();
+    }
+  }
+
+  /**
+   * Clears waypoints from the map
+   */
+  clearWaypoints(): void {
+    if (this.waypointsLayerGroup) {
+      this.waypointsLayerGroup.clearLayers();
     }
   }
 
