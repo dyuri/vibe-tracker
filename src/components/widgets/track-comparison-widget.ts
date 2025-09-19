@@ -275,14 +275,6 @@ export default class TrackComparisonWidget
           <div class="stat-value">${this.formatDuration(stats.duration)}</div>
           <div class="stat-description">total time</div>
         </div>
-
-        <div class="stat-card">
-          <h4>Data Points</h4>
-          <div class="stat-value">${stats.actualPoints}</div>
-          <div class="stat-description">
-            actual vs ${stats.plannedPoints} planned
-          </div>
-        </div>
       </div>
     `;
   }
@@ -340,10 +332,6 @@ export default class TrackComparisonWidget
       <div class="track-comparison-widget">
         <div class="widget-header">
           <h3>Track Comparison</h3>
-          <div class="legend">
-            <span class="legend-item planned">Planned Route</span>
-            <span class="legend-item actual">Actual Track</span>
-          </div>
         </div>
         <div class="comparison-stats">
           <div class="no-data">Load track data to see comparison</div>

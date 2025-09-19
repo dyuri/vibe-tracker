@@ -570,6 +570,51 @@ export default class SessionManagementWidget
     this.detailFormMessage.className = '';
   }
 
+  async loadTrackDataForComparison(): Promise<void> {
+    if (!this.currentSession || !this.user) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/session/${this.user.username}/${this.currentSession.name}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to load session data: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      const data = result.data || result;
+
+      // Get track comparison widget
+      const trackComparisonWidget = this.shadowRoot!.getElementById('track-comparison') as any;
+
+      if (trackComparisonWidget) {
+        // Set planned track (GPX) data if available
+        if (data.gpx && data.gpx.track_points) {
+          trackComparisonWidget.setPlannedTrack(data.gpx.track_points);
+        }
+
+        // Set actual track (location) data if available
+        if (data.features && data.features.length > 0) {
+          const actualTrackData = {
+            type: 'FeatureCollection',
+            features: data.features,
+          };
+          trackComparisonWidget.setActualTrack(actualTrackData);
+        }
+      }
+    } catch (error: any) {
+      console.error('Error loading track data for comparison:', error);
+    }
+  }
+
   switchTab(tabName: string): void {
     // Update active tab button
     this.sessionDetailTabs.querySelectorAll('.tab-btn').forEach(btn => {
@@ -582,6 +627,11 @@ export default class SessionManagementWidget
       const htmlContent = content as HTMLElement;
       content.classList.toggle('active', htmlContent.dataset.tab === tabName);
     });
+
+    // Load track data when switching to comparison tab
+    if (tabName === 'comparison') {
+      this.loadTrackDataForComparison();
+    }
   }
 
   handleGpxUploaded(detail: { file: File }): void {
