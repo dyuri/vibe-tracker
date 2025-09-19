@@ -74,6 +74,17 @@ export default class SessionManagementWidget
   private sessionDetailTabs!: HTMLElement;
   private sessionDetailContent!: HTMLElement;
   private backToListBtn!: HTMLButtonElement;
+  // Detail form elements
+  private detailSessionForm!: HTMLFormElement;
+  private detailSessionNameInput!: HTMLInputElement;
+  private detailSessionTitleInput!: HTMLInputElement;
+  private detailSessionDescriptionInput!: HTMLTextAreaElement;
+  private detailSessionPublicInput!: HTMLInputElement;
+  private detailFormActions!: HTMLElement;
+  private saveChangesBtn!: HTMLButtonElement;
+  private cancelChangesBtn!: HTMLButtonElement;
+  private detailFormMessage!: HTMLElement;
+  private isDetailFormDirty: boolean = false;
 
   constructor() {
     super();
@@ -97,7 +108,7 @@ export default class SessionManagementWidget
             <form id="session-form">
               <div class="form-group">
                 <label for="session-name">Session Name *</label>
-                <input type="text" id="session-name" placeholder="e.g., morning-run-2024" pattern="^[a-zA-Z0-9_\\\\-]+$" required>
+                <input type="text" id="session-name" placeholder="e.g., morning-run-2024" pattern="^[a-zA-Z0-9_\\\\\\\\-]+$" required>
                 <small class="form-help-text">Only letters, numbers, hyphens, and underscores allowed</small>
               </div>
               
@@ -168,7 +179,45 @@ export default class SessionManagementWidget
           <div class="session-detail-content" id="session-detail-content">
             <!-- Overview Tab -->
             <div class="tab-content active" data-tab="overview">
-              <div class="overview-stats">
+              <div class="overview-container">
+                <!-- Session Basic Info (Inline Editable) -->
+                <div class="stat-card">
+                  <h4>Session Information</h4>
+                  <form id="detail-session-form" class="session-detail-form">
+                    <div class="form-group">
+                      <label for="detail-session-name-input">Session Name</label>
+                      <input type="text" id="detail-session-name-input" readonly class="readonly-field">
+                      <small class="form-help-text">Session name cannot be changed after creation</small>
+                    </div>
+                    
+                    <div class="form-group">
+                      <label for="detail-session-title-input">Session Title</label>
+                      <input type="text" id="detail-session-title-input" placeholder="e.g., Morning Run 2024">
+                    </div>
+                    
+                    <div class="form-group">
+                      <label for="detail-session-description-input">Description</label>
+                      <textarea id="detail-session-description-input" placeholder="Optional description of this session..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                      <div class="checkbox-group">
+                        <input type="checkbox" id="detail-session-public-input">
+                        <label for="detail-session-public-input">Make this session public</label>
+                      </div>
+                      <small class="form-help-text">Public sessions can be viewed by anyone</small>
+                    </div>
+                    
+                    <div class="form-actions hidden" id="detail-form-actions">
+                      <button type="button" id="save-changes-btn" class="action-btn">Save Changes</button>
+                      <button type="button" id="cancel-changes-btn" class="btn-secondary">Cancel</button>
+                    </div>
+                    
+                    <div id="detail-form-message"></div>
+                  </form>
+                </div>
+
+                <!-- Session Statistics -->
                 <div class="stat-card">
                   <h4>Session Details</h4>
                   <div class="session-details-info">
@@ -194,10 +243,11 @@ export default class SessionManagementWidget
                     </div>
                   </div>
                 </div>
+                
+                <!-- Quick Actions -->
                 <div class="stat-card">
                   <h4>Quick Actions</h4>
                   <div class="quick-actions">
-                    <button class="action-btn" id="edit-session-btn">Edit Session</button>
                     <button class="action-btn" id="view-tracking-btn">View Tracking</button>
                     <button class="action-btn btn-danger" id="delete-session-btn">Delete Session</button>
                   </div>
@@ -274,6 +324,29 @@ export default class SessionManagementWidget
     this.sessionDetailTabs = this.shadowRoot!.getElementById('session-detail-tabs')!;
     this.sessionDetailContent = this.shadowRoot!.getElementById('session-detail-content')!;
     this.backToListBtn = this.shadowRoot!.getElementById('back-to-list-btn')! as HTMLButtonElement;
+
+    // Detail form elements
+    this.detailSessionForm = this.shadowRoot!.getElementById(
+      'detail-session-form'
+    )! as HTMLFormElement;
+    this.detailSessionNameInput = this.shadowRoot!.getElementById(
+      'detail-session-name-input'
+    )! as HTMLInputElement;
+    this.detailSessionTitleInput = this.shadowRoot!.getElementById(
+      'detail-session-title-input'
+    )! as HTMLInputElement;
+    this.detailSessionDescriptionInput = this.shadowRoot!.getElementById(
+      'detail-session-description-input'
+    )! as HTMLTextAreaElement;
+    this.detailSessionPublicInput = this.shadowRoot!.getElementById(
+      'detail-session-public-input'
+    )! as HTMLInputElement;
+    this.detailFormActions = this.shadowRoot!.getElementById('detail-form-actions')!;
+    this.saveChangesBtn = this.shadowRoot!.getElementById('save-changes-btn')! as HTMLButtonElement;
+    this.cancelChangesBtn = this.shadowRoot!.getElementById(
+      'cancel-changes-btn'
+    )! as HTMLButtonElement;
+    this.detailFormMessage = this.shadowRoot!.getElementById('detail-form-message')!;
   }
 
   setupEventListeners(): void {
@@ -297,6 +370,17 @@ export default class SessionManagementWidget
         this.sessionTitleInput.value = this.generateTitle(this.sessionNameInput.value);
       }
     });
+
+    // Detail form event listeners
+    this.saveChangesBtn.addEventListener('click', () => this.handleDetailFormSave());
+    this.cancelChangesBtn.addEventListener('click', () => this.handleDetailFormCancel());
+
+    // Track changes in detail form
+    this.detailSessionTitleInput.addEventListener('input', () => this.handleDetailFormChange());
+    this.detailSessionDescriptionInput.addEventListener('input', () =>
+      this.handleDetailFormChange()
+    );
+    this.detailSessionPublicInput.addEventListener('change', () => this.handleDetailFormChange());
 
     // Listen for GPX upload success
     this.shadowRoot!.addEventListener('gpx-uploaded', ((e: CustomEvent) => {
@@ -359,6 +443,18 @@ export default class SessionManagementWidget
       ? 'Public'
       : 'Private';
 
+    // Populate the inline edit form
+    this.detailSessionNameInput.value = session.name;
+    this.detailSessionTitleInput.value = session.title || '';
+    this.detailSessionDescriptionInput.value = session.description || '';
+    this.detailSessionPublicInput.checked = session.public || false;
+
+    // Reset form state
+    this.isDetailFormDirty = false;
+    this.detailFormActions.classList.add('hidden');
+    this.detailFormMessage.textContent = '';
+    this.detailFormMessage.className = '';
+
     // Update GPX track information
     const hasGpx = session.gpx_track && session.gpx_track.trim() !== '';
     const gpxElement = this.shadowRoot!.getElementById('detail-has-gpx')!;
@@ -388,14 +484,8 @@ export default class SessionManagementWidget
   }
 
   setupSessionActions(session: Session): void {
-    const editBtn = this.shadowRoot!.getElementById('edit-session-btn')!;
     const viewBtn = this.shadowRoot!.getElementById('view-tracking-btn')!;
     const deleteBtn = this.shadowRoot!.getElementById('delete-session-btn')!;
-
-    editBtn.onclick = () => {
-      this.showSessionList();
-      this.editSession(session.name);
-    };
 
     viewBtn.onclick = () => {
       window.location.href = `/u/${this.user!.username}/s/${session.name}`;
@@ -404,6 +494,80 @@ export default class SessionManagementWidget
     deleteBtn.onclick = () => {
       this.deleteSession(session.name);
     };
+  }
+
+  handleDetailFormChange(): void {
+    this.isDetailFormDirty = true;
+    this.detailFormActions.classList.remove('hidden');
+  }
+
+  async handleDetailFormSave(): Promise<void> {
+    if (!this.currentSession || !this.isDetailFormDirty) {
+      return;
+    }
+
+    const title = this.detailSessionTitleInput.value.trim();
+    const description = this.detailSessionDescriptionInput.value.trim();
+    const isPublic = this.detailSessionPublicInput.checked;
+
+    this.saveChangesBtn.disabled = true;
+    this.saveChangesBtn.textContent = 'Saving...';
+
+    try {
+      await this.updateSession(this.currentSession.name, {
+        title,
+        description,
+        public: isPublic,
+      });
+
+      // Update the current session object
+      this.currentSession.title = title;
+      this.currentSession.description = description;
+      this.currentSession.public = isPublic;
+
+      // Update the header display
+      this.shadowRoot!.getElementById('detail-session-name')!.textContent =
+        title || this.currentSession.name;
+      this.shadowRoot!.getElementById('detail-session-description')!.textContent =
+        description || '';
+
+      // Update visibility display
+      this.shadowRoot!.getElementById('detail-visibility')!.textContent = isPublic
+        ? 'Public'
+        : 'Private';
+
+      this.isDetailFormDirty = false;
+      this.detailFormActions.classList.add('hidden');
+      this.showMessage(this.detailFormMessage, 'Session updated successfully!', 'success');
+
+      // Reload the session list to reflect changes
+      this.loadSessions();
+    } catch (error: any) {
+      this.showMessage(
+        this.detailFormMessage,
+        error.message || 'Failed to update session',
+        'error'
+      );
+    } finally {
+      this.saveChangesBtn.disabled = false;
+      this.saveChangesBtn.textContent = 'Save Changes';
+    }
+  }
+
+  handleDetailFormCancel(): void {
+    if (!this.currentSession) {
+      return;
+    }
+
+    // Reset form fields to original values
+    this.detailSessionTitleInput.value = this.currentSession.title || '';
+    this.detailSessionDescriptionInput.value = this.currentSession.description || '';
+    this.detailSessionPublicInput.checked = this.currentSession.public || false;
+
+    this.isDetailFormDirty = false;
+    this.detailFormActions.classList.add('hidden');
+    this.detailFormMessage.textContent = '';
+    this.detailFormMessage.className = '';
   }
 
   switchTab(tabName: string): void {
@@ -520,7 +684,6 @@ export default class SessionManagementWidget
         </div>
         <div class="session-actions">
           <button class="manage-btn" data-session-id="${session.id}" onclick="this.getRootNode().host.showSessionDetailsById('${session.id}')">Manage</button>
-          <button class="edit-btn" data-session-id="${session.id}" onclick="this.getRootNode().host.editSession('${session.name}')">Edit</button>
           <button class="delete-btn btn-danger" data-session-id="${session.id}" onclick="this.getRootNode().host.deleteSession('${session.name}')">Delete</button>
         </div>
       </div>

@@ -443,3 +443,150 @@ button:disabled {
     padding: var(--spacing-md);
   }
 }
+
+/* Inline Editing Interface Styles */
+.overview-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.session-detail-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.session-detail-form .form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.session-detail-form .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.readonly-field {
+  background-color: var(--bg-tertiary) !important;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.readonly-field:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.form-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-light);
+}
+
+.form-actions button {
+  margin: 0;
+}
+
+.form-actions .action-btn {
+  background: var(--color-primary);
+  color: white;
+  border: 1px solid var(--color-primary);
+}
+
+.form-actions .action-btn:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.form-actions .btn-secondary {
+  background: var(--color-logged-out);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.form-actions .btn-secondary:hover {
+  background: var(--text-muted);
+  color: white;
+}
+
+/* Enhanced Overview Layout */
+.overview-container .stat-card:first-child {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 769px) {
+  .overview-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .overview-container .stat-card:first-child {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .overview-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .overview-stats .stat-card {
+    margin: 0;
+  }
+}
+
+/* Form State Indicators */
+.session-detail-form input:focus,
+.session-detail-form textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
+  outline: none;
+}
+
+.session-detail-form input[type='checkbox']:focus {
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
+  outline: none;
+}
+
+/* Transition animations for form actions */
+.form-actions {
+  transition: all 0.3s ease;
+  transform-origin: top;
+}
+
+.form-actions.hidden {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  border-top: none;
+}
+
+.form-actions:not(.hidden) {
+  opacity: 1;
+  max-height: 100px;
+}
+
+/* Message styling for detail form */
+#detail-form-message {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+}
+
+#detail-form-message.error {
+  background-color: rgba(var(--color-danger-rgb), 0.1);
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+}
+
+#detail-form-message.success {
+  background-color: rgba(var(--color-success-rgb), 0.1);
+  border: 1px solid var(--color-success);
+  color: var(--color-success);
+}

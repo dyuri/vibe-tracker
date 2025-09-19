@@ -90,15 +90,15 @@ func (h *SessionHandler) ListSessions(c echo.Context) error {
 	sessionList := make([]map[string]any, len(sessions))
 	for i, session := range sessions {
 		sessionList[i] = map[string]any{
-			"id":               session.Id,
-			"name":             session.GetString("name"),
-			"title":            session.GetString("title"),
-			"description":      session.GetString("description"),
-			"public":           session.GetBool("public"),
-			"created":          session.GetDateTime("created").Time().Format(time.RFC3339),
-			"updated":          session.GetDateTime("updated").Time().Format(time.RFC3339),
-			"gpx_track":        session.GetString("gpx_track"),
-			"track_name":       session.GetString("track_name"),
+			"id":                session.Id,
+			"name":              session.GetString("name"),
+			"title":             session.GetString("title"),
+			"description":       session.GetString("description"),
+			"public":            session.GetBool("public"),
+			"created":           session.GetDateTime("created").Time().Format(time.RFC3339),
+			"updated":           session.GetDateTime("updated").Time().Format(time.RFC3339),
+			"gpx_track":         session.GetString("gpx_track"),
+			"track_name":        session.GetString("track_name"),
 			"track_description": session.GetString("track_description"),
 		}
 	}
@@ -141,15 +141,15 @@ func (h *SessionHandler) GetSession(c echo.Context) error {
 	}
 
 	sessionData := map[string]any{
-		"id":               session.Id,
-		"name":             session.GetString("name"),
-		"title":            session.GetString("title"),
-		"description":      session.GetString("description"),
-		"public":           session.GetBool("public"),
-		"created":          session.GetDateTime("created").Time().Format(time.RFC3339),
-		"updated":          session.GetDateTime("updated").Time().Format(time.RFC3339),
-		"gpx_track":        session.GetString("gpx_track"),
-		"track_name":       session.GetString("track_name"),
+		"id":                session.Id,
+		"name":              session.GetString("name"),
+		"title":             session.GetString("title"),
+		"description":       session.GetString("description"),
+		"public":            session.GetBool("public"),
+		"created":           session.GetDateTime("created").Time().Format(time.RFC3339),
+		"updated":           session.GetDateTime("updated").Time().Format(time.RFC3339),
+		"gpx_track":         session.GetString("gpx_track"),
+		"track_name":        session.GetString("track_name"),
 		"track_description": session.GetString("track_description"),
 	}
 
@@ -211,15 +211,15 @@ func (h *SessionHandler) CreateSession(c echo.Context) error {
 	}
 
 	sessionData := map[string]any{
-		"id":               session.Id,
-		"name":             session.GetString("name"),
-		"title":            session.GetString("title"),
-		"description":      session.GetString("description"),
-		"public":           session.GetBool("public"),
-		"created":          session.GetDateTime("created").Time().Format(time.RFC3339),
-		"updated":          session.GetDateTime("updated").Time().Format(time.RFC3339),
-		"gpx_track":        session.GetString("gpx_track"),
-		"track_name":       session.GetString("track_name"),
+		"id":                session.Id,
+		"name":              session.GetString("name"),
+		"title":             session.GetString("title"),
+		"description":       session.GetString("description"),
+		"public":            session.GetBool("public"),
+		"created":           session.GetDateTime("created").Time().Format(time.RFC3339),
+		"updated":           session.GetDateTime("updated").Time().Format(time.RFC3339),
+		"gpx_track":         session.GetString("gpx_track"),
+		"track_name":        session.GetString("track_name"),
 		"track_description": session.GetString("track_description"),
 	}
 
@@ -279,15 +279,15 @@ func (h *SessionHandler) UpdateSession(c echo.Context) error {
 	}
 
 	sessionData := map[string]any{
-		"id":               session.Id,
-		"name":             session.GetString("name"),
-		"title":            session.GetString("title"),
-		"description":      session.GetString("description"),
-		"public":           session.GetBool("public"),
-		"created":          session.GetDateTime("created").Time().Format(time.RFC3339),
-		"updated":          session.GetDateTime("updated").Time().Format(time.RFC3339),
-		"gpx_track":        session.GetString("gpx_track"),
-		"track_name":       session.GetString("track_name"),
+		"id":                session.Id,
+		"name":              session.GetString("name"),
+		"title":             session.GetString("title"),
+		"description":       session.GetString("description"),
+		"public":            session.GetBool("public"),
+		"created":           session.GetDateTime("created").Time().Format(time.RFC3339),
+		"updated":           session.GetDateTime("updated").Time().Format(time.RFC3339),
+		"gpx_track":         session.GetString("gpx_track"),
+		"track_name":        session.GetString("track_name"),
 		"track_description": session.GetString("track_description"),
 	}
 
