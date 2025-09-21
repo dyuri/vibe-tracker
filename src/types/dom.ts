@@ -7,7 +7,17 @@ import type {
   LocationsResponse,
   WaypointsResponse,
   GpxTrackPointsResponse,
-} from '@/types';
+} from './location';
+
+// Re-export types for use by components
+export type {
+  LocationResponse,
+  LocationsResponse,
+  WaypointsResponse,
+  GpxTrackPointsResponse,
+} from './location';
+
+export type { User } from './user';
 
 // Base class for all custom elements
 export interface CustomElementConstructor {
@@ -80,6 +90,17 @@ export interface ChartWidgetElement extends HTMLElement, CustomElementLifecycle 
   clearHighlight(): void;
 }
 
+// Session map panel widget
+export interface SessionMapPanelWidgetElement extends HTMLElement, CustomElementLifecycle {
+  setSessionData(sessionData: any): void;
+  displayData(data: LocationsResponse | LocationResponse): void;
+  displayGpxTrack(data: GpxTrackPointsResponse): void;
+  displayWaypoints(data: WaypointsResponse): void;
+  highlightPoint(index: number): void;
+  clearHighlight(): void;
+  updateLocationData(feature: any): void;
+}
+
 // Geolocation coordinates (extending built-in types)
 export interface GeolocationCoordinates {
   latitude: number;
@@ -106,6 +127,7 @@ declare global {
     'profile-widget': ProfileWidgetElement;
     'session-management-widget': SessionManagementWidgetElement;
     'chart-widget': ChartWidgetElement;
+    'session-map-panel-widget': SessionMapPanelWidgetElement;
   }
 
   interface WindowEventMap {
