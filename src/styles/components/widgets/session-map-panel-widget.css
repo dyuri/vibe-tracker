@@ -257,6 +257,20 @@
   margin: var(--spacing-md) 0;
 }
 
+.location-data-status {
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.location-data-status small {
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: var(--font-size-xs);
+}
+
 /* Session Edit Styles */
 .session-edit {
   max-width: 600px;

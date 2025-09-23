@@ -257,6 +257,13 @@ let isInitialized: boolean = false;
 /** Store current session data for session panel */
 let _currentSessionData: any = null;
 
+/** Global state for selected location point */
+let selectedLocationPoint: {
+  feature: any;
+  index: number;
+  coordinates: [number, number];
+} | null = null;
+
 /**
  * Update page header based on current username and session
  */
@@ -383,6 +390,9 @@ function fetchData(isInitialLoad: boolean = false, useDelta: boolean = false): v
         latestTimestamp = Math.max(...timestamps);
       } else {
         // Initial load or full refresh - display all data
+        // Reset location selection when loading new session data
+        clearSelectedPoint();
+
         if (mapWidget) {
           mapWidget.displayData(data);
 
@@ -581,26 +591,41 @@ function handleChartHover(e: Event): void {
 }
 
 function handleChartHoverOut(_e: Event): void {
-  if (mapWidget) {
+  // Clear temporary hover effects
+  // Keep selected marker if one exists
+  if (!selectedLocationPoint && mapWidget) {
     mapWidget.hideHoverMarker();
-    console.log('Chart hover out - hiding marker');
+    console.log('Chart hover out - hiding hover marker');
   }
 }
 
 function handleChartClick(e: Event): void {
   const customEvent = e as CustomEvent<{ feature: any; index: number }>;
-  const feature = customEvent.detail.feature;
+  const { feature, index } = customEvent.detail;
 
-  if (feature && feature.geometry && feature.geometry.coordinates) {
+  if (feature?.geometry?.coordinates) {
     const [longitude, latitude] = feature.geometry.coordinates;
 
-    // Center map on the clicked point
+    // Set global selected point state
+    selectedLocationPoint = {
+      feature,
+      index,
+      coordinates: [longitude, latitude],
+    };
+
+    // Show persistent red marker
     if (mapWidget) {
+      mapWidget.showSelectedMarker(latitude, longitude);
+      // Center map on the clicked point
       mapWidget.centerOnCoordinates(latitude, longitude);
-      console.log('Chart click - centered map on:', latitude, longitude);
+      console.log(
+        'Chart click - showing selected marker and centered map on:',
+        latitude,
+        longitude
+      );
     }
 
-    // Update location data display in the session panel widget
+    // Update location data in overview tab
     if (sessionPanelWidget) {
       sessionPanelWidget.updateLocationData(feature);
     }
@@ -611,15 +636,43 @@ function handleMapPointClick(e: Event): void {
   const customEvent = e as CustomEvent<{ feature: any; index: number }>;
   const { feature, index } = customEvent.detail;
 
-  // Highlight the corresponding point on the session panel
-  if (sessionPanelWidget) {
-    sessionPanelWidget.highlightPoint(index);
-    console.log('Map point click - highlighted chart point at index:', index);
+  // Set global selected point state
+  selectedLocationPoint = {
+    feature,
+    index,
+    coordinates: [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
+  };
+
+  // Show persistent red marker (already at clicked location)
+  if (feature?.geometry?.coordinates && mapWidget) {
+    const [longitude, latitude] = feature.geometry.coordinates;
+    mapWidget.showSelectedMarker(latitude, longitude);
+    console.log('Map point click - showing selected marker at:', latitude, longitude);
   }
 
-  // Update location data display in the session panel widget
+  // Highlight chart point
+  if (sessionPanelWidget) {
+    sessionPanelWidget.highlightPoint(index);
+  }
+
+  // Update location data
   if (sessionPanelWidget) {
     sessionPanelWidget.updateLocationData(feature);
+  }
+}
+
+/**
+ * Clear the currently selected location point
+ */
+function clearSelectedPoint(): void {
+  selectedLocationPoint = null;
+  if (mapWidget) {
+    mapWidget.hideSelectedMarker();
+  }
+
+  // Update location data to show latest point or empty state
+  if (sessionPanelWidget) {
+    sessionPanelWidget.updateLocationData(); // No parameter = use fallback
   }
 }
 

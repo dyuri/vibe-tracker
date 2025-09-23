@@ -1161,7 +1161,7 @@ export default class SessionMapPanelWidget
   /**
    * Update location data display (replaces location-widget functionality)
    */
-  updateLocationData(feature: any): void {
+  updateLocationData(feature?: any): void {
     const locationContent = this.shadowRoot!.getElementById('overview-location-content');
     if (!locationContent) {
       return;
@@ -1170,13 +1170,33 @@ export default class SessionMapPanelWidget
     // Clear existing content
     locationContent.innerHTML = '';
 
-    if (feature && feature.properties) {
-      const { speed, heart_rate, timestamp, session, session_title } = feature.properties;
-      const altitude = feature.geometry.coordinates[2];
+    // Use provided feature, or fallback to latest location from current data
+    let displayFeature = feature;
+    if (!displayFeature && this.currentLocationData?.features?.length > 0) {
+      // Fallback to latest location point
+      displayFeature =
+        this.currentLocationData.features[this.currentLocationData.features.length - 1];
+    }
+
+    if (displayFeature?.properties) {
+      const { speed, heart_rate, timestamp, session, session_title } = displayFeature.properties;
+      const altitude = displayFeature.geometry.coordinates[2];
       const sessionDisplay =
         session_title && session_title !== session
           ? `${session_title} (${session})`
           : session || 'N/A';
+
+      // Add indicator if showing selected vs latest point
+      const isLatestPoint =
+        !feature &&
+        displayFeature ===
+          this.currentLocationData?.features?.[this.currentLocationData.features.length - 1];
+      const headerText = isLatestPoint ? 'Latest Location Data' : 'Selected Location Data';
+
+      const headerElement = document.createElement('div');
+      headerElement.className = 'location-data-status';
+      headerElement.innerHTML = `<small>${headerText}</small>`;
+      locationContent.appendChild(headerElement);
 
       this.showLocationProperty(
         locationContent,
@@ -1189,7 +1209,7 @@ export default class SessionMapPanelWidget
       this.showLocationProperty(locationContent, 'Heart Rate', `${heart_rate} bpm`);
     } else {
       locationContent.innerHTML =
-        '<p class="no-data">Select a point on the map to view location details</p>';
+        '<p class="no-data">Select a point on the map or chart to view location details</p>';
     }
   }
 

@@ -794,6 +794,54 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
 
     this.hoverMarkerLayerGroup.clearLayers();
   }
+
+  /**
+   * Show persistent selected marker at specific coordinates
+   */
+  showSelectedMarker(latitude: number, longitude: number): void {
+    if (!this.hoverMarkerLayerGroup) {
+      console.warn('Map not initialized, cannot show selected marker');
+      return;
+    }
+
+    // Clear any existing markers (both hover and selected use same layer group)
+    this.hoverMarkerLayerGroup.clearLayers();
+
+    // Create a distinctive selected marker (same visual as hover marker for now)
+    const selectedMarker = L.circleMarker([latitude, longitude], {
+      radius: 8,
+      fillColor: '#ff0000',
+      color: '#ffffff',
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.8,
+    });
+
+    this.hoverMarkerLayerGroup.addLayer(selectedMarker);
+  }
+
+  /**
+   * Hide selected marker
+   */
+  hideSelectedMarker(): void {
+    if (!this.hoverMarkerLayerGroup) {
+      console.warn('Map not initialized, cannot hide selected marker');
+      return;
+    }
+
+    this.hoverMarkerLayerGroup.clearLayers();
+  }
+
+  /**
+   * Check if a marker is currently shown
+   */
+  hasSelectedMarker(): boolean {
+    if (!this.hoverMarkerLayerGroup) {
+      return false;
+    }
+
+    return this.hoverMarkerLayerGroup.getLayers().length > 0;
+  }
 }
 
 customElements.define('map-widget', MapWidget);

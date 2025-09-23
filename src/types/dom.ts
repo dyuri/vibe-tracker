@@ -42,6 +42,9 @@ export interface MapWidgetElement extends HTMLElement, CustomElementLifecycle {
   centerOnCoordinates(latitude: number, longitude: number, zoom?: number): void;
   showHoverMarker(latitude: number, longitude: number): void;
   hideHoverMarker(): void;
+  showSelectedMarker(latitude: number, longitude: number): void;
+  hideSelectedMarker(): void;
+  hasSelectedMarker(): boolean;
 }
 
 // Theme toggle widget
@@ -98,7 +101,7 @@ export interface SessionMapPanelWidgetElement extends HTMLElement, CustomElement
   displayWaypoints(data: WaypointsResponse): void;
   highlightPoint(index: number): void;
   clearHighlight(): void;
-  updateLocationData(feature: any): void;
+  updateLocationData(feature?: any): void;
 }
 
 // Geolocation coordinates (extending built-in types)
