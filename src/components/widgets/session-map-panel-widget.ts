@@ -134,6 +134,7 @@ export default class SessionMapPanelWidget
     this.currentSessionData = sessionData;
     this.updateTabVisibility();
     this.updateSessionOverview();
+    this.populateEditForm();
 
     // If no active tab is visible, switch to first visible tab
     if (!this.isTabVisible(this.activeTab)) {
@@ -224,45 +225,47 @@ export default class SessionMapPanelWidget
           <!-- Overview Tab -->
           <div class="tab-content active" data-tab="overview">
             <div class="session-overview">
-              <div class="overview-stats" id="overview-stats">
+              <div class="overview-container" id="overview-stats">
                 <div class="no-session-message">
                   <p>Welcome to Vibe Tracker</p>
                   <p class="subtitle">Use the controls below to manage location tracking and display settings</p>
                 </div>
               </div>
 
-              <!-- Location Controls Section -->
-              <div class="location-controls-section">
-                <h5>Location & Display Controls</h5>
-                <div class="controls-grid">
-                  <label class="control-item">
-                    <input type="checkbox" id="overview-refresh-checkbox">
-                    <span>Auto Refresh</span>
-                  </label>
-                  <label class="control-item">
-                    <input type="checkbox" id="overview-show-position-checkbox">
-                    <span>Show My Position</span>
-                  </label>
-                  <label class="control-item">
-                    <input type="checkbox" id="overview-dark-theme-checkbox">
-                    <span>Dark Theme</span>
-                  </label>
-                  <label class="control-item">
-                    <input type="checkbox" id="overview-dark-map-checkbox">
-                    <span>Dark Map</span>
-                  </label>
-                  <label class="control-item">
-                    <input type="checkbox" id="overview-wake-lock-checkbox">
-                    <span>Wake Lock</span>
-                  </label>
+              <div class="overview-container">
+                <!-- Location Controls Card -->
+                <div class="overview-card">
+                  <h4>Location & Display Controls</h4>
+                  <div class="controls-grid">
+                    <label class="control-item">
+                      <input type="checkbox" id="overview-refresh-checkbox">
+                      <span>Auto Refresh</span>
+                    </label>
+                    <label class="control-item">
+                      <input type="checkbox" id="overview-show-position-checkbox">
+                      <span>Show My Position</span>
+                    </label>
+                    <label class="control-item">
+                      <input type="checkbox" id="overview-dark-theme-checkbox">
+                      <span>Dark Theme</span>
+                    </label>
+                    <label class="control-item">
+                      <input type="checkbox" id="overview-dark-map-checkbox">
+                      <span>Dark Map</span>
+                    </label>
+                    <label class="control-item">
+                      <input type="checkbox" id="overview-wake-lock-checkbox">
+                      <span>Wake Lock</span>
+                    </label>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Location Data Display -->
-              <div class="location-data-section" id="overview-location-data">
-                <h5>Location Data</h5>
-                <div class="location-properties" id="overview-location-content">
-                  <p class="no-data">Select a point on the map to view location details</p>
+                <!-- Location Data Card -->
+                <div class="overview-card" id="overview-location-data">
+                  <h4>Location Data</h4>
+                  <div class="location-properties" id="overview-location-content">
+                    <p class="no-data">Select a point on the map to view location details</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -468,7 +471,7 @@ export default class SessionMapPanelWidget
     // Always show the panel - it contains global controls even without session
     const panel = this.shadowRoot!.querySelector('.session-map-panel') as HTMLElement;
     if (panel) {
-      panel.style.display = 'block';
+      panel.style.display = 'flex';
     }
   }
 
@@ -540,81 +543,75 @@ export default class SessionMapPanelWidget
       sessionName,
       title,
       description,
-      created,
-      updated,
       public: isPublic,
       track_name,
     } = this.currentSessionData;
 
-    overviewStats.innerHTML = `
-      <div class="overview-grid">
-        <div class="overview-card">
-          <h4>Session Information</h4>
-          <div class="info-row">
-            <span class="label">Name:</span>
-            <span class="value">${sessionName}</span>
-          </div>
-          ${
-            title
-              ? `
-            <div class="info-row">
-              <span class="label">Title:</span>
-              <span class="value">${title}</span>
-            </div>
-          `
-              : ''
-          }
-          ${
-            description
-              ? `
-            <div class="info-row">
-              <span class="label">Description:</span>
-              <span class="value">${description}</span>
-            </div>
-          `
-              : ''
-          }
-          <div class="info-row">
-            <span class="label">Visibility:</span>
-            <span class="value ${isPublic ? 'public' : 'private'}">${isPublic ? 'Public' : 'Private'}</span>
-          </div>
-        </div>
+    // Update the overview container to include session information card
+    const overviewContainer = this.shadowRoot!.querySelector('.overview-container:last-child');
+    if (!overviewContainer) {
+      return;
+    }
 
-        <div class="overview-card">
-          <h4>Session Details</h4>
-          ${
-            created
-              ? `
-            <div class="info-row">
-              <span class="label">Created:</span>
-              <span class="value">${new Date(created).toLocaleDateString()}</span>
-            </div>
-          `
-              : ''
-          }
-          ${
-            updated
-              ? `
-            <div class="info-row">
-              <span class="label">Updated:</span>
-              <span class="value">${new Date(updated).toLocaleDateString()}</span>
-            </div>
-          `
-              : ''
-          }
-          ${
-            track_name
-              ? `
-            <div class="info-row">
-              <span class="label">GPX Track:</span>
-              <span class="value">✅ ${track_name}</span>
-            </div>
-          `
-              : ''
-          }
-        </div>
+    // Create session information card and prepend it to the container
+    const sessionCard = document.createElement('div');
+    sessionCard.className = 'overview-card';
+    sessionCard.innerHTML = `
+      <h4>Session Information</h4>
+      <div class="info-row">
+        <span class="label">Name:</span>
+        <span class="value">${sessionName}</span>
       </div>
+      ${
+        title
+          ? `
+        <div class="info-row">
+          <span class="label">Title:</span>
+          <span class="value">${title}</span>
+        </div>
+      `
+          : ''
+      }
+      ${
+        description
+          ? `
+        <div class="info-row">
+          <span class="label">Description:</span>
+          <span class="value">${description}</span>
+        </div>
+      `
+          : ''
+      }
+      <div class="info-row">
+        <span class="label">Visibility:</span>
+        <span class="value ${isPublic ? 'public' : 'private'}">${isPublic ? 'Public' : 'Private'}</span>
+      </div>
+      ${
+        track_name
+          ? `
+        <div class="info-row">
+          <span class="label">GPX Track:</span>
+          <span class="value">✅ ${track_name}</span>
+        </div>
+      `
+          : ''
+      }
     `;
+
+    // Remove existing session card if present
+    const existingSessionCard = overviewContainer.querySelector(
+      '.overview-card[data-session-info="true"]'
+    );
+    if (existingSessionCard) {
+      existingSessionCard.remove();
+    }
+
+    // Mark the card and add it as the first card
+    sessionCard.setAttribute('data-session-info', 'true');
+    overviewContainer.insertBefore(sessionCard, overviewContainer.firstChild);
+
+    // Clear the overview-stats since we're now using the container
+    overviewStats.innerHTML = '';
   }
 
   private updateTrackComparison(): void {
@@ -679,6 +676,37 @@ export default class SessionMapPanelWidget
     } catch (error: any) {
       this.showEditMessage(error.message || 'Failed to update session', 'error');
     }
+  }
+
+  /**
+   * Populate the edit form with current session data
+   */
+  private populateEditForm(): void {
+    if (!this.currentSessionData) {
+      return;
+    }
+
+    // Populate form fields with current session data
+    const titleInput = this.shadowRoot!.getElementById('edit-session-title') as HTMLInputElement;
+    const descriptionInput = this.shadowRoot!.getElementById(
+      'edit-session-description'
+    ) as HTMLTextAreaElement;
+    const publicCheckbox = this.shadowRoot!.getElementById(
+      'edit-session-public'
+    ) as HTMLInputElement;
+
+    if (titleInput) {
+      titleInput.value = this.currentSessionData.title || '';
+    }
+    if (descriptionInput) {
+      descriptionInput.value = this.currentSessionData.description || '';
+    }
+    if (publicCheckbox) {
+      publicCheckbox.checked = this.currentSessionData.public || false;
+    }
+
+    // Clear any existing message
+    this.showEditMessage('', '');
   }
 
   private cancelEdit(): void {

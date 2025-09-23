@@ -147,11 +147,12 @@
   font-style: italic;
 }
 
-.overview-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.overview-container {
+  display: flex;
+  flex-direction: row;
   gap: var(--spacing-lg);
   height: fit-content;
+  justify-content: center;
 }
 
 .overview-card {
@@ -196,22 +197,7 @@
   font-weight: var(--font-weight-medium);
 }
 
-/* Location Controls Section */
-.location-controls-section {
-  margin-top: var(--spacing-lg);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  padding: var(--spacing-md);
-}
-
-.location-controls-section h5 {
-  margin: 0 0 var(--spacing-md) 0;
-  font-size: var(--font-size-md);
-  color: var(--text-primary);
-  border-bottom: 1px solid var(--border-light);
-  padding-bottom: var(--spacing-xs);
-}
+/* Location Controls in Overview Card */
 
 .controls-grid {
   display: grid;
@@ -238,22 +224,7 @@
   accent-color: var(--color-primary);
 }
 
-/* Location Data Section */
-.location-data-section {
-  margin-top: var(--spacing-lg);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  padding: var(--spacing-md);
-}
-
-.location-data-section h5 {
-  margin: 0 0 var(--spacing-md) 0;
-  font-size: var(--font-size-md);
-  color: var(--text-primary);
-  border-bottom: 1px solid var(--border-light);
-  padding-bottom: var(--spacing-xs);
-}
+/* Location Data in Overview Card */
 
 .location-properties {
   display: flex;
