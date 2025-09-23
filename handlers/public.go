@@ -246,6 +246,7 @@ func (h *PublicHandler) GetSessionData(c echo.Context) error {
 	sessionTitle := session // fallback to session name
 	var gpxTrackFile, trackName, trackDescription string
 	var sessionRecordId string
+	var sessionMetadata map[string]any
 	if session != "" {
 		if sessionRecord, err := findSessionByNameAndUser(h.app.Dao(), session, user.Id); err == nil && sessionRecord != nil {
 			sessionRecordId = sessionRecord.Id
@@ -256,6 +257,17 @@ func (h *PublicHandler) GetSessionData(c echo.Context) error {
 			gpxTrackFile = sessionRecord.GetString("gpx_track")
 			trackName = sessionRecord.GetString("track_name")
 			trackDescription = sessionRecord.GetString("track_description")
+
+			// Build complete session metadata
+			sessionMetadata = map[string]any{
+				"id":          sessionRecord.Id,
+				"name":        sessionRecord.GetString("name"),
+				"title":       sessionRecord.GetString("title"),
+				"description": sessionRecord.GetString("description"),
+				"public":      sessionRecord.GetBool("public"),
+				"created":     sessionRecord.GetDateTime("created").Time().Format(time.RFC3339),
+				"updated":     sessionRecord.GetDateTime("updated").Time().Format(time.RFC3339),
+			}
 		}
 	}
 
@@ -336,6 +348,11 @@ func (h *PublicHandler) GetSessionData(c echo.Context) error {
 	response := map[string]interface{}{
 		"type":     "FeatureCollection",
 		"features": features,
+	}
+
+	// Add session metadata if available
+	if sessionMetadata != nil {
+		response["session"] = sessionMetadata
 	}
 
 	// Add GPX track information if available
