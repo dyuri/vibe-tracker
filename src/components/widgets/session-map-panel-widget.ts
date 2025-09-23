@@ -21,7 +21,7 @@ import type {
 interface TabConfig {
   id: string;
   label: string;
-  visible: (isOwner: boolean, hasSession: boolean) => boolean;
+  visible: (isOwner: boolean, hasSession: boolean, sessionData?: SessionData) => boolean;
   component: string;
 }
 
@@ -75,7 +75,10 @@ export default class SessionMapPanelWidget
     {
       id: 'comparison',
       label: 'Comparison',
-      visible: (_, hasSession) => hasSession,
+      visible: (_, hasSession, sessionData) => {
+        // Only show comparison tab if there's a session AND a GPX track to compare against
+        return hasSession && !!(sessionData?.track_name || sessionData?.gpx_track);
+      },
       component: 'track-comparison',
     },
     {
@@ -479,7 +482,7 @@ export default class SessionMapPanelWidget
     const isOwner = this.isSessionOwner();
     const hasSession = !!this.currentSessionData;
 
-    return this.tabs.filter(tab => tab.visible(isOwner, hasSession));
+    return this.tabs.filter(tab => tab.visible(isOwner, hasSession, this.currentSessionData));
   }
 
   private isTabVisible(tabId: string): boolean {
