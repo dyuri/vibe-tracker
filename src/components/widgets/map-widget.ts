@@ -469,14 +469,7 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
         });
 
         if (closestPoint) {
-          const coords: [number, number, number] =
-            closestPoint.geometry.coordinates.length === 2
-              ? ([...closestPoint.geometry.coordinates, 0] as [number, number, number])
-              : (closestPoint.geometry.coordinates as [number, number, number]);
-          const popupContent = this.createPopupContent(closestPoint.properties, coords);
-          L.popup().setLatLng(e.latlng).setContent(popupContent).openOn(this.map!);
-
-          // Dispatch event for chart synchronization
+          // Dispatch event for chart synchronization and location data display
           const pointIndex =
             this.currentFeatureCollection?.features.findIndex(f => f === closestPoint) ?? -1;
           if (pointIndex !== -1) {

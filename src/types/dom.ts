@@ -102,6 +102,9 @@ export interface SessionMapPanelWidgetElement extends HTMLElement, CustomElement
   highlightPoint(index: number): void;
   clearHighlight(): void;
   updateLocationData(feature?: any): void;
+  switchToTab(tabId: string): void;
+  expandPanel(): void;
+  isPanelCollapsed(): boolean;
 }
 
 // Geolocation coordinates (extending built-in types)

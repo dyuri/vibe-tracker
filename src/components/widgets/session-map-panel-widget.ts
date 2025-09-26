@@ -210,6 +210,31 @@ export default class SessionMapPanelWidget
     }
   }
 
+  /**
+   * Switch to a specific tab (public method)
+   */
+  switchToTab(tabId: string): void {
+    if (this.isTabVisible(tabId)) {
+      this.switchTab(tabId);
+    }
+  }
+
+  /**
+   * Expand the panel if it's collapsed (public method)
+   */
+  expandPanel(): void {
+    if (this.isCollapsed) {
+      this.toggleCollapse();
+    }
+  }
+
+  /**
+   * Check if panel is currently collapsed (public method)
+   */
+  isPanelCollapsed(): boolean {
+    return this.isCollapsed;
+  }
+
   private render(): void {
     this.shadowRoot!.innerHTML = `
       <style>${styles}</style>
@@ -1185,18 +1210,6 @@ export default class SessionMapPanelWidget
         session_title && session_title !== session
           ? `${session_title} (${session})`
           : session || 'N/A';
-
-      // Add indicator if showing selected vs latest point
-      const isLatestPoint =
-        !feature &&
-        displayFeature ===
-          this.currentLocationData?.features?.[this.currentLocationData.features.length - 1];
-      const headerText = isLatestPoint ? 'Latest Location Data' : 'Selected Location Data';
-
-      const headerElement = document.createElement('div');
-      headerElement.className = 'location-data-status';
-      headerElement.innerHTML = `<small>${headerText}</small>`;
-      locationContent.appendChild(headerElement);
 
       this.showLocationProperty(
         locationContent,

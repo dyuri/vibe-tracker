@@ -403,12 +403,19 @@ function fetchData(isInitialLoad: boolean = false, useDelta: boolean = false): v
         }
 
         // Update session panel widget with the data
-        if (sessionPanelWidget && username && session) {
+        if (sessionPanelWidget && username) {
+          // Determine session name: explicit from URL or extracted from API response
+          let sessionName = session;
+          if (!sessionName && data.features && data.features.length > 0) {
+            // Extract session name from the latest location data
+            sessionName = data.features[data.features.length - 1].properties?.session;
+          }
+
           // Create session data from URL parameters and API response
           const sessionData = {
             username: username,
-            sessionName: session,
-            sessionId: data.session?.id || `${username}-${session}`,
+            sessionName: sessionName || 'latest',
+            sessionId: data.session?.id || `${username}-${sessionName || 'latest'}`,
             title:
               data.session?.title ||
               (data.features && data.features.length > 0
@@ -650,13 +657,11 @@ function handleMapPointClick(e: Event): void {
     console.log('Map point click - showing selected marker at:', latitude, longitude);
   }
 
-  // Highlight chart point
+  // Expand panel and switch to overview tab to show the location data
   if (sessionPanelWidget) {
+    sessionPanelWidget.expandPanel();
+    sessionPanelWidget.switchToTab('overview');
     sessionPanelWidget.highlightPoint(index);
-  }
-
-  // Update location data
-  if (sessionPanelWidget) {
     sessionPanelWidget.updateLocationData(feature);
   }
 }
