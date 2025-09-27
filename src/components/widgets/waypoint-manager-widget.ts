@@ -6,6 +6,7 @@ import type {
   CreateWaypointRequest,
   WaypointManagerWidgetElement,
 } from '@/types';
+import { waypointService } from '@/services/waypoint-service';
 import styles from '@/styles/components/widgets/waypoint-manager-widget.css?inline';
 
 /**
@@ -19,6 +20,11 @@ export default class WaypointManagerWidget
   private sessionId: string = '';
   private waypoints: WaypointFeature[] = [];
   private showingCreateForm: boolean = false;
+  private isLoading: boolean = false;
+  private errorMessage: string = '';
+  private isSelectingFromMap: boolean = false;
+  private editingWaypointId: string | null = null;
+  private showOnMap: boolean = false;
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -39,6 +45,15 @@ export default class WaypointManagerWidget
   }
 
   /**
+   * Loads waypoints from provided data (optimized - no API call)
+   */
+  loadWaypointsFromData(sessionId: string, waypointsData: WaypointsResponse): void {
+    this.sessionId = sessionId;
+    this.waypoints = waypointsData.features || [];
+    this.updateWaypointsList();
+  }
+
+  /**
    * Refreshes the waypoints list
    */
   refreshWaypoints(): void {
@@ -51,6 +66,7 @@ export default class WaypointManagerWidget
    * Shows the create waypoint form
    */
   showCreateForm(): void {
+    this.editingWaypointId = null; // Reset editing mode
     this.showingCreateForm = true;
     this.updateFormDisplay();
   }
@@ -68,25 +84,36 @@ export default class WaypointManagerWidget
    * Fetches waypoints from the API
    */
   private async fetchWaypoints(): Promise<void> {
+    console.log('fetchWaypoints called with sessionId:', this.sessionId);
+
+    if (!this.sessionId) {
+      console.warn('No session ID provided for waypoint fetch');
+      return;
+    }
+
+    this.setLoading(true);
+    this.clearError();
+
     try {
-      const container = this.shadowRoot!.querySelector('.waypoints-list') as HTMLElement;
-      container.innerHTML = '<div class="loading">Loading waypoints...</div>';
+      console.log('About to call waypointService.getWaypoints with sessionId:', this.sessionId);
+      const response = await waypointService.getWaypoints(this.sessionId);
+      console.log('waypointService.getWaypoints response:', response);
+      console.log('response.features:', response.features);
+      console.log('response.features length:', response.features?.length);
 
-      // This would be the actual API call - placeholder for now
-      // const response = await this.apiService.getWaypoints(this.sessionId);
+      this.waypoints = response.features || [];
+      console.log('Set this.waypoints to:', this.waypoints);
+      console.log('this.waypoints length:', this.waypoints.length);
 
-      // Mock data for demonstration
-      const mockResponse: WaypointsResponse = {
-        type: 'FeatureCollection',
-        features: [],
-      };
-
-      this.waypoints = mockResponse.features;
       this.updateWaypointsList();
+      console.log('Called updateWaypointsList()');
     } catch (error) {
       console.error('Failed to fetch waypoints:', error);
-      const container = this.shadowRoot!.querySelector('.waypoints-list') as HTMLElement;
-      container.innerHTML = '<div class="error">Failed to load waypoints</div>';
+      this.setError('Failed to load waypoints. Please try again.');
+      this.waypoints = [];
+      this.updateWaypointsList();
+    } finally {
+      this.setLoading(false);
     }
   }
 
@@ -96,8 +123,21 @@ export default class WaypointManagerWidget
   private updateWaypointsList(): void {
     const container = this.shadowRoot!.querySelector('.waypoints-list') as HTMLElement;
 
+    if (this.isLoading) {
+      container.innerHTML = '<div class="loading">Loading waypoints...</div>';
+      return;
+    }
+
+    if (this.errorMessage) {
+      container.innerHTML = `<div class="error">${this.errorMessage}</div>`;
+      return;
+    }
+
     if (this.waypoints.length === 0) {
-      container.innerHTML = '<div class="no-waypoints">No waypoints found</div>';
+      const noWaypointsMessage = this.sessionId
+        ? 'No waypoints found for this session'
+        : 'Select a session to view waypoints';
+      container.innerHTML = `<div class="no-waypoints">${noWaypointsMessage}</div>`;
       return;
     }
 
@@ -105,6 +145,9 @@ export default class WaypointManagerWidget
       .map(waypoint => this.renderWaypointItem(waypoint))
       .join('');
     container.innerHTML = waypointsHtml;
+
+    // Update map visibility based on current checkbox state
+    this.handleMapVisibilityToggle();
   }
 
   /**
@@ -212,6 +255,7 @@ export default class WaypointManagerWidget
   private setupEventListeners(): void {
     this.shadowRoot!.addEventListener('click', this.handleClick.bind(this));
     this.shadowRoot!.addEventListener('submit', this.handleFormSubmit.bind(this));
+    this.shadowRoot!.addEventListener('change', this.handleChange.bind(this));
   }
 
   /**
@@ -231,6 +275,51 @@ export default class WaypointManagerWidget
       this.handleEditWaypoint(target.dataset.waypointId!);
     } else if (target.dataset.action === 'delete') {
       this.handleDeleteWaypoint(target.dataset.waypointId!);
+    } else if (target.classList.contains('pick-from-map-btn')) {
+      this.handlePickFromMap();
+    } else if (target.classList.contains('cancel-map-selection-btn')) {
+      this.handleCancelMapSelection();
+    }
+  }
+
+  /**
+   * Handles change events
+   */
+  private handleChange(event: Event): void {
+    const target = event.target as HTMLInputElement;
+
+    if (target.classList.contains('show-on-map-checkbox')) {
+      this.showOnMap = target.checked;
+      this.handleMapVisibilityToggle();
+    }
+  }
+
+  /**
+   * Handles toggling waypoint visibility on the map
+   */
+  private handleMapVisibilityToggle(): void {
+    if (this.showOnMap && this.waypoints.length > 0) {
+      // Show waypoints on map by dispatching display-waypoints event
+      const waypointsResponse = {
+        features: this.waypoints,
+        type: 'FeatureCollection' as const,
+      };
+
+      this.dispatchEvent(
+        new CustomEvent('display-waypoints', {
+          detail: waypointsResponse,
+          bubbles: true,
+          composed: true,
+        })
+      );
+    } else {
+      // Hide waypoints on map by dispatching clear-waypoints event
+      this.dispatchEvent(
+        new CustomEvent('clear-waypoints', {
+          bubbles: true,
+          composed: true,
+        })
+      );
     }
   }
 
@@ -243,27 +332,73 @@ export default class WaypointManagerWidget
     const form = event.target as HTMLFormElement;
     const formData = new FormData(form);
 
+    // Validate session ID
+    if (!this.sessionId) {
+      this.setError('No session selected. Please select a session first.');
+      return;
+    }
+
+    // Validate required fields
+    const name = formData.get('name') as string;
+    const type = formData.get('type') as WaypointType;
+    const latStr = formData.get('latitude') as string;
+    const lngStr = formData.get('longitude') as string;
+
+    if (!name?.trim()) {
+      this.setError('Name is required.');
+      return;
+    }
+
+    if (!type) {
+      this.setError('Type is required.');
+      return;
+    }
+
+    if (!latStr || !lngStr) {
+      this.setError(
+        'Coordinates are required. Please enter latitude and longitude or pick from map.'
+      );
+      return;
+    }
+
+    const latitude = parseFloat(latStr);
+    const longitude = parseFloat(lngStr);
+
+    if (isNaN(latitude) || isNaN(longitude)) {
+      this.setError('Invalid coordinates. Please enter valid numbers.');
+      return;
+    }
+
+    if (latitude < -90 || latitude > 90) {
+      this.setError('Latitude must be between -90 and 90.');
+      return;
+    }
+
+    if (longitude < -180 || longitude > 180) {
+      this.setError('Longitude must be between -180 and 180.');
+      return;
+    }
+
     const waypointData: CreateWaypointRequest = {
-      name: formData.get('name') as string,
-      type: formData.get('type') as WaypointType,
-      description: (formData.get('description') as string) || undefined,
-      latitude: parseFloat(formData.get('latitude') as string),
-      longitude: parseFloat(formData.get('longitude') as string),
-      altitude: formData.get('altitude')
-        ? parseFloat(formData.get('altitude') as string)
-        : undefined,
+      name: name.trim(),
+      type: type,
+      description: (formData.get('description') as string)?.trim() || undefined,
+      latitude: latitude,
+      longitude: longitude,
       session_id: this.sessionId,
       source: 'manual',
       position_confidence: 'manual',
     };
 
     try {
-      await this.createWaypoint(waypointData);
+      if (this.editingWaypointId) {
+        await this.updateWaypoint(this.editingWaypointId, waypointData);
+      } else {
+        await this.createWaypoint(waypointData);
+      }
       this.hideCreateForm();
-      this.refreshWaypoints();
     } catch (error) {
-      console.error('Failed to create waypoint:', error);
-      // Show error message
+      console.error('Form submission failed:', error);
     }
   }
 
@@ -271,9 +406,60 @@ export default class WaypointManagerWidget
    * Creates a new waypoint
    */
   private async createWaypoint(data: CreateWaypointRequest): Promise<void> {
-    // This would be the actual API call
-    // await this.apiService.createWaypoint(data);
-    console.log('Creating waypoint:', data);
+    this.setLoading(true);
+    this.clearError();
+
+    try {
+      const waypoint = await waypointService.createWaypoint(data);
+      console.log('Created waypoint:', waypoint);
+
+      // Re-fetch all waypoints to ensure consistency
+      await this.fetchWaypoints();
+
+      // Emit event to notify other components (like map widget)
+      this.dispatchEvent(
+        new CustomEvent('waypoint-created', {
+          detail: { waypoint },
+          bubbles: true,
+        })
+      );
+    } catch (error) {
+      console.error('Failed to create waypoint:', error);
+      this.setError('Failed to create waypoint. Please try again.');
+      throw error; // Re-throw to handle in form submission
+    } finally {
+      this.setLoading(false);
+    }
+  }
+
+  /**
+   * Updates an existing waypoint
+   */
+  private async updateWaypoint(waypointId: string, data: CreateWaypointRequest): Promise<void> {
+    this.setLoading(true);
+    this.clearError();
+
+    try {
+      const updatedWaypoint = await waypointService.updateWaypoint(waypointId, data);
+      console.log('Updated waypoint:', updatedWaypoint);
+
+      // Re-fetch all waypoints to ensure consistency
+      await this.fetchWaypoints();
+
+      // Emit event to notify other components (like map widget)
+      this.dispatchEvent(
+        new CustomEvent('waypoint-updated', {
+          detail: { waypoint: updatedWaypoint },
+          bubbles: true,
+        })
+      );
+    } catch (error) {
+      console.error('Failed to update waypoint:', error);
+      this.setError('Failed to update waypoint. Please try again.');
+      throw error;
+    } finally {
+      this.setLoading(false);
+    }
   }
 
   /**
@@ -292,6 +478,7 @@ export default class WaypointManagerWidget
    * Populates the form for editing
    */
   private populateFormForEdit(waypoint: WaypointFeature): void {
+    this.editingWaypointId = waypoint.properties.id;
     const form = this.shadowRoot!.querySelector('#waypoint-form') as HTMLFormElement;
     const formData = waypoint.properties;
     const coords = waypoint.geometry.coordinates;
@@ -302,9 +489,17 @@ export default class WaypointManagerWidget
       formData.description || '';
     (form.querySelector('[name="latitude"]') as HTMLInputElement).value = coords[1].toString();
     (form.querySelector('[name="longitude"]') as HTMLInputElement).value = coords[0].toString();
-    if (formData.altitude) {
-      (form.querySelector('[name="altitude"]') as HTMLInputElement).value =
-        formData.altitude.toString();
+
+    // Update form title
+    const formTitle = this.shadowRoot!.querySelector('.form-header h4');
+    if (formTitle) {
+      formTitle.textContent = 'Edit Waypoint';
+    }
+
+    // Update submit button text
+    const submitBtn = this.shadowRoot!.querySelector('.submit-btn') as HTMLButtonElement;
+    if (submitBtn) {
+      submitBtn.textContent = 'Update Waypoint';
     }
   }
 
@@ -315,9 +510,10 @@ export default class WaypointManagerWidget
     if (confirm('Are you sure you want to delete this waypoint?')) {
       try {
         await this.deleteWaypoint(waypointId);
-        this.refreshWaypoints();
+        // No need to refresh as deleteWaypoint already updates the UI
       } catch (error) {
-        console.error('Failed to delete waypoint:', error);
+        // Error already handled in deleteWaypoint method
+        console.error('Delete operation failed:', error);
       }
     }
   }
@@ -326,9 +522,195 @@ export default class WaypointManagerWidget
    * Deletes a waypoint
    */
   private async deleteWaypoint(waypointId: string): Promise<void> {
-    // This would be the actual API call
-    // await this.apiService.deleteWaypoint(waypointId);
-    console.log('Deleting waypoint:', waypointId);
+    this.setLoading(true);
+    this.clearError();
+
+    try {
+      await waypointService.deleteWaypoint(waypointId);
+      console.log('Deleted waypoint:', waypointId);
+
+      // Re-fetch all waypoints to ensure consistency
+      await this.fetchWaypoints();
+
+      // Emit event to notify other components (like map widget)
+      this.dispatchEvent(
+        new CustomEvent('waypoint-deleted', {
+          detail: { waypointId },
+          bubbles: true,
+        })
+      );
+    } catch (error) {
+      console.error('Failed to delete waypoint:', error);
+      this.setError('Failed to delete waypoint. Please try again.');
+    } finally {
+      this.setLoading(false);
+    }
+  }
+
+  /**
+   * Sets loading state
+   */
+  private setLoading(loading: boolean): void {
+    this.isLoading = loading;
+    this.updateWaypointsList();
+
+    // Disable form buttons during loading
+    const submitBtn = this.shadowRoot!.querySelector('.submit-btn') as HTMLButtonElement;
+    const addBtn = this.shadowRoot!.querySelector('.add-waypoint-btn') as HTMLButtonElement;
+
+    if (submitBtn) {
+      submitBtn.disabled = loading;
+      submitBtn.textContent = loading ? 'Creating...' : 'Create Waypoint';
+    }
+
+    if (addBtn) {
+      addBtn.disabled = loading;
+    }
+  }
+
+  /**
+   * Sets error message
+   */
+  private setError(message: string): void {
+    this.errorMessage = message;
+    this.updateWaypointsList();
+
+    // Auto-clear error after 5 seconds
+    setTimeout(() => {
+      if (this.errorMessage === message) {
+        this.clearError();
+      }
+    }, 5000);
+  }
+
+  /**
+   * Clears error message
+   */
+  private clearError(): void {
+    this.errorMessage = '';
+    this.updateWaypointsList();
+  }
+
+  /**
+   * Handle "Pick from Map" button click
+   */
+  private handlePickFromMap(): void {
+    this.isSelectingFromMap = true;
+    this.updatePickFromMapUI();
+
+    // Hide form overlay during map selection
+    const overlay = this.shadowRoot!.querySelector('.form-overlay') as HTMLElement;
+    const form = this.shadowRoot!.querySelector('.create-form') as HTMLElement;
+
+    if (overlay) {overlay.style.display = 'none';}
+    if (form) {form.style.display = 'none';}
+
+    // Get map widget and start selection mode
+    const mapWidget = document.querySelector('map-widget') as any;
+    if (mapWidget && mapWidget.startWaypointSelection) {
+      mapWidget.startWaypointSelection();
+
+      // Listen for waypoint selection
+      const handleWaypointSelected = (event: CustomEvent) => {
+        const { latitude, longitude } = event.detail;
+        this.handleMapSelection(latitude, longitude);
+
+        // Clean up listener
+        mapWidget.removeEventListener('waypoint-selected', handleWaypointSelected);
+
+        // Restore form overlay
+        if (overlay) {overlay.style.display = 'block';}
+        if (form) {form.style.display = 'block';}
+      };
+
+      mapWidget.addEventListener('waypoint-selected', handleWaypointSelected);
+    } else {
+      console.warn('Map widget not found or selection not supported');
+      this.setError('Map selection not available');
+      this.isSelectingFromMap = false;
+      this.updatePickFromMapUI();
+
+      // Restore form overlay on error
+      if (overlay) {overlay.style.display = 'block';}
+      if (form) {form.style.display = 'block';}
+    }
+  }
+
+  /**
+   * Handle canceling map selection
+   */
+  private handleCancelMapSelection(): void {
+    this.isSelectingFromMap = false;
+    this.updatePickFromMapUI();
+
+    // Stop map selection mode
+    const mapWidget = document.querySelector('map-widget') as any;
+    if (mapWidget && mapWidget.stopWaypointSelection) {
+      mapWidget.stopWaypointSelection();
+    }
+
+    // Restore form overlay
+    const overlay = this.shadowRoot!.querySelector('.form-overlay') as HTMLElement;
+    const form = this.shadowRoot!.querySelector('.create-form') as HTMLElement;
+
+    if (overlay) {overlay.style.display = 'block';}
+    if (form) {form.style.display = 'block';}
+  }
+
+  /**
+   * Handle coordinates selected from map
+   */
+  private handleMapSelection(latitude: number, longitude: number): void {
+    // Update form fields with selected coordinates
+    const latInput = this.shadowRoot!.querySelector('[name="latitude"]') as HTMLInputElement;
+    const lngInput = this.shadowRoot!.querySelector('[name="longitude"]') as HTMLInputElement;
+
+    if (latInput) {latInput.value = latitude.toFixed(6);}
+    if (lngInput) {lngInput.value = longitude.toFixed(6);}
+
+    // Exit map selection mode
+    this.isSelectingFromMap = false;
+    this.updatePickFromMapUI();
+
+    // Stop map selection mode
+    const mapWidget = document.querySelector('map-widget') as any;
+    if (mapWidget && mapWidget.stopWaypointSelection) {
+      mapWidget.stopWaypointSelection();
+    }
+
+    console.log('Selected waypoint coordinates from map:', latitude, longitude);
+  }
+
+  /**
+   * Update Pick from Map UI state
+   */
+  private updatePickFromMapUI(): void {
+    const pickBtn = this.shadowRoot!.querySelector('.pick-from-map-btn') as HTMLButtonElement;
+    const cancelBtn = this.shadowRoot!.querySelector(
+      '.cancel-map-selection-btn'
+    ) as HTMLButtonElement;
+    const coordinateInputs = this.shadowRoot!.querySelectorAll(
+      '.coordinate-input'
+    ) as NodeListOf<HTMLInputElement>;
+
+    if (pickBtn) {
+      pickBtn.style.display = this.isSelectingFromMap ? 'none' : 'inline-block';
+      pickBtn.disabled = this.isSelectingFromMap;
+    }
+
+    if (cancelBtn) {
+      cancelBtn.style.display = this.isSelectingFromMap ? 'inline-block' : 'none';
+    }
+
+    // Disable coordinate inputs during map selection
+    coordinateInputs.forEach(input => {
+      input.disabled = this.isSelectingFromMap;
+      if (this.isSelectingFromMap) {
+        input.placeholder = 'Select from map...';
+      } else {
+        input.placeholder = '';
+      }
+    });
   }
 
   /**
@@ -340,7 +722,13 @@ export default class WaypointManagerWidget
       <div class="waypoint-manager-widget">
         <div class="widget-header">
           <h3>Waypoints</h3>
-          <button class="add-waypoint-btn">+ Add Waypoint</button>
+          <div class="header-controls">
+            <label class="map-toggle">
+              <input type="checkbox" class="show-on-map-checkbox" ${this.showOnMap ? 'checked' : ''}>
+              Show on map
+            </label>
+            <button class="add-waypoint-btn">+ Add Waypoint</button>
+          </div>
         </div>
 
         <div class="waypoints-list">
@@ -379,20 +767,24 @@ export default class WaypointManagerWidget
                 </select>
               </div>
 
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="latitude">Latitude</label>
-                  <input type="number" id="latitude" name="latitude" step="any" required>
+              <div class="coordinates-section">
+                <div class="coordinates-header">
+                  <h5>Location</h5>
+                  <div class="coordinate-actions">
+                    <button type="button" class="pick-from-map-btn">📍 Pick from Map</button>
+                    <button type="button" class="cancel-map-selection-btn" style="display: none;">Cancel Selection</button>
+                  </div>
                 </div>
-                <div class="form-group">
-                  <label for="longitude">Longitude</label>
-                  <input type="number" id="longitude" name="longitude" step="any" required>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="latitude">Latitude</label>
+                    <input type="number" class="coordinate-input" id="latitude" name="latitude" step="any" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="longitude">Longitude</label>
+                    <input type="number" class="coordinate-input" id="longitude" name="longitude" step="any" required>
+                  </div>
                 </div>
-              </div>
-
-              <div class="form-group">
-                <label for="altitude">Altitude (m)</label>
-                <input type="number" id="altitude" name="altitude" step="any">
               </div>
 
               <div class="form-group">

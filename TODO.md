@@ -1,3 +1,12 @@
+- waypoints:
+  - photo support
+  - move them to the session endpoint
+  - change display similar to start/stop markers
+  - check show/hide, it's broken on page load
+
+- session data is missing from overview
+- I seem to be logged out on page reloads sometimes
+
 - better (location tracking) session management
   - landmarks (waypoints) setup
   - multi-user sessions

@@ -138,6 +138,7 @@ func setupAPIRoutes(router *echo.Echo, di *container.Container) {
 	}
 
 	api.GET("/waypoints/:username", di.WaypointHandler.ListWaypoints, append(waypointMiddleware, di.UserMiddleware.LoadUserFromPath())...)
+	api.GET("/waypoints/by-session/:sessionId", di.WaypointHandler.ListWaypointsBySession, waypointMiddleware...)
 	api.GET("/waypoints/detail/:id", di.WaypointHandler.GetWaypoint, waypointMiddleware...)
 	api.POST("/waypoints", di.WaypointHandler.CreateWaypoint, append(waypointMiddleware, di.AuthMiddleware.RequireJWTAuth(), di.ValidationMiddleware.ValidateJSON(&models.CreateWaypointRequest{}))...)
 	api.PUT("/waypoints/:id", di.WaypointHandler.UpdateWaypoint, append(waypointMiddleware, di.AuthMiddleware.RequireJWTAuth(), di.ValidationMiddleware.ValidateJSON(&models.UpdateWaypointRequest{}))...)

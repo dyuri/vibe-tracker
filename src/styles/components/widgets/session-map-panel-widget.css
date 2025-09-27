@@ -130,23 +130,6 @@
   color: var(--text-muted);
 }
 
-.no-session-message {
-  text-align: center;
-  padding: var(--spacing-lg);
-}
-
-.no-session-message p {
-  margin: 0 0 var(--spacing-xs) 0;
-  font-size: var(--font-size-lg);
-  color: var(--text-primary);
-}
-
-.no-session-message .subtitle {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  font-style: italic;
-}
-
 .overview-container {
   display: flex;
   flex-direction: row;

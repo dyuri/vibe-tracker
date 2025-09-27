@@ -144,6 +144,119 @@ func (h *WaypointHandler) ListWaypoints(c echo.Context) error {
 	return utils.SendPaginated(c, http.StatusOK, waypointList, paginationMeta, "")
 }
 
+// ListWaypointsBySession lists waypoints for a specific session by session ID
+//
+//	@Summary		List waypoints by session
+//	@Description	Returns waypoints for the specified session ID
+//	@Tags			Waypoints
+//	@Produce		json
+//	@Param			sessionId	path		string	true	"Session ID"
+//	@Param			type		query		string	false	"Waypoint type filter"
+//	@Param			page		query		int		false	"Page number (default: 1)"
+//	@Param			per_page	query		int		false	"Items per page (default: 20, max: 100)"
+//	@Success		200			{object}	models.SuccessResponse	"Waypoints retrieved successfully"
+//	@Failure		404			{object}	models.ErrorResponse	"Session not found"
+//	@Router			/waypoints/by-session/{sessionId} [get]
+func (h *WaypointHandler) ListWaypointsBySession(c echo.Context) error {
+	sessionID := c.PathParam("sessionId")
+
+	// Find the session to verify it exists and check access
+	session, err := h.app.Dao().FindRecordById("sessions", sessionID)
+	if err != nil {
+		return apis.NewNotFoundError("Session not found", err)
+	}
+
+	// Check if user has access to this session
+	authRecord, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
+	isOwner := authRecord != nil && authRecord.Id == session.GetString("user")
+
+	if !session.GetBool("public") && !isOwner {
+		return apis.NewForbiddenError("Access denied", nil)
+	}
+
+	// Parse pagination parameters
+	page := constants.DefaultPage
+	perPage := constants.DefaultPerPage
+	if pageStr := c.QueryParam("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+	if perPageStr := c.QueryParam("perPage"); perPageStr != "" {
+		if pp, err := strconv.Atoi(perPageStr); err == nil && pp > 0 && pp <= constants.MaxPerPageLimit {
+			perPage = pp
+		}
+	}
+
+	// Build filter
+	filter := "session_id = {:session_id}"
+	params := dbx.Params{"session_id": sessionID}
+
+	// Type filter
+	if waypointType := c.QueryParam("type"); waypointType != "" {
+		filter += " && type = {:type}"
+		params["type"] = waypointType
+	}
+
+	// Get waypoints with pagination
+	waypoints, err := h.app.Dao().FindRecordsByFilter(
+		"waypoints",
+		filter,
+		"-created", // Order by newest first
+		perPage,
+		(page-1)*perPage,
+		params,
+	)
+
+	if err != nil {
+		return apis.NewApiError(http.StatusInternalServerError, "Failed to fetch waypoints", err)
+	}
+
+	// Format response as GeoJSON FeatureCollection to match frontend expectations
+	features := make([]map[string]any, len(waypoints))
+	for i, waypoint := range waypoints {
+		features[i] = map[string]any{
+			"type": "Feature",
+			"id":   waypoint.Id,
+			"geometry": map[string]any{
+				"type": "Point",
+				"coordinates": []float64{
+					waypoint.GetFloat("longitude"),
+					waypoint.GetFloat("latitude"),
+				},
+			},
+			"properties": map[string]any{
+				"id":                  waypoint.Id,
+				"name":                waypoint.GetString("name"),
+				"type":                waypoint.GetString("type"),
+				"description":         waypoint.GetString("description"),
+				"session_id":          waypoint.GetString("session_id"),
+				"source":              waypoint.GetString("source"),
+				"position_confidence": waypoint.GetString("position_confidence"),
+				"created":             waypoint.GetDateTime("created").Time().Format(time.RFC3339),
+				"updated":             waypoint.GetDateTime("updated").Time().Format(time.RFC3339),
+			},
+		}
+
+		// Add optional fields
+		if altitude := waypoint.GetFloat("altitude"); altitude != 0 {
+			features[i]["properties"].(map[string]any)["altitude"] = altitude
+		}
+
+		if photo := waypoint.GetString("photo"); photo != "" {
+			features[i]["properties"].(map[string]any)["photo"] = photo
+		}
+	}
+
+	// Return GeoJSON FeatureCollection format to match frontend expectations
+	response := map[string]any{
+		"type":     "FeatureCollection",
+		"features": features,
+	}
+
+	return utils.SendSuccess(c, http.StatusOK, response, "")
+}
+
 // GetWaypoint retrieves a specific waypoint
 //
 //	@Summary		Get waypoint
@@ -240,8 +353,40 @@ func (h *WaypointHandler) CreateWaypoint(c echo.Context) error {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to create waypoint", err)
 	}
 
-	waypointData := h.formatWaypointResponse(waypoint)
-	return utils.SendSuccess(c, http.StatusCreated, waypointData, "Waypoint created successfully")
+	// Format as GeoJSON Feature to match frontend expectations
+	waypointFeature := map[string]any{
+		"type": "Feature",
+		"id":   waypoint.Id,
+		"geometry": map[string]any{
+			"type": "Point",
+			"coordinates": []float64{
+				waypoint.GetFloat("longitude"),
+				waypoint.GetFloat("latitude"),
+			},
+		},
+		"properties": map[string]any{
+			"id":                  waypoint.Id,
+			"name":                waypoint.GetString("name"),
+			"type":                waypoint.GetString("type"),
+			"description":         waypoint.GetString("description"),
+			"session_id":          waypoint.GetString("session_id"),
+			"source":              waypoint.GetString("source"),
+			"position_confidence": waypoint.GetString("position_confidence"),
+			"created":             waypoint.GetDateTime("created").Time().Format(time.RFC3339),
+			"updated":             waypoint.GetDateTime("updated").Time().Format(time.RFC3339),
+		},
+	}
+
+	// Add optional fields
+	if altitude := waypoint.GetFloat("altitude"); altitude != 0 {
+		waypointFeature["properties"].(map[string]any)["altitude"] = altitude
+	}
+
+	if photo := waypoint.GetString("photo"); photo != "" {
+		waypointFeature["properties"].(map[string]any)["photo"] = photo
+	}
+
+	return utils.SendSuccess(c, http.StatusCreated, waypointFeature, "Waypoint created successfully")
 }
 
 // UpdateWaypoint updates an existing waypoint
@@ -314,8 +459,40 @@ func (h *WaypointHandler) UpdateWaypoint(c echo.Context) error {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to update waypoint", err)
 	}
 
-	waypointData := h.formatWaypointResponse(waypoint)
-	return utils.SendSuccess(c, http.StatusOK, waypointData, "Waypoint updated successfully")
+	// Format as GeoJSON Feature to match frontend expectations
+	waypointFeature := map[string]any{
+		"type": "Feature",
+		"id":   waypoint.Id,
+		"geometry": map[string]any{
+			"type": "Point",
+			"coordinates": []float64{
+				waypoint.GetFloat("longitude"),
+				waypoint.GetFloat("latitude"),
+			},
+		},
+		"properties": map[string]any{
+			"id":                  waypoint.Id,
+			"name":                waypoint.GetString("name"),
+			"type":                waypoint.GetString("type"),
+			"description":         waypoint.GetString("description"),
+			"session_id":          waypoint.GetString("session_id"),
+			"source":              waypoint.GetString("source"),
+			"position_confidence": waypoint.GetString("position_confidence"),
+			"created":             waypoint.GetDateTime("created").Time().Format(time.RFC3339),
+			"updated":             waypoint.GetDateTime("updated").Time().Format(time.RFC3339),
+		},
+	}
+
+	// Add optional fields
+	if altitude := waypoint.GetFloat("altitude"); altitude != 0 {
+		waypointFeature["properties"].(map[string]any)["altitude"] = altitude
+	}
+
+	if photo := waypoint.GetString("photo"); photo != "" {
+		waypointFeature["properties"].(map[string]any)["photo"] = photo
+	}
+
+	return utils.SendSuccess(c, http.StatusOK, waypointFeature, "Waypoint updated successfully")
 }
 
 // DeleteWaypoint deletes an existing waypoint

@@ -30,6 +30,10 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   private gpxTrackLayerGroup: L.LayerGroup | null = null;
   private waypointsLayerGroup: L.LayerGroup | null = null;
   private currentFeatureCollection: LocationsResponse | null = null;
+  // Waypoint selection properties
+  private waypointSelectionMode: boolean = false;
+  private waypointSelectionMarker: L.Marker | null = null;
+  private selectedWaypointCoords: [number, number] | null = null;
   private colorScale: Array<Array<number>> = [
     [0, 0, 255], // Blue
     [0, 255, 0], // Green
@@ -834,6 +838,151 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     }
 
     return this.hoverMarkerLayerGroup.getLayers().length > 0;
+  }
+
+  /**
+   * Start waypoint selection mode
+   */
+  startWaypointSelection(): void {
+    if (!this.map) {
+      console.warn('Map not initialized, cannot start waypoint selection');
+      return;
+    }
+
+    this.waypointSelectionMode = true;
+    this.selectedWaypointCoords = null;
+
+    // Change cursor to crosshair
+    const mapContainer = this.map.getContainer();
+    mapContainer.style.cursor = 'crosshair';
+
+    // Add click handler for waypoint selection
+    this.map.on('click', this.handleWaypointSelection.bind(this));
+
+    // Show instruction overlay
+    this.showWaypointSelectionInstructions();
+
+    console.log('Started waypoint selection mode');
+  }
+
+  /**
+   * Stop waypoint selection mode
+   */
+  stopWaypointSelection(): void {
+    if (!this.map) {
+      return;
+    }
+
+    this.waypointSelectionMode = false;
+    this.selectedWaypointCoords = null;
+
+    // Reset cursor
+    const mapContainer = this.map.getContainer();
+    mapContainer.style.cursor = '';
+
+    // Remove click handler
+    this.map.off('click', this.handleWaypointSelection);
+
+    // Clear selection marker
+    if (this.waypointSelectionMarker) {
+      this.map.removeLayer(this.waypointSelectionMarker);
+      this.waypointSelectionMarker = null;
+    }
+
+    // Hide instruction overlay
+    this.hideWaypointSelectionInstructions();
+
+    console.log('Stopped waypoint selection mode');
+  }
+
+  /**
+   * Check if currently in waypoint selection mode
+   */
+  isInWaypointSelectionMode(): boolean {
+    return this.waypointSelectionMode;
+  }
+
+  /**
+   * Get selected waypoint coordinates
+   */
+  getSelectedWaypointCoordinates(): [number, number] | null {
+    return this.selectedWaypointCoords;
+  }
+
+  /**
+   * Handle waypoint selection click
+   */
+  private handleWaypointSelection(e: L.LeafletMouseEvent): void {
+    if (!this.waypointSelectionMode || !this.map) {
+      return;
+    }
+
+    const { lat, lng } = e.latlng;
+    this.selectedWaypointCoords = [lat, lng];
+
+    // Clear existing selection marker
+    if (this.waypointSelectionMarker) {
+      this.map.removeLayer(this.waypointSelectionMarker);
+    }
+
+    // Create new selection marker
+    this.waypointSelectionMarker = L.marker([lat, lng], {
+      icon: L.divIcon({
+        html: `<div class="waypoint-selection-marker">📍</div>`,
+        className: 'waypoint-selection-marker-container',
+        iconSize: [30, 30],
+        iconAnchor: [15, 30],
+      }),
+    });
+
+    this.map.addLayer(this.waypointSelectionMarker);
+
+    // Dispatch event with selected coordinates
+    this.dispatchEvent(
+      new CustomEvent('waypoint-selected', {
+        detail: {
+          latitude: lat,
+          longitude: lng,
+          coordinates: [lat, lng],
+        },
+        bubbles: true,
+      })
+    );
+
+    console.log('Waypoint selected at:', lat, lng);
+  }
+
+  /**
+   * Show waypoint selection instructions
+   */
+  private showWaypointSelectionInstructions(): void {
+    const mapContainer = this.shadowRoot!.getElementById('map')!;
+
+    // Check if instruction overlay already exists
+    if (mapContainer.querySelector('.waypoint-instructions')) {
+      return;
+    }
+
+    const instructionOverlay = document.createElement('div');
+    instructionOverlay.className = 'waypoint-instructions';
+    instructionOverlay.innerHTML = `
+      <div class="waypoint-instruction-content">
+        <span>📍 Click on the map to select waypoint location</span>
+        <button class="instruction-close-btn" onclick="this.closest('map-widget').stopWaypointSelection()">×</button>
+      </div>
+    `;
+
+    mapContainer.appendChild(instructionOverlay);
+  }
+
+  /**
+   * Hide waypoint selection instructions
+   */
+  private hideWaypointSelectionInstructions(): void {
+    const instructionOverlay = this.shadowRoot!.querySelector('.waypoint-instructions');
+    if (instructionOverlay) {
+      instructionOverlay.remove();
+    }
   }
 }
 

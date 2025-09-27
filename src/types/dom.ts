@@ -45,6 +45,12 @@ export interface MapWidgetElement extends HTMLElement, CustomElementLifecycle {
   showSelectedMarker(latitude: number, longitude: number): void;
   hideSelectedMarker(): void;
   hasSelectedMarker(): boolean;
+  startWaypointSelection(): void;
+  stopWaypointSelection(): void;
+  isInWaypointSelectionMode(): boolean;
+  getSelectedWaypointCoordinates(): [number, number] | null;
+  clearWaypoints(): void;
+  displayWaypoints(data: WaypointsResponse): void;
 }
 
 // Theme toggle widget
@@ -81,6 +87,7 @@ export interface GpxUploadWidgetElement extends HTMLElement {
 
 export interface WaypointManagerWidgetElement extends HTMLElement {
   loadWaypoints(sessionId: string): void;
+  loadWaypointsFromData(sessionId: string, waypointsData: WaypointsResponse): void;
   refreshWaypoints(): void;
   showCreateForm(): void;
   hideCreateForm(): void;

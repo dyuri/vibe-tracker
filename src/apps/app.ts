@@ -7,6 +7,7 @@ import type {
   ProfileWidgetElement,
   SessionManagementWidgetElement,
   SessionMapPanelWidgetElement,
+  WaypointsResponse,
 } from '@/types';
 
 // Import modules
@@ -412,6 +413,10 @@ function fetchData(isInitialLoad: boolean = false, useDelta: boolean = false): v
           }
 
           // Create session data from URL parameters and API response
+          console.log('DEBUG: data object:', data);
+          console.log('DEBUG: data.session:', data.session);
+          console.log('DEBUG: data.session?.id:', data.session?.id);
+
           const sessionData = {
             username: username,
             sessionName: sessionName || 'latest',
@@ -513,6 +518,8 @@ function initializeMainView(): void {
     sessionPanelWidget?.removeEventListener('refresh-change', handleRefreshChange);
     sessionPanelWidget?.removeEventListener('show-current-position', handleShowCurrentPosition);
     sessionPanelWidget?.removeEventListener('hide-current-position', handleHideCurrentPosition);
+    sessionPanelWidget?.removeEventListener('display-waypoints', handleDisplayWaypoints);
+    sessionPanelWidget?.removeEventListener('clear-waypoints', handleClearWaypoints);
     mapWidget?.removeEventListener('location-update', handleLocationUpdate);
     mapWidget?.removeEventListener('map-point-click', handleMapPointClick);
     sessionPanelWidget?.removeEventListener('chart-hover', handleChartHover);
@@ -523,6 +530,8 @@ function initializeMainView(): void {
     sessionPanelWidget?.addEventListener('refresh-change', handleRefreshChange);
     sessionPanelWidget?.addEventListener('show-current-position', handleShowCurrentPosition);
     sessionPanelWidget?.addEventListener('hide-current-position', handleHideCurrentPosition);
+    sessionPanelWidget?.addEventListener('display-waypoints', handleDisplayWaypoints);
+    sessionPanelWidget?.addEventListener('clear-waypoints', handleClearWaypoints);
     mapWidget?.addEventListener('location-update', handleLocationUpdate);
     mapWidget?.addEventListener('map-point-click', handleMapPointClick);
     sessionPanelWidget?.addEventListener('chart-hover', handleChartHover);
@@ -576,6 +585,19 @@ function handleShowCurrentPosition(e: Event): void {
 function handleHideCurrentPosition(_e: Event): void {
   if (mapWidget) {
     mapWidget.hideCurrentPosition();
+  }
+}
+
+function handleDisplayWaypoints(e: Event): void {
+  const customEvent = e as CustomEvent<WaypointsResponse>;
+  if (mapWidget) {
+    mapWidget.displayWaypoints(customEvent.detail);
+  }
+}
+
+function handleClearWaypoints(_e: Event): void {
+  if (mapWidget) {
+    mapWidget.clearWaypoints();
   }
 }
 

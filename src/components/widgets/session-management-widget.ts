@@ -469,11 +469,12 @@ export default class SessionManagementWidget
       gpxElement.style.color = 'var(--text-muted)';
     }
 
-    // Initialize widgets with session data
+    // Initialize waypoint widget with session data
     const waypointManager = this.shadowRoot!.getElementById('waypoint-manager') as any;
 
-    if (waypointManager && waypointManager.loadWaypoints) {
-      waypointManager.loadWaypoints(session.id);
+    if (waypointManager) {
+      // Load session data to get waypoints if available
+      this.loadSessionDataForWaypoints(session);
     }
 
     // Set up session actions
@@ -481,6 +482,55 @@ export default class SessionManagementWidget
 
     // Switch to overview tab by default
     this.switchTab('overview');
+  }
+
+  private async loadSessionDataForWaypoints(session: Session): Promise<void> {
+    if (!this.user) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/session/${this.user.username}/${session.name}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to load session data: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      const data = result.data || result;
+
+      // Update waypoint count display
+      const waypointCountElement = this.shadowRoot!.getElementById('detail-waypoint-count')!;
+      if (data.waypoints && data.waypoints.features) {
+        const count = data.waypoints.features.length;
+        waypointCountElement.textContent = `${count} waypoint${count !== 1 ? 's' : ''}`;
+        waypointCountElement.style.color = count > 0 ? 'var(--color-success)' : 'var(--text-muted)';
+      } else {
+        waypointCountElement.textContent = '0 waypoints';
+        waypointCountElement.style.color = 'var(--text-muted)';
+      }
+
+      // Initialize waypoint widget with session data if waypoints are available
+      const waypointManager = this.shadowRoot!.getElementById('waypoint-manager') as any;
+      if (waypointManager && data.waypoints && waypointManager.loadWaypointsFromData) {
+        waypointManager.loadWaypointsFromData(session.id, data.waypoints);
+      } else if (waypointManager && waypointManager.loadWaypoints) {
+        // Fallback to API call if loadWaypointsFromData is not available
+        waypointManager.loadWaypoints(session.id);
+      }
+    } catch (error: any) {
+      console.error('Error loading session data for waypoints:', error);
+
+      // Fallback to direct API call if session data loading fails
+      const waypointManager = this.shadowRoot!.getElementById('waypoint-manager') as any;
+      if (waypointManager && waypointManager.loadWaypoints) {
+        waypointManager.loadWaypoints(session.id);
+      }
+    }
   }
 
   setupSessionActions(session: Session): void {

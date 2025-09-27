@@ -134,18 +134,12 @@ export default class SessionMapPanelWidget
    * Set session data and update the interface
    */
   setSessionData(sessionData: SessionData): void {
+    console.log('SessionMapPanel setSessionData called with:', sessionData);
     this.currentSessionData = sessionData;
-    this.updateTabVisibility();
-    this.updateSessionOverview();
     this.populateEditForm();
 
-    // If no active tab is visible, switch to first visible tab
-    if (!this.isTabVisible(this.activeTab)) {
-      const firstVisibleTab = this.getVisibleTabs()[0];
-      if (firstVisibleTab) {
-        this.switchTab(firstVisibleTab.id);
-      }
-    }
+    // Note: Waypoints are now handled directly by app.ts via displayWaypoints() method
+    // when they are included in the session response. No need to make separate API calls here.
   }
 
   /**
@@ -180,13 +174,49 @@ export default class SessionMapPanelWidget
   /**
    * Display waypoints data
    */
-  displayWaypoints(_data: WaypointsResponse): void {
-    // Pass to waypoint manager if it exists
+  displayWaypoints(data: WaypointsResponse): void {
+    // Pass to waypoint manager if it exists - use optimized method that avoids API call
     const waypointWidget = this.shadowRoot!.querySelector(
       'waypoint-manager-widget'
     ) as WaypointManagerWidgetElement;
     if (waypointWidget) {
-      waypointWidget.loadWaypoints(this.currentSessionData?.sessionId || '');
+      waypointWidget.loadWaypointsFromData(this.currentSessionData?.sessionId || '', data);
+    }
+
+    // Also display waypoints on the map
+    this.dispatchEvent(
+      new CustomEvent('display-waypoints', {
+        detail: data,
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  /**
+   * Refresh waypoints on the map by fetching latest data
+   */
+  private async refreshWaypointsOnMap(): Promise<void> {
+    console.warn('Using fallback API call for waypoints - this should be rare');
+    if (!this.currentSessionData?.sessionId) {
+      return;
+    }
+
+    try {
+      // Import the waypoint service dynamically to avoid circular imports
+      const { waypointService } = await import('../../services/waypoint-service');
+      const waypointsData = await waypointService.getWaypoints(this.currentSessionData.sessionId);
+
+      // Dispatch event to update waypoints on map
+      this.dispatchEvent(
+        new CustomEvent('display-waypoints', {
+          detail: waypointsData,
+          bubbles: true,
+          composed: true,
+        })
+      );
+    } catch (error) {
+      console.error('Failed to refresh waypoints on map:', error);
     }
   }
 
@@ -253,12 +283,7 @@ export default class SessionMapPanelWidget
           <!-- Overview Tab -->
           <div class="tab-content active" data-tab="overview">
             <div class="session-overview">
-              <div class="overview-container" id="overview-stats">
-                <div class="no-session-message">
-                  <p>Welcome to Vibe Tracker</p>
-                  <p class="subtitle">Use the controls below to manage location tracking and display settings</p>
-                </div>
-              </div>
+              <div class="overview-container" id="overview-stats"></div>
 
               <div class="overview-container">
                 <!-- Location Controls Card -->
@@ -474,6 +499,22 @@ export default class SessionMapPanelWidget
         this.dispatchEvent(new CustomEvent('chart-click', { detail: (e as CustomEvent).detail }));
       });
     }
+
+    // Listen for waypoint events from waypoint manager widget
+    const waypointWidget = this.shadowRoot!.querySelector(
+      'waypoint-manager-widget'
+    ) as WaypointManagerWidgetElement;
+    if (waypointWidget) {
+      waypointWidget.addEventListener('waypoint-created', () => {
+        this.refreshWaypointsOnMap();
+      });
+      waypointWidget.addEventListener('waypoint-updated', () => {
+        this.refreshWaypointsOnMap();
+      });
+      waypointWidget.addEventListener('waypoint-deleted', () => {
+        this.refreshWaypointsOnMap();
+      });
+    }
   }
 
   private updateTabVisibility(): void {
@@ -551,18 +592,7 @@ export default class SessionMapPanelWidget
 
   private updateSessionOverview(): void {
     const overviewStats = this.shadowRoot!.getElementById('overview-stats');
-    if (!overviewStats) {
-      return;
-    }
-
-    if (!this.currentSessionData) {
-      // No session loaded - show welcome message
-      overviewStats.innerHTML = `
-        <div class="no-session-message">
-          <p>Welcome to Vibe Tracker</p>
-          <p class="subtitle">Use the controls below to manage location tracking and display settings</p>
-        </div>
-      `;
+    if (!overviewStats || !this.currentSessionData) {
       return;
     }
 

@@ -30,6 +30,27 @@
   color: var(--text-primary);
 }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.map-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.map-toggle input[type='checkbox'] {
+  margin: 0;
+  cursor: pointer;
+}
+
 .add-waypoint-btn {
   background: var(--color-primary);
   color: white;
@@ -357,6 +378,180 @@
   background: var(--color-primary-dark);
 }
 
+/* Waypoint selection and coordinates section */
+.coordinates-section {
+  margin-bottom: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  padding: 12px;
+}
+
+.coordinates-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.coordinates-header h5 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.coordinate-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pick-from-map-btn {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pick-from-map-btn:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.pick-from-map-btn:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cancel-map-selection-btn {
+  background: var(--color-danger);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-map-selection-btn:hover {
+  background: var(--color-danger-dark);
+}
+
+.coordinate-input:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+/* Waypoint selection marker styles (for map widget) */
+.waypoint-selection-marker {
+  font-size: 24px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  animation: bounce 1s infinite;
+}
+
+.waypoint-selection-marker-container {
+  background: transparent !important;
+  border: none !important;
+}
+
+@keyframes bounce {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-5px);
+  }
+  60% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Waypoint selection instructions overlay */
+.waypoint-instructions {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: var(--shadow-medium);
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+  max-width: 90%;
+  backdrop-filter: blur(4px);
+}
+
+.waypoint-instruction-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.instruction-close-btn {
+  background: var(--color-danger);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  transition: background-color 0.2s ease;
+}
+
+.instruction-close-btn:hover {
+  background: var(--color-danger-dark);
+}
+
+/* Loading and disabled states */
+.waypoint-manager-widget .add-waypoint-btn:disabled,
+.waypoint-manager-widget .submit-btn:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.waypoints-list .loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .widget-header {
@@ -385,5 +580,30 @@
   .create-form {
     width: 95%;
     max-height: 90vh;
+  }
+
+  .coordinates-header {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .coordinate-actions {
+    justify-content: center;
+  }
+
+  .pick-from-map-btn,
+  .cancel-map-selection-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .waypoint-instructions {
+    position: fixed;
+    top: 10px;
+    left: 5%;
+    right: 5%;
+    transform: none;
+    max-width: none;
   }
 }
