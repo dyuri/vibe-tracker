@@ -20,22 +20,6 @@
   overflow: hidden;
 }
 
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
-  background: var(--bg-secondary, #f8f9fa);
-  border-bottom: 1px solid var(--border-color, #e9ecef);
-  min-height: 40px;
-}
-
-.chart-title {
-  font-weight: 600;
-  color: var(--text-primary, #212529);
-  font-size: var(--font-size-md, 16px);
-}
-
 .chart-content {
   display: flex;
   flex: 1;
@@ -183,11 +167,6 @@
 
 /* Responsive design - drawer style on mobile */
 @media (max-width: 768px) {
-  /* Hide header on mobile for cleaner drawer look */
-  .chart-header {
-    display: none;
-  }
-
   .chart-content {
     flex-direction: column;
     flex: 1;

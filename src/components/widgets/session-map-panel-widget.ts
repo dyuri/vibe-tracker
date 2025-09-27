@@ -138,6 +138,10 @@ export default class SessionMapPanelWidget
     this.currentSessionData = sessionData;
     this.populateEditForm();
 
+    // Update tab visibility and session overview when session data is received
+    this.updateTabVisibility();
+    this.updateSessionOverview();
+
     // Note: Waypoints are now handled directly by app.ts via displayWaypoints() method
     // when they are included in the session response. No need to make separate API calls here.
   }

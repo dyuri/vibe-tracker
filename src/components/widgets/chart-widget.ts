@@ -48,9 +48,6 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
       <style>${styles}</style>
       <div id="chart-container" class="chart-container">
         <div id="chart-panel" class="chart-panel">
-          <div class="chart-header">
-            <span class="chart-title">Track Data</span>
-          </div>
           <div class="chart-content">
             <div id="chart-controls" class="chart-controls">
               <div class="control-group">
