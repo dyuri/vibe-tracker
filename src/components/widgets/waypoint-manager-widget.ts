@@ -24,7 +24,6 @@ export default class WaypointManagerWidget
   private errorMessage: string = '';
   private isSelectingFromMap: boolean = false;
   private editingWaypointId: string | null = null;
-  private showOnMap: boolean = false;
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -145,9 +144,6 @@ export default class WaypointManagerWidget
       .map(waypoint => this.renderWaypointItem(waypoint))
       .join('');
     container.innerHTML = waypointsHtml;
-
-    // Update map visibility based on current checkbox state
-    this.handleMapVisibilityToggle();
   }
 
   /**
@@ -285,42 +281,8 @@ export default class WaypointManagerWidget
   /**
    * Handles change events
    */
-  private handleChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-
-    if (target.classList.contains('show-on-map-checkbox')) {
-      this.showOnMap = target.checked;
-      this.handleMapVisibilityToggle();
-    }
-  }
-
-  /**
-   * Handles toggling waypoint visibility on the map
-   */
-  private handleMapVisibilityToggle(): void {
-    if (this.showOnMap && this.waypoints.length > 0) {
-      // Show waypoints on map by dispatching display-waypoints event
-      const waypointsResponse = {
-        features: this.waypoints,
-        type: 'FeatureCollection' as const,
-      };
-
-      this.dispatchEvent(
-        new CustomEvent('display-waypoints', {
-          detail: waypointsResponse,
-          bubbles: true,
-          composed: true,
-        })
-      );
-    } else {
-      // Hide waypoints on map by dispatching clear-waypoints event
-      this.dispatchEvent(
-        new CustomEvent('clear-waypoints', {
-          bubbles: true,
-          composed: true,
-        })
-      );
-    }
+  private handleChange(_event: Event): void {
+    // No change handlers currently needed
   }
 
   /**
@@ -602,8 +564,12 @@ export default class WaypointManagerWidget
     const overlay = this.shadowRoot!.querySelector('.form-overlay') as HTMLElement;
     const form = this.shadowRoot!.querySelector('.create-form') as HTMLElement;
 
-    if (overlay) {overlay.style.display = 'none';}
-    if (form) {form.style.display = 'none';}
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
+    if (form) {
+      form.style.display = 'none';
+    }
 
     // Get map widget and start selection mode
     const mapWidget = document.querySelector('map-widget') as any;
@@ -619,8 +585,12 @@ export default class WaypointManagerWidget
         mapWidget.removeEventListener('waypoint-selected', handleWaypointSelected);
 
         // Restore form overlay
-        if (overlay) {overlay.style.display = 'block';}
-        if (form) {form.style.display = 'block';}
+        if (overlay) {
+          overlay.style.display = 'block';
+        }
+        if (form) {
+          form.style.display = 'block';
+        }
       };
 
       mapWidget.addEventListener('waypoint-selected', handleWaypointSelected);
@@ -631,8 +601,12 @@ export default class WaypointManagerWidget
       this.updatePickFromMapUI();
 
       // Restore form overlay on error
-      if (overlay) {overlay.style.display = 'block';}
-      if (form) {form.style.display = 'block';}
+      if (overlay) {
+        overlay.style.display = 'block';
+      }
+      if (form) {
+        form.style.display = 'block';
+      }
     }
   }
 
@@ -653,8 +627,12 @@ export default class WaypointManagerWidget
     const overlay = this.shadowRoot!.querySelector('.form-overlay') as HTMLElement;
     const form = this.shadowRoot!.querySelector('.create-form') as HTMLElement;
 
-    if (overlay) {overlay.style.display = 'block';}
-    if (form) {form.style.display = 'block';}
+    if (overlay) {
+      overlay.style.display = 'block';
+    }
+    if (form) {
+      form.style.display = 'block';
+    }
   }
 
   /**
@@ -665,8 +643,12 @@ export default class WaypointManagerWidget
     const latInput = this.shadowRoot!.querySelector('[name="latitude"]') as HTMLInputElement;
     const lngInput = this.shadowRoot!.querySelector('[name="longitude"]') as HTMLInputElement;
 
-    if (latInput) {latInput.value = latitude.toFixed(6);}
-    if (lngInput) {lngInput.value = longitude.toFixed(6);}
+    if (latInput) {
+      latInput.value = latitude.toFixed(6);
+    }
+    if (lngInput) {
+      lngInput.value = longitude.toFixed(6);
+    }
 
     // Exit map selection mode
     this.isSelectingFromMap = false;
@@ -723,10 +705,6 @@ export default class WaypointManagerWidget
         <div class="widget-header">
           <h3>Waypoints</h3>
           <div class="header-controls">
-            <label class="map-toggle">
-              <input type="checkbox" class="show-on-map-checkbox" ${this.showOnMap ? 'checked' : ''}>
-              Show on map
-            </label>
             <button class="add-waypoint-btn">+ Add Waypoint</button>
           </div>
         </div>

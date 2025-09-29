@@ -272,35 +272,30 @@ export default class SessionMapPanelWidget
   private render(): void {
     this.shadowRoot!.innerHTML = `
       <style>${styles}</style>
-      <div class="session-map-panel ${this.isCollapsed ? 'collapsed' : ''}">
+      <div class="session-map-panel">
         <div class="panel-header">
           <div class="panel-tabs" id="panel-tabs">
-            <!-- Tabs will be rendered dynamically -->
+            <!-- Tabs will be dynamically rendered by updateTabVisibility -->
           </div>
-          <div class="panel-controls">
-            <button class="collapse-btn" id="collapse-btn">
-              ${this.isCollapsed ? '↑' : '↓'}
-            </button>
-          </div>
+          <button id="collapse-btn" class="collapse-btn" title="Collapse Panel">↓</button>
         </div>
+        
         <div class="panel-content" id="panel-content">
           <!-- Overview Tab -->
           <div class="tab-content active" data-tab="overview">
-            <div class="session-overview">
-              <div class="overview-container" id="overview-stats"></div>
-
+            <div class="overview-section">
               <div class="overview-container">
-                <!-- Location Controls Card -->
+                <!-- Location & Display Controls Card -->
                 <div class="overview-card">
                   <h4>Location & Display Controls</h4>
-                  <div class="controls-grid">
+                  <div class="control-grid">
                     <label class="control-item">
                       <input type="checkbox" id="overview-refresh-checkbox">
                       <span>Auto Refresh</span>
                     </label>
                     <label class="control-item">
                       <input type="checkbox" id="overview-show-position-checkbox">
-                      <span>Show My Position</span>
+                      <span>Show Position</span>
                     </label>
                     <label class="control-item">
                       <input type="checkbox" id="overview-dark-theme-checkbox">
@@ -313,6 +308,10 @@ export default class SessionMapPanelWidget
                     <label class="control-item">
                       <input type="checkbox" id="overview-wake-lock-checkbox">
                       <span>Wake Lock</span>
+                    </label>
+                    <label class="control-item">
+                      <input type="checkbox" id="overview-show-waypoints-checkbox">
+                      <span>Show Waypoints</span>
                     </label>
                   </div>
                 </div>
@@ -1129,6 +1128,34 @@ export default class SessionMapPanelWidget
       }
     });
 
+    // Show waypoints control
+    const showWaypointsCheckbox = this.shadowRoot!.getElementById(
+      'overview-show-waypoints-checkbox'
+    ) as HTMLInputElement;
+    showWaypointsCheckbox?.addEventListener('change', (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      localStorage.setItem('show-waypoints-enabled', target.checked.toString());
+
+      if (target.checked) {
+        // Show waypoints on map by dispatching display-waypoints event
+        this.dispatchEvent(
+          new CustomEvent('display-waypoints', {
+            detail: null, // Will be populated by displayWaypoints method if waypoints exist
+            bubbles: true,
+            composed: true,
+          })
+        );
+      } else {
+        // Hide waypoints on map by dispatching clear-waypoints event
+        this.dispatchEvent(
+          new CustomEvent('clear-waypoints', {
+            bubbles: true,
+            composed: true,
+          })
+        );
+      }
+    });
+
     // Initialize control states from localStorage
     this.initializeLocationControlStates();
   }
@@ -1214,6 +1241,26 @@ export default class SessionMapPanelWidget
           mapWidget.removeAttribute('data-map-theme');
         }
       }
+    }
+
+    // Show waypoints - default to enabled if no saved preference
+    const showWaypointsCheckbox = this.shadowRoot!.getElementById(
+      'overview-show-waypoints-checkbox'
+    ) as HTMLInputElement;
+    const savedShowWaypoints = localStorage.getItem('show-waypoints-enabled');
+    if (showWaypointsCheckbox) {
+      // Default to enabled (true) if no saved preference exists
+      const shouldShowWaypoints =
+        savedShowWaypoints !== null ? savedShowWaypoints === 'true' : true;
+      showWaypointsCheckbox.checked = shouldShowWaypoints;
+
+      // Save the default if not already saved
+      if (savedShowWaypoints === null) {
+        localStorage.setItem('show-waypoints-enabled', 'true');
+      }
+
+      // Trigger change event to apply the setting
+      showWaypointsCheckbox.dispatchEvent(new Event('change'));
     }
   }
 
