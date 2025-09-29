@@ -448,9 +448,13 @@ function fetchData(isInitialLoad: boolean = false, useDelta: boolean = false): v
             sessionPanelWidget.displayGpxTrack(data.gpx.track_points);
           }
 
-          // Display waypoints if available
+          // Display waypoints if available and enabled
           if (data.waypoints) {
-            sessionPanelWidget.displayWaypoints(data.waypoints);
+            const showWaypoints = localStorage.getItem('show-waypoints-enabled');
+            // Default to enabled (true) if no saved preference exists, otherwise respect the setting
+            if (showWaypoints !== 'false') {
+              sessionPanelWidget.displayWaypoints(data.waypoints);
+            }
           }
         }
 

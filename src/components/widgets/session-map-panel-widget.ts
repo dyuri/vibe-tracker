@@ -1137,14 +1137,8 @@ export default class SessionMapPanelWidget
       localStorage.setItem('show-waypoints-enabled', target.checked.toString());
 
       if (target.checked) {
-        // Show waypoints on map by dispatching display-waypoints event
-        this.dispatchEvent(
-          new CustomEvent('display-waypoints', {
-            detail: null, // Will be populated by displayWaypoints method if waypoints exist
-            bubbles: true,
-            composed: true,
-          })
-        );
+        // Show waypoints on map by refreshing waypoint data
+        this.refreshWaypointsOnMap();
       } else {
         // Hide waypoints on map by dispatching clear-waypoints event
         this.dispatchEvent(

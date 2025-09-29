@@ -237,9 +237,9 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       html: `<div class="waypoint-marker-content" style="background-color: ${config.color}; ${confidenceStyle}">
                <span class="waypoint-marker-icon">${config.icon}</span>
              </div>`,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
-      popupAnchor: [0, -12],
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+      popupAnchor: [0, -10],
     });
   }
 
@@ -269,12 +269,12 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    */
   getConfidenceStyle(confidence: PositionConfidence): string {
     const styles: Record<PositionConfidence, string> = {
-      gps: 'opacity: 1; border: 2px solid #28a745;', // Green border for GPS
-      time_matched: 'opacity: 0.9; border: 2px solid #007bff;', // Blue border
-      tracked: 'opacity: 0.8; border: 2px solid #17a2b8;', // Cyan border
-      gpx_track: 'opacity: 0.7; border: 2px solid #6f42c1;', // Purple border
-      last_known: 'opacity: 0.6; border: 2px solid #fd7e14;', // Orange border
-      manual: 'opacity: 0.5; border: 2px dashed #6c757d;', // Gray dashed border
+      gps: 'border: 2px solid #28a745;', // Green border for GPS
+      time_matched: 'border: 2px solid #007bff;', // Blue border
+      tracked: 'border: 2px solid #17a2b8;', // Cyan border
+      gpx_track: 'border: 2px solid #6f42c1;', // Purple border
+      last_known: 'border: 2px solid #fd7e14;', // Orange border
+      manual: 'border: 2px solid #6c757d;', // Gray border
     };
 
     return styles[confidence] || styles.manual;
