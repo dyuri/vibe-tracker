@@ -10,6 +10,7 @@ import (
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
+	"github.com/pocketbase/pocketbase/forms"
 	"github.com/pocketbase/pocketbase/models"
 
 	"vibe-tracker/constants"
@@ -596,23 +597,8 @@ func (h *WaypointHandler) UploadPhotoWaypoint(c echo.Context) error {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to extract EXIF data", err)
 	}
 
-	// Reset file reader for storage
+	// Reset file reader for EXIF extraction (will be re-read by form handler)
 	file.Seek(0, 0)
-
-	// Store the photo file
-	fs, err := h.app.NewFilesystem()
-	if err != nil {
-		return apis.NewApiError(http.StatusInternalServerError, "Failed to initialize filesystem", err)
-	}
-	defer fs.Close()
-
-	// Generate unique file key for photo
-	photoFileName := sessionID + "_" + fileHeader.Filename
-
-	err = fs.UploadMultipart(fileHeader, photoFileName)
-	if err != nil {
-		return apis.NewApiError(http.StatusInternalServerError, "Failed to upload photo", err)
-	}
 
 	// Determine position and confidence
 	var latitude, longitude, altitude *float64
@@ -655,20 +641,21 @@ func (h *WaypointHandler) UploadPhotoWaypoint(c echo.Context) error {
 
 	description := c.FormValue("description")
 
-	// Create waypoint
+	// Create waypoint using PocketBase form handling for proper file association
 	collection, err := h.app.Dao().FindCollectionByNameOrId("waypoints")
 	if err != nil {
 		return apis.NewApiError(http.StatusInternalServerError, "Waypoints collection not found", err)
 	}
 
 	waypoint := models.NewRecord(collection)
+
+	// Pre-set fields that are not in the form
 	waypoint.Set("session_id", sessionID)
 	waypoint.Set("name", name)
 	waypoint.Set("type", waypointType)
 	waypoint.Set("description", description)
 	waypoint.Set("latitude", *latitude)
 	waypoint.Set("longitude", *longitude)
-	waypoint.Set("photo", photoFileName)
 	waypoint.Set("source", "photo")
 	waypoint.Set("position_confidence", positionConfidence)
 
@@ -676,7 +663,16 @@ func (h *WaypointHandler) UploadPhotoWaypoint(c echo.Context) error {
 		waypoint.Set("altitude", *altitude)
 	}
 
-	if err := h.app.Dao().SaveRecord(waypoint); err != nil {
+	// Use PocketBase forms to handle the file upload properly
+	form := forms.NewRecordUpsert(h.app, waypoint)
+
+	// Load the multipart form data (this will handle the photo file)
+	if err := form.LoadRequest(c.Request(), ""); err != nil {
+		return apis.NewBadRequestError("Failed to parse form data", err)
+	}
+
+	// Submit the form (this will save the record and handle file upload)
+	if err := form.Submit(); err != nil {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to create waypoint", err)
 	}
 

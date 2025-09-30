@@ -67,6 +67,31 @@
   background: var(--color-primary-dark);
 }
 
+.add-photo-waypoint-btn {
+  background: var(--color-secondary, #6f42c1);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.add-photo-waypoint-btn:hover {
+  background: var(--color-secondary-dark, #5a2d91);
+}
+
+.add-photo-waypoint-btn:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
 .waypoints-list {
   flex: 1;
   overflow-y: auto;
@@ -530,6 +555,7 @@
 
 /* Loading and disabled states */
 .waypoint-manager-widget .add-waypoint-btn:disabled,
+.waypoint-manager-widget .add-photo-waypoint-btn:disabled,
 .waypoint-manager-widget .submit-btn:disabled {
   background: var(--bg-tertiary);
   color: var(--text-disabled);
@@ -606,4 +632,31 @@
     transform: none;
     max-width: none;
   }
+}
+
+/* Waypoint photo display */
+.waypoint-photo-display {
+  margin: 0;
+}
+
+.waypoint-photo-display .photo-preview {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  display: inline-block;
+}
+
+.waypoint-photo-display .photo-preview a {
+  display: block;
+  transition: opacity 0.2s;
+}
+
+.waypoint-photo-display .photo-preview a:hover {
+  opacity: 0.8;
+}
+
+.waypoint-photo-display .photo-preview img {
+  display: block;
+  max-width: 200px;
+  height: auto;
 }

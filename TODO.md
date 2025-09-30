@@ -1,7 +1,3 @@
-- waypoints:
-  - photo support
-  - waypoint confidence?
-
 - better (location tracking) session management
   - multi-user sessions
     - refactor route display to support multiple users

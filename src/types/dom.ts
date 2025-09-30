@@ -91,6 +91,15 @@ export interface WaypointManagerWidgetElement extends HTMLElement {
   refreshWaypoints(): void;
   showCreateForm(): void;
   hideCreateForm(): void;
+  showPhotoUploadDialog(): void;
+  setPhotoWaypointLocation(latitude: number, longitude: number): void;
+}
+
+export interface PhotoWaypointUploadWidgetElement extends HTMLElement {
+  setSessionId(sessionId: string): void;
+  show(): void;
+  hide(): void;
+  setManualLocation(latitude: number, longitude: number): void;
 }
 
 // Chart widget

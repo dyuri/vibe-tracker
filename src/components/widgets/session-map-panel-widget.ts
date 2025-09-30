@@ -225,6 +225,18 @@ export default class SessionMapPanelWidget
   }
 
   /**
+   * Centers the map on a specific location
+   */
+  private centerMapOnLocation(latitude: number, longitude: number): void {
+    const mapWidget = document.querySelector('map-widget') as any;
+    if (mapWidget && mapWidget.centerOnCoordinates) {
+      mapWidget.centerOnCoordinates(latitude, longitude);
+    } else {
+      console.warn('Map widget not found or centerOnCoordinates method not available');
+    }
+  }
+
+  /**
    * Highlight a point (used by map-chart interaction)
    */
   highlightPoint(index: number): void {
@@ -516,6 +528,10 @@ export default class SessionMapPanelWidget
       });
       waypointWidget.addEventListener('waypoint-deleted', () => {
         this.refreshWaypointsOnMap();
+      });
+      waypointWidget.addEventListener('center-on-waypoint', (event: CustomEvent) => {
+        const { latitude, longitude } = event.detail;
+        this.centerMapOnLocation(latitude, longitude);
       });
     }
   }

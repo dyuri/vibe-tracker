@@ -9,6 +9,17 @@ export interface UpdateWaypointRequest extends Partial<CreateWaypointRequest> {
   id?: string;
 }
 
+export interface PhotoWaypointMetadata {
+  name: string;
+  type: string;
+  description?: string;
+  sessionId: string;
+  manualLocation?: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
 export class WaypointService {
   private baseUrl: string;
 
@@ -119,7 +130,7 @@ export class WaypointService {
   async updateWaypoint(id: string, data: UpdateWaypointRequest): Promise<WaypointFeature> {
     try {
       const response = await fetch(`${this.baseUrl}/api/waypoints/${id}`, {
-        method: 'PATCH',
+        method: 'PUT',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -236,6 +247,207 @@ export class WaypointService {
       return data;
     } catch (error) {
       console.error('Error fetching user waypoints:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a waypoint from a photo with EXIF data extraction
+   */
+  async createWaypointFromPhoto(
+    file: File,
+    metadata: PhotoWaypointMetadata
+  ): Promise<WaypointFeature> {
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+      formData.append('session_id', metadata.sessionId);
+      formData.append('name', metadata.name);
+      formData.append('type', metadata.type);
+
+      if (metadata.description) {
+        formData.append('description', metadata.description);
+      }
+
+      // If manual location is provided, include it
+      if (metadata.manualLocation) {
+        formData.append('latitude', metadata.manualLocation.latitude.toString());
+        formData.append('longitude', metadata.manualLocation.longitude.toString());
+      }
+
+      const response = await fetch(`${this.baseUrl}/api/waypoints/photo`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          // Don't set Content-Type header - let browser set it with boundary for FormData
+          ...this.getAuthHeaders(),
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          errorData.message ||
+          `Failed to create waypoint from photo: ${response.status} ${response.statusText}`;
+        console.error('Photo waypoint creation error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+        });
+        throw new Error(errorMessage);
+      }
+
+      const waypoint = await response.json();
+      return waypoint;
+    } catch (error) {
+      console.error('Error creating waypoint from photo:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get photo URL for a waypoint
+   */
+  getPhotoUrl(waypointId: string): string {
+    return `${this.baseUrl}/api/waypoints/${waypointId}/photo`;
+  }
+
+  /**
+   * Generate thumbnail URL for a photo waypoint
+   * This could be enhanced with server-side thumbnail generation
+   */
+  getThumbnailUrl(waypointId: string, size: 'small' | 'medium' | 'large' = 'small'): string {
+    return `${this.baseUrl}/api/waypoints/${waypointId}/photo?thumbnail=${size}`;
+  }
+
+  /**
+   * Generate thumbnail from photo URL using Canvas API (client-side)
+   */
+  async generateThumbnail(photoUrl: string, maxSize: number = 150): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          if (!ctx) {
+            reject(new Error('Could not get canvas context'));
+            return;
+          }
+
+          // Calculate thumbnail dimensions while maintaining aspect ratio
+          let { width, height } = img;
+          if (width > height) {
+            if (width > maxSize) {
+              height = (height * maxSize) / width;
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width = (width * maxSize) / height;
+              height = maxSize;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          // Draw the thumbnail
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert to data URL
+          const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
+          resolve(thumbnailUrl);
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      img.onerror = () => {
+        reject(new Error('Failed to load image for thumbnail generation'));
+      };
+
+      img.src = photoUrl;
+    });
+  }
+
+  /**
+   * Check if a waypoint has a photo
+   */
+  async hasPhoto(waypointId: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/waypoints/${waypointId}/photo`, {
+        method: 'HEAD',
+        credentials: 'include',
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.warn('Error checking waypoint photo:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Delete photo from a waypoint
+   */
+  async deleteWaypointPhoto(waypointId: string): Promise<void> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/waypoints/${waypointId}/photo`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message ||
+            `Failed to delete waypoint photo: ${response.status} ${response.statusText}`
+        );
+      }
+    } catch (error) {
+      console.error('Error deleting waypoint photo:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get photo metadata (EXIF data, dimensions, etc.)
+   */
+  async getPhotoMetadata(waypointId: string): Promise<{
+    size: number;
+    dimensions: { width: number; height: number };
+    exif?: any;
+    mimeType: string;
+  }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/waypoints/${waypointId}/photo-metadata`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          ...this.getAuthHeaders(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to get photo metadata: ${response.status} ${response.statusText}`);
+      }
+
+      const metadata = await response.json();
+      return metadata;
+    } catch (error) {
+      console.error('Error getting photo metadata:', error);
       throw error;
     }
   }

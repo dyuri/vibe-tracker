@@ -284,15 +284,31 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    * Creates popup content for waypoints
    */
   createWaypointPopupContent(waypoint: WaypointFeature): string {
-    const { name, type, description, altitude, source, position_confidence } = waypoint.properties;
+    const { name, type, description, altitude, source, position_confidence, photo, id } =
+      waypoint.properties;
     const coords = waypoint.geometry.coordinates;
 
     const altitudeText = altitude ? `<b>Altitude:</b> ${altitude} m<br>` : '';
     const descriptionText = description ? `<b>Description:</b> ${description}<br>` : '';
 
+    // Add photo display if available
+    let photoHtml = '';
+    if (photo) {
+      const photoUrl = `/api/files/waypoints/${id}/${photo}`;
+      const thumbnailUrl = `${photoUrl}?thumb=150x150`;
+      photoHtml = `
+        <div class="waypoint-photo">
+          <a href="${photoUrl}" target="_blank" rel="noopener noreferrer">
+            <img src="${thumbnailUrl}" alt="${name}" />
+          </a>
+        </div>
+      `;
+    }
+
     return `
       <div class="waypoint-popup">
         <h4>${name}</h4>
+        ${photoHtml}
         <b>Type:</b> ${type.charAt(0).toUpperCase() + type.slice(1)}<br>
         ${descriptionText}
         <b>Coordinates:</b> ${coords[1].toFixed(6)}, ${coords[0].toFixed(6)}<br>

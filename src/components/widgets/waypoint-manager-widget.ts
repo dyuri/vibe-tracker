@@ -5,9 +5,13 @@ import type {
   PositionConfidence,
   CreateWaypointRequest,
   WaypointManagerWidgetElement,
+  PhotoWaypointUploadWidgetElement,
 } from '@/types';
 import { waypointService } from '@/services/waypoint-service';
 import styles from '@/styles/components/widgets/waypoint-manager-widget.css?inline';
+
+// Import the photo upload widget
+import './photo-waypoint-upload-widget';
 
 /**
  * Waypoint Manager Widget Web Component
@@ -77,6 +81,19 @@ export default class WaypointManagerWidget
     this.showingCreateForm = false;
     this.updateFormDisplay();
     this.resetForm();
+  }
+
+  /**
+   * Shows the photo upload dialog
+   */
+  showPhotoUploadDialog(): void {
+    const photoWidget = this.shadowRoot!.querySelector(
+      'photo-waypoint-upload-widget'
+    ) as PhotoWaypointUploadWidgetElement;
+    if (photoWidget) {
+      photoWidget.setSessionId(this.sessionId);
+      photoWidget.show();
+    }
   }
 
   /**
@@ -168,10 +185,13 @@ export default class WaypointManagerWidget
             </div>
           </div>
           <div class="waypoint-actions">
-            <button class="action-btn edit-btn" data-action="edit" data-waypoint-id="${waypoint.properties.id}">
+            <button class="action-btn center-btn" data-action="center" data-waypoint-id="${waypoint.properties.id}" data-lat="${coords[1]}" data-lng="${coords[0]}" title="Center on map">
+              🎯
+            </button>
+            <button class="action-btn edit-btn" data-action="edit" data-waypoint-id="${waypoint.properties.id}" title="Edit waypoint">
               ✏️
             </button>
-            <button class="action-btn delete-btn" data-action="delete" data-waypoint-id="${waypoint.properties.id}">
+            <button class="action-btn delete-btn" data-action="delete" data-waypoint-id="${waypoint.properties.id}" title="Delete waypoint">
               🗑️
             </button>
           </div>
@@ -242,6 +262,23 @@ export default class WaypointManagerWidget
     const form = this.shadowRoot!.querySelector('#waypoint-form') as HTMLFormElement;
     if (form) {
       form.reset();
+      // Remove photo display if present
+      const photoDisplay = form.querySelector('.waypoint-photo-display');
+      if (photoDisplay) {
+        photoDisplay.remove();
+      }
+    }
+    this.editingWaypointId = null;
+
+    // Reset form title and button text
+    const formTitle = this.shadowRoot!.querySelector('.form-header h4');
+    if (formTitle) {
+      formTitle.textContent = 'Create New Waypoint';
+    }
+
+    const submitBtn = this.shadowRoot!.querySelector('.submit-btn') as HTMLButtonElement;
+    if (submitBtn) {
+      submitBtn.textContent = 'Create Waypoint';
     }
   }
 
@@ -252,6 +289,61 @@ export default class WaypointManagerWidget
     this.shadowRoot!.addEventListener('click', this.handleClick.bind(this));
     this.shadowRoot!.addEventListener('submit', this.handleFormSubmit.bind(this));
     this.shadowRoot!.addEventListener('change', this.handleChange.bind(this));
+
+    // Set up photo upload widget event listeners
+    this.setupPhotoUploadListeners();
+  }
+
+  /**
+   * Sets up event listeners for the photo upload widget
+   */
+  private setupPhotoUploadListeners(): void {
+    const photoWidget = this.shadowRoot!.querySelector(
+      'photo-waypoint-upload-widget'
+    ) as PhotoWaypointUploadWidgetElement;
+
+    if (photoWidget) {
+      // Listen for successful waypoint creation from photo
+      photoWidget.addEventListener('waypoint-created', (event: CustomEvent) => {
+        console.log('Photo waypoint created:', event.detail);
+
+        // Refresh the waypoints list to show the new photo waypoint
+        this.fetchWaypoints();
+
+        // Emit the same event up to parent components (like map widget)
+        this.dispatchEvent(
+          new CustomEvent('waypoint-created', {
+            detail: event.detail,
+            bubbles: true,
+          })
+        );
+      });
+
+      // Listen for location picking requests
+      photoWidget.addEventListener('pick-location', (_event: CustomEvent) => {
+        console.log('Photo widget requesting location pick');
+
+        // Forward the pick-location event to parent components
+        this.dispatchEvent(
+          new CustomEvent('pick-location-for-photo', {
+            bubbles: true,
+            composed: true,
+          })
+        );
+      });
+    }
+  }
+
+  /**
+   * Sets manual location for photo waypoint (called from map integration)
+   */
+  setPhotoWaypointLocation(latitude: number, longitude: number): void {
+    const photoWidget = this.shadowRoot!.querySelector(
+      'photo-waypoint-upload-widget'
+    ) as PhotoWaypointUploadWidgetElement;
+    if (photoWidget) {
+      photoWidget.setManualLocation(latitude, longitude);
+    }
   }
 
   /**
@@ -262,11 +354,15 @@ export default class WaypointManagerWidget
 
     if (target.classList.contains('add-waypoint-btn')) {
       this.showCreateForm();
+    } else if (target.classList.contains('add-photo-waypoint-btn')) {
+      this.showPhotoUploadDialog();
     } else if (
       target.classList.contains('cancel-btn') ||
       target.classList.contains('form-overlay')
     ) {
       this.hideCreateForm();
+    } else if (target.dataset.action === 'center') {
+      this.handleCenterOnMap(parseFloat(target.dataset.lat!), parseFloat(target.dataset.lng!));
     } else if (target.dataset.action === 'edit') {
       this.handleEditWaypoint(target.dataset.waypointId!);
     } else if (target.dataset.action === 'delete') {
@@ -430,9 +526,11 @@ export default class WaypointManagerWidget
   private handleEditWaypoint(waypointId: string): void {
     const waypoint = this.waypoints.find(w => w.properties.id === waypointId);
     if (waypoint) {
-      // Populate form with existing data and show it
+      // Show form first (without resetting editing ID)
+      this.showingCreateForm = true;
+      this.updateFormDisplay();
+      // Then populate form with existing data
       this.populateFormForEdit(waypoint);
-      this.showCreateForm();
     }
   }
 
@@ -463,6 +561,48 @@ export default class WaypointManagerWidget
     if (submitBtn) {
       submitBtn.textContent = 'Update Waypoint';
     }
+
+    // Display photo if available
+    this.displayWaypointPhoto(waypoint);
+  }
+
+  /**
+   * Displays waypoint photo in the edit form
+   */
+  private displayWaypointPhoto(waypoint: WaypointFeature): void {
+    const photo = waypoint.properties.photo;
+    const form = this.shadowRoot!.querySelector('#waypoint-form') as HTMLFormElement;
+
+    // Remove existing photo display if any
+    const existingPhotoDisplay = form.querySelector('.waypoint-photo-display');
+    if (existingPhotoDisplay) {
+      existingPhotoDisplay.remove();
+    }
+
+    // Add photo display if waypoint has a photo
+    if (photo) {
+      const photoUrl = `/api/files/waypoints/${waypoint.properties.id}/${photo}`;
+      const thumbnailUrl = `${photoUrl}?thumb=200x200`;
+
+      const photoDisplay = document.createElement('div');
+      photoDisplay.className = 'waypoint-photo-display';
+      photoDisplay.innerHTML = `
+        <div class="form-group">
+          <label>Photo</label>
+          <div class="photo-preview">
+            <a href="${photoUrl}" target="_blank" rel="noopener noreferrer">
+              <img src="${thumbnailUrl}" alt="${waypoint.properties.name}" />
+            </a>
+          </div>
+        </div>
+      `;
+
+      // Insert after the type field
+      const typeGroup = form.querySelector('[name="type"]')?.closest('.form-group');
+      if (typeGroup) {
+        typeGroup.after(photoDisplay);
+      }
+    }
   }
 
   /**
@@ -478,6 +618,20 @@ export default class WaypointManagerWidget
         console.error('Delete operation failed:', error);
       }
     }
+  }
+
+  /**
+   * Centers the map on a waypoint's location
+   */
+  private handleCenterOnMap(latitude: number, longitude: number): void {
+    // Dispatch event to center map on waypoint location
+    this.dispatchEvent(
+      new CustomEvent('center-on-waypoint', {
+        detail: { latitude, longitude },
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   /**
@@ -519,6 +673,9 @@ export default class WaypointManagerWidget
     // Disable form buttons during loading
     const submitBtn = this.shadowRoot!.querySelector('.submit-btn') as HTMLButtonElement;
     const addBtn = this.shadowRoot!.querySelector('.add-waypoint-btn') as HTMLButtonElement;
+    const addPhotoBtn = this.shadowRoot!.querySelector(
+      '.add-photo-waypoint-btn'
+    ) as HTMLButtonElement;
 
     if (submitBtn) {
       submitBtn.disabled = loading;
@@ -527,6 +684,10 @@ export default class WaypointManagerWidget
 
     if (addBtn) {
       addBtn.disabled = loading;
+    }
+
+    if (addPhotoBtn) {
+      addPhotoBtn.disabled = loading;
     }
   }
 
@@ -706,6 +867,7 @@ export default class WaypointManagerWidget
           <h3>Waypoints</h3>
           <div class="header-controls">
             <button class="add-waypoint-btn">+ Add Waypoint</button>
+            <button class="add-photo-waypoint-btn">📷 Add from Photo</button>
           </div>
         </div>
 
@@ -777,6 +939,9 @@ export default class WaypointManagerWidget
             </form>
           </div>
         </div>
+
+        <!-- Photo Waypoint Upload Widget -->
+        <photo-waypoint-upload-widget></photo-waypoint-upload-widget>
       </div>
     `;
   }

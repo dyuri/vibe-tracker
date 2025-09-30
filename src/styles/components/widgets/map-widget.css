@@ -248,3 +248,27 @@
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 4px;
 }
+
+/* Waypoint photo in popup */
+.waypoint-photo {
+  margin: 10px 0;
+  text-align: center;
+}
+
+.waypoint-photo a {
+  display: inline-block;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: opacity 0.2s;
+}
+
+.waypoint-photo a:hover {
+  opacity: 0.8;
+}
+
+.waypoint-photo img {
+  display: block;
+  max-width: 150px;
+  height: auto;
+}
