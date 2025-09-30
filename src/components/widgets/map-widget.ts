@@ -102,25 +102,76 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   setViewFromUrlHash(): boolean {
     const hash = window.location.hash;
     if (hash.startsWith('#map=')) {
-      const parts = hash.substring(5).split('/');
-      if (parts.length === 3) {
-        const lat = parseFloat(parts[0]);
-        const lon = parseFloat(parts[1]);
-        const zoom = parseInt(parts[2], 10);
-        if (!isNaN(lat) && !isNaN(lon) && !isNaN(zoom)) {
-          this.map!.setView([lat, lon], zoom);
-          return true;
+      const hashParts = hash.substring(1).split('&');
+      const mapParam = hashParts.find(p => p.startsWith('map='));
+
+      if (mapParam) {
+        const parts = mapParam.substring(4).split('/');
+        if (parts.length === 3) {
+          const lat = parseFloat(parts[0]);
+          const lon = parseFloat(parts[1]);
+          const zoom = parseInt(parts[2], 10);
+          if (!isNaN(lat) && !isNaN(lon) && !isNaN(zoom)) {
+            this.map!.setView([lat, lon], zoom);
+            // Note: waypoint parameter is handled in displayWaypoints() after waypoints are loaded
+            return true;
+          }
         }
       }
     }
     return false;
   }
 
-  updateUrlHash(): void {
+  updateUrlHash(waypointId?: string): void {
+    const center = this.map!.getCenter();
+    const zoom = this.map!.getZoom();
+    let hash = `#map=${center.lat.toFixed(6)}/${center.lng.toFixed(6)}/${zoom}`;
+
+    // If waypointId is explicitly provided, use it
+    // If not provided but we want to preserve existing waypoint, extract it from current URL
+    if (waypointId) {
+      hash += `&wp=${waypointId}`;
+    } else {
+      // Preserve existing waypoint parameter if present
+      const currentHash = window.location.hash;
+      if (currentHash.includes('&wp=')) {
+        const wpMatch = currentHash.match(/&wp=([^&]+)/);
+        if (wpMatch) {
+          hash += `&wp=${wpMatch[1]}`;
+        }
+      }
+    }
+
+    history.replaceState(null, null, hash);
+  }
+
+  /**
+   * Removes waypoint parameter from URL
+   */
+  private clearWaypointFromUrl(): void {
     const center = this.map!.getCenter();
     const zoom = this.map!.getZoom();
     const hash = `#map=${center.lat.toFixed(6)}/${center.lng.toFixed(6)}/${zoom}`;
     history.replaceState(null, null, hash);
+  }
+
+  /**
+   * Opens a waypoint popup by waypoint ID
+   */
+  private openWaypointPopupById(waypointId: string): void {
+    if (!this.waypointsLayerGroup) {
+      return;
+    }
+
+    // Search through all waypoint markers to find the matching one
+    this.waypointsLayerGroup.eachLayer((layer: any) => {
+      if (layer.waypointId === waypointId) {
+        // Found the marker, open its popup
+        if (layer.openPopup) {
+          layer.openPopup();
+        }
+      }
+    });
   }
 
   /**
@@ -208,8 +259,31 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       const popupContent = this.createWaypointPopupContent(waypoint);
       marker.bindPopup(popupContent);
 
+      // Update URL when popup is opened
+      marker.on('popupopen', () => {
+        this.updateUrlHash(waypoint.properties.id);
+      });
+
+      // Remove waypoint parameter when popup is closed
+      marker.on('popupclose', () => {
+        this.clearWaypointFromUrl();
+      });
+
       this.waypointsLayerGroup!.addLayer(marker);
     });
+
+    // After waypoints are loaded, check if URL has a waypoint parameter to open
+    const hash = window.location.hash;
+    if (hash.includes('&wp=')) {
+      const wpMatch = hash.match(/&wp=([^&]+)/);
+      if (wpMatch) {
+        const waypointId = wpMatch[1];
+        // Use setTimeout to ensure markers are fully added to the map
+        setTimeout(() => {
+          this.openWaypointPopupById(waypointId);
+        }, 100);
+      }
+    }
   }
 
   /**
@@ -222,7 +296,10 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       waypoint.properties.position_confidence
     );
 
-    return L.marker([latitude, longitude], { icon });
+    const marker = L.marker([latitude, longitude], { icon });
+    // Store waypoint ID on marker for later retrieval
+    (marker as any).waypointId = waypoint.properties.id;
+    return marker;
   }
 
   /**
@@ -762,13 +839,34 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   /**
    * Center map on specific coordinates
    */
-  centerOnCoordinates(latitude: number, longitude: number, zoom?: number): void {
+  centerOnCoordinates(
+    latitude: number,
+    longitude: number,
+    zoomOrWaypointId?: number | string
+  ): void {
     if (!this.map) {
       console.warn('Map not initialized, cannot center on coordinates');
       return;
     }
 
+    let zoom: number | undefined;
+    let waypointId: string | undefined;
+
+    // Handle overloaded parameters
+    if (typeof zoomOrWaypointId === 'number') {
+      zoom = zoomOrWaypointId;
+    } else if (typeof zoomOrWaypointId === 'string') {
+      waypointId = zoomOrWaypointId;
+    }
+
     this.map.setView([latitude, longitude], zoom || this.map.getZoom());
+
+    // Update URL hash with waypoint ID if provided
+    if (waypointId) {
+      this.updateUrlHash(waypointId);
+      // Also open the waypoint popup
+      this.openWaypointPopupById(waypointId);
+    }
   }
 
   /**

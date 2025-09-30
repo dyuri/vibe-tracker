@@ -362,7 +362,11 @@ export default class WaypointManagerWidget
     ) {
       this.hideCreateForm();
     } else if (target.dataset.action === 'center') {
-      this.handleCenterOnMap(parseFloat(target.dataset.lat!), parseFloat(target.dataset.lng!));
+      this.handleCenterOnMap(
+        parseFloat(target.dataset.lat!),
+        parseFloat(target.dataset.lng!),
+        target.dataset.waypointId!
+      );
     } else if (target.dataset.action === 'edit') {
       this.handleEditWaypoint(target.dataset.waypointId!);
     } else if (target.dataset.action === 'delete') {
@@ -623,11 +627,11 @@ export default class WaypointManagerWidget
   /**
    * Centers the map on a waypoint's location
    */
-  private handleCenterOnMap(latitude: number, longitude: number): void {
+  private handleCenterOnMap(latitude: number, longitude: number, waypointId: string): void {
     // Dispatch event to center map on waypoint location
     this.dispatchEvent(
       new CustomEvent('center-on-waypoint', {
-        detail: { latitude, longitude },
+        detail: { latitude, longitude, waypointId },
         bubbles: true,
         composed: true,
       })

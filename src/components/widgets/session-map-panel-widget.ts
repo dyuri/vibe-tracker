@@ -227,10 +227,10 @@ export default class SessionMapPanelWidget
   /**
    * Centers the map on a specific location
    */
-  private centerMapOnLocation(latitude: number, longitude: number): void {
+  private centerMapOnLocation(latitude: number, longitude: number, waypointId?: string): void {
     const mapWidget = document.querySelector('map-widget') as any;
     if (mapWidget && mapWidget.centerOnCoordinates) {
-      mapWidget.centerOnCoordinates(latitude, longitude);
+      mapWidget.centerOnCoordinates(latitude, longitude, waypointId);
     } else {
       console.warn('Map widget not found or centerOnCoordinates method not available');
     }
@@ -530,8 +530,8 @@ export default class SessionMapPanelWidget
         this.refreshWaypointsOnMap();
       });
       waypointWidget.addEventListener('center-on-waypoint', (event: CustomEvent) => {
-        const { latitude, longitude } = event.detail;
-        this.centerMapOnLocation(latitude, longitude);
+        const { latitude, longitude, waypointId } = event.detail;
+        this.centerMapOnLocation(latitude, longitude, waypointId);
       });
     }
   }
