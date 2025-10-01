@@ -92,9 +92,30 @@ function showUpdateAvailable(registration: ServiceWorkerRegistration): void {
   const dismissButton = updateBanner.querySelector('#dismiss-button');
 
   updateButton?.addEventListener('click', () => {
-    // Skip waiting and reload
-    registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
-    window.location.reload();
+    const waitingWorker = registration.waiting;
+    if (waitingWorker) {
+      // Send skip waiting message (in case SW supports it)
+      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+
+      // Listen for the controlling service worker change
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
+
+      // Fallback: reload after a short delay if controllerchange doesn't fire
+      setTimeout(() => {
+        if (!refreshing) {
+          window.location.reload();
+        }
+      }, 100);
+    } else {
+      // No waiting worker, just reload
+      window.location.reload();
+    }
   });
 
   dismissButton?.addEventListener('click', () => {

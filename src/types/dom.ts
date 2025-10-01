@@ -53,19 +53,6 @@ export interface MapWidgetElement extends HTMLElement, CustomElementLifecycle {
   displayWaypoints(data: WaypointsResponse): void;
 }
 
-// Theme toggle widget
-export interface ThemeToggleElement extends HTMLElement, CustomElementLifecycle {}
-
-// Location widget
-export interface LocationWidgetElement extends HTMLElement, CustomElementLifecycle {
-  update(detail: any): void;
-}
-
-// Login widget
-export interface LoginWidgetElement extends HTMLElement, CustomElementLifecycle {
-  showPanel(): void;
-}
-
 // Profile widget
 export interface ProfileWidgetElement extends HTMLElement, CustomElementLifecycle {}
 
@@ -143,9 +130,6 @@ export interface GeolocationPosition {
 declare global {
   interface HTMLElementTagNameMap {
     'map-widget': MapWidgetElement;
-    'theme-toggle': ThemeToggleElement;
-    'location-widget': LocationWidgetElement;
-    'login-widget': LoginWidgetElement;
     'profile-widget': ProfileWidgetElement;
     'session-management-widget': SessionManagementWidgetElement;
     'chart-widget': ChartWidgetElement;

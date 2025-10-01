@@ -5,6 +5,7 @@
 import { Plugin } from 'vite';
 import { generateSW } from 'workbox-build';
 import path from 'path';
+import fs from 'fs';
 
 export function workboxPlugin(): Plugin {
   return {
@@ -20,7 +21,7 @@ export function workboxPlugin(): Plugin {
             globDirectory: path.resolve(options.dir || 'dist'),
             globPatterns: ['**/*.{html,js,css,png,svg,jpg,jpeg,gif,webp,woff,woff2,ttf,eot}'],
             swDest: path.resolve(options.dir || 'dist', 'sw.js'),
-            skipWaiting: true,
+            skipWaiting: false, // Changed to false, we'll handle it manually
             clientsClaim: true,
             runtimeCaching: [
               {
@@ -82,6 +83,24 @@ export function workboxPlugin(): Plugin {
             console.warn('⚠️  Workbox warnings:');
             warnings.forEach(warning => console.warn(`   ${warning}`));
           }
+
+          // Add message listener for SKIP_WAITING
+          const swPath = path.resolve(options.dir || 'dist', 'sw.js');
+          let swContent = fs.readFileSync(swPath, 'utf-8');
+
+          // Inject message listener at the end of the file
+          const messageListener = `
+// Listen for SKIP_WAITING message
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+`;
+          swContent += messageListener;
+          fs.writeFileSync(swPath, swContent);
+
+          console.log('✅ Added SKIP_WAITING message listener to service worker');
         } catch (error) {
           console.error('❌ Failed to generate service worker:', error);
           throw error;

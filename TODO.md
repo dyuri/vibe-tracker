@@ -1,5 +1,7 @@
 - bugs
   - manual "add waypoint" is broken, the popup is opened at the bottom of the content (not as a popup)
+  - get rid of unused widgets
+  - WPA update?
 
 - frontend improvements
   - waypoint / marker styles are inconsistent

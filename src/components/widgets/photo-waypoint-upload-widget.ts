@@ -280,8 +280,11 @@ export default class PhotoWaypointUploadWidget
     if (target.classList.contains('close-btn') || target.classList.contains('cancel-btn')) {
       this.hide();
     } else if (target.classList.contains('file-input-trigger')) {
+      console.log('!!! CLICK !!!');
       const fileInput = this.shadowRoot!.querySelector('#photo-file-input') as HTMLInputElement;
-      fileInput.click();
+      if (fileInput) {
+        fileInput.click();
+      }
     } else if (target.classList.contains('pick-location-btn')) {
       this.handlePickLocation();
     }
@@ -423,15 +426,20 @@ export default class PhotoWaypointUploadWidget
     }
 
     return `
-      <div class="drop-zone">
-        <div class="drop-zone-content">
-          <div class="drop-zone-icon">📷</div>
-          <div class="drop-zone-text">
-            <p>Drag and drop a photo here</p>
-            <p>or <button type="button" class="file-input-trigger">choose a file</button></p>
+      <div class="drop-zone-container">
+        <div class="drop-zone">
+          <div class="drop-zone-content">
+            <div class="drop-zone-icon">📷</div>
+            <div class="drop-zone-text">
+              <p>Drag and drop a photo here</p>
+            </div>
           </div>
-          <input type="file" id="photo-file-input" accept="image/*" style="display: none;">
         </div>
+        <div class="file-select-section">
+          <p>or</p>
+          <button type="button" class="file-input-trigger">Choose a file</button>
+        </div>
+        <input type="file" id="photo-file-input" accept="image/*" style="display: none;">
       </div>
     `;
   }

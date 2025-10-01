@@ -1,6 +1,11 @@
 /* Import UI component styles */
 @import '@/styles/ui/button.css';
 @import '@/styles/ui/checkbox.css';
+@import '@/styles/ui/input.css';
+@import '@/styles/ui/textarea.css';
+@import '@/styles/ui/select.css';
+@import '@/styles/ui/label.css';
+@import '@/styles/ui/overlay.css';
 
 :host {
   display: block;
@@ -267,6 +272,65 @@
 
 .photo-modal-close:hover {
   background: #f0f0f0;
+}
+
+/* Form-specific styles - uses generic overlay styles from ui/overlay.css */
+
+/* Coordinates section styling */
+.coordinates-section {
+  background: var(--bg-secondary);
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.coordinates-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.coordinates-header h5 {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.coordinate-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pick-from-map-btn,
+.cancel-map-selection-btn {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.pick-from-map-btn {
+  background: var(--color-secondary, #6f42c1);
+  color: white;
+}
+
+.pick-from-map-btn:hover {
+  background: var(--color-secondary-dark, #5a2d91);
+}
+
+.cancel-map-selection-btn {
+  background: var(--color-danger);
+  color: white;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.coordinate-input {
+  font-family: monospace;
 }
 
 /* Responsive */

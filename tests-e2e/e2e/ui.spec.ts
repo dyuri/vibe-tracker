@@ -14,57 +14,7 @@ test.describe('User Interface', () => {
     await expect(page.locator('#content')).toBeVisible();
 
     // Check that essential widgets are present on main page
-    await expect(page.locator('login-widget')).toBeVisible();
     await expect(page.locator('map-widget')).toBeVisible();
-    await expect(page.locator('theme-toggle')).toBeVisible();
-  });
-
-  test('should display theme toggle widget', async ({ page }) => {
-    // Check for theme toggle widget
-    const themeToggle = page.locator('theme-toggle');
-    await expect(themeToggle).toBeVisible();
-
-    // Check that theme toggle works
-    await page.evaluate(() => {
-      const themeWidget = document.querySelector('theme-toggle') as any;
-      const shadowRoot = themeWidget?.shadowRoot;
-      if (shadowRoot) {
-        const toggleButton = shadowRoot.querySelector('#theme-toggle-btn') as HTMLButtonElement;
-        if (toggleButton) toggleButton.click();
-      }
-    });
-
-    // Wait for theme change
-    await page.waitForTimeout(500);
-
-    // Check that theme has changed (look for dark theme class or attribute)
-    const isDarkTheme = await page.evaluate(() => {
-      return (
-        document.documentElement.classList.contains('dark-theme') ||
-        document.documentElement.getAttribute('data-theme') === 'dark'
-      );
-    });
-
-    // Toggle back
-    await page.evaluate(() => {
-      const themeWidget = document.querySelector('theme-toggle-widget') as any;
-      const shadowRoot = themeWidget?.shadowRoot;
-      if (shadowRoot) {
-        const toggleButton = shadowRoot.querySelector('#theme-toggle-btn') as HTMLButtonElement;
-        if (toggleButton) toggleButton.click();
-      }
-    });
-
-    await page.waitForTimeout(500);
-
-    const isLightTheme = await page.evaluate(() => {
-      return (
-        !document.documentElement.classList.contains('dark-theme') &&
-        document.documentElement.getAttribute('data-theme') !== 'dark'
-      );
-    });
-
-    expect(isLightTheme).toBe(true);
   });
 
   test('should handle responsive design - mobile viewport', async ({ page }) => {
@@ -72,7 +22,6 @@ test.describe('User Interface', () => {
     await page.setViewportSize({ width: 375, height: 667 });
 
     // Check that widgets are still visible and functional
-    await expect(page.locator('login-widget')).toBeVisible();
     await expect(page.locator('map-widget')).toBeVisible();
 
     // Check that map widget adapts to mobile size
@@ -94,9 +43,7 @@ test.describe('User Interface', () => {
     await page.setViewportSize({ width: 768, height: 1024 });
 
     // Check that main page widgets are visible
-    await expect(page.locator('login-widget')).toBeVisible();
     await expect(page.locator('map-widget')).toBeVisible();
-    await expect(page.locator('theme-toggle')).toBeVisible();
 
     // Check layout adapts properly
     const contentWidth = await page
@@ -147,7 +94,7 @@ test.describe('User Interface', () => {
     // Check that an error message is displayed
     const hasError = await page.evaluate(() => {
       // Look for error messages in any widget
-      const widgets = ['session-management-widget', 'map-widget', 'login-widget'];
+      const widgets = ['session-management-widget', 'map-widget'];
 
       for (const widgetTag of widgets) {
         const widget = document.querySelector(widgetTag) as any;
@@ -197,36 +144,24 @@ test.describe('User Interface', () => {
   test('should display loading states appropriately', async ({ page }) => {
     // Login to trigger loading states
     const credentials = getTestCredentials();
+    await loginViaUI(page, credentials);
 
-    // Fill login form
-    await page.evaluate(creds => {
-      const loginWidget = document.querySelector('login-widget') as any;
-      const shadowRoot = loginWidget?.shadowRoot;
-      if (shadowRoot) {
-        const emailInput = shadowRoot.querySelector('#email') as HTMLInputElement;
-        const passwordInput = shadowRoot.querySelector('#password') as HTMLInputElement;
-
-        if (emailInput) emailInput.value = creds.email;
-        if (passwordInput) passwordInput.value = creds.password;
-      }
-    }, credentials);
-
-    // Click login and immediately check for loading state
+    // Try to perform an action that triggers loading (e.g., create session)
     await page.evaluate(() => {
-      const loginWidget = document.querySelector('login-widget') as any;
-      const shadowRoot = loginWidget?.shadowRoot;
+      const sessionWidget = document.querySelector('session-management-widget') as any;
+      const shadowRoot = sessionWidget?.shadowRoot;
       if (shadowRoot) {
-        const loginButton = shadowRoot.querySelector('#login-btn') as HTMLButtonElement;
-        if (loginButton) loginButton.click();
+        const createButton = shadowRoot.querySelector('#create-session-btn') as HTMLButtonElement;
+        if (createButton) createButton.click();
       }
     });
 
-    // Check for loading indicator (this should appear briefly)
+    // Check for loading indicator
     await page.waitForTimeout(100);
 
     const hasLoadingState = await page.evaluate(() => {
-      const loginWidget = document.querySelector('login-widget') as any;
-      const shadowRoot = loginWidget?.shadowRoot;
+      const sessionWidget = document.querySelector('session-management-widget') as any;
+      const shadowRoot = sessionWidget?.shadowRoot;
       if (shadowRoot) {
         const loadingIndicators = shadowRoot.querySelectorAll(
           '.loading, .spinner, [class*="loading"]'
@@ -238,24 +173,6 @@ test.describe('User Interface', () => {
 
     // Note: This test might be timing-dependent
     console.log('Loading state detected:', hasLoadingState);
-
-    // Wait for login to complete
-    await page.waitForTimeout(3000);
-
-    // Verify loading state is gone
-    const loadingGone = await page.evaluate(() => {
-      const loginWidget = document.querySelector('login-widget') as any;
-      const shadowRoot = loginWidget?.shadowRoot;
-      if (shadowRoot) {
-        const loadingIndicators = shadowRoot.querySelectorAll(
-          '.loading, .spinner, [class*="loading"]'
-        );
-        return loadingIndicators.length === 0;
-      }
-      return true;
-    });
-
-    expect(loadingGone).toBe(true);
   });
 
   test('should maintain consistent styling across components', async ({ page }) => {
@@ -277,7 +194,7 @@ test.describe('User Interface', () => {
 
     // Check that widgets inherit consistent styling
     const widgetStyles = await page.evaluate(() => {
-      const widgets = ['login-widget', 'map-widget', 'session-management-widget'];
+      const widgets = ['map-widget', 'session-management-widget'];
       const styles = {};
 
       widgets.forEach(widgetTag => {

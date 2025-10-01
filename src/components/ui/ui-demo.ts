@@ -487,7 +487,110 @@ export default class UiDemo extends HTMLElement {
           </div>
         </div>
       </div>
+
+      <!-- Overlays/Modals -->
+      <div class="demo-section">
+        <h2 class="demo-title">Overlays / Modals</h2>
+
+        <div class="demo-group">
+          <div class="demo-label">Overlay Structure</div>
+          <div class="demo-description">
+            Use the <code>overlay</code> class for full-screen centered overlays.
+            Add <code>overlay-content</code> for the modal content box.
+          </div>
+
+          <button id="show-overlay-demo">Show Overlay Demo</button>
+
+          <div id="overlay-demo" class="overlay" style="display: none;">
+            <div class="overlay-content overlay-md">
+              <div class="overlay-header">
+                <h3>Example Modal</h3>
+                <button id="close-overlay-demo" class="overlay-close">×</button>
+              </div>
+              <div class="overlay-body">
+                <p>This is an example of a modal overlay using the generic overlay styles.</p>
+                <p>The overlay is centered on screen and has a semi-transparent backdrop.</p>
+                <div class="form-group">
+                  <label for="demo-overlay-input">Example Input</label>
+                  <input type="text" id="demo-overlay-input" placeholder="Type something...">
+                </div>
+              </div>
+              <div class="overlay-footer">
+                <button class="btn-secondary" id="cancel-overlay-demo">Cancel</button>
+                <button>Save Changes</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="demo-description" style="margin-top: 1rem;">
+            HTML structure:
+            <pre style="background: var(--bg-secondary); padding: 1rem; border-radius: 4px; overflow-x: auto;"><code>&lt;div class="overlay"&gt;
+  &lt;div class="overlay-content overlay-md"&gt;
+    &lt;div class="overlay-header"&gt;
+      &lt;h3&gt;Title&lt;/h3&gt;
+      &lt;button class="overlay-close"&gt;×&lt;/button&gt;
+    &lt;/div&gt;
+    &lt;div class="overlay-body"&gt;
+      Content here...
+    &lt;/div&gt;
+    &lt;div class="overlay-footer"&gt;
+      &lt;button&gt;Action&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+          </div>
+        </div>
+
+        <div class="demo-group">
+          <div class="demo-label">Overlay Sizes</div>
+          <div class="demo-row">
+            <code>overlay-sm</code> (400px)
+            <code>overlay-md</code> (600px)
+            <code>overlay-lg</code> (800px)
+            <code>overlay-xl</code> (1200px)
+            <code>overlay-full</code> (95vw)
+          </div>
+          <div class="demo-description">
+            Add size classes to <code>overlay-content</code> element
+          </div>
+        </div>
+
+        <div class="demo-group">
+          <div class="demo-label">Overlay Variants</div>
+          <div class="demo-row">
+            <code>overlay</code> - Standard (50% black)
+            <code>overlay-dark</code> - Dark (75% black)
+            <code>overlay-light</code> - Light (90% white)
+          </div>
+        </div>
+      </div>
     `;
+
+    // Add event listeners for overlay demo
+    setTimeout(() => {
+      const showBtn = this.shadowRoot!.getElementById('show-overlay-demo');
+      const closeBtn = this.shadowRoot!.getElementById('close-overlay-demo');
+      const cancelBtn = this.shadowRoot!.getElementById('cancel-overlay-demo');
+      const overlay = this.shadowRoot!.getElementById('overlay-demo');
+
+      showBtn?.addEventListener('click', () => {
+        overlay!.style.display = 'flex';
+      });
+
+      const hideOverlay = () => {
+        overlay!.style.display = 'none';
+      };
+
+      closeBtn?.addEventListener('click', hideOverlay);
+      cancelBtn?.addEventListener('click', hideOverlay);
+
+      // Click outside to close
+      overlay?.addEventListener('click', e => {
+        if (e.target === overlay) {
+          hideOverlay();
+        }
+      });
+    }, 0);
   }
 }
 

@@ -243,14 +243,11 @@ export default class WaypointManagerWidget
    * Updates the form display based on showingCreateForm state
    */
   private updateFormDisplay(): void {
-    const form = this.shadowRoot!.querySelector('.create-form') as HTMLElement;
     const overlay = this.shadowRoot!.querySelector('.form-overlay') as HTMLElement;
 
     if (this.showingCreateForm) {
-      form.style.display = 'block';
-      overlay.style.display = 'block';
+      overlay.style.display = 'flex';
     } else {
-      form.style.display = 'none';
       overlay.style.display = 'none';
     }
   }
@@ -727,13 +724,9 @@ export default class WaypointManagerWidget
 
     // Hide form overlay during map selection
     const overlay = this.shadowRoot!.querySelector('.form-overlay') as HTMLElement;
-    const form = this.shadowRoot!.querySelector('.create-form') as HTMLElement;
 
     if (overlay) {
       overlay.style.display = 'none';
-    }
-    if (form) {
-      form.style.display = 'none';
     }
 
     // Get map widget and start selection mode
@@ -751,10 +744,7 @@ export default class WaypointManagerWidget
 
         // Restore form overlay
         if (overlay) {
-          overlay.style.display = 'block';
-        }
-        if (form) {
-          form.style.display = 'block';
+          overlay.style.display = 'flex';
         }
       };
 
@@ -767,10 +757,7 @@ export default class WaypointManagerWidget
 
       // Restore form overlay on error
       if (overlay) {
-        overlay.style.display = 'block';
-      }
-      if (form) {
-        form.style.display = 'block';
+        overlay.style.display = 'flex';
       }
     }
   }
@@ -790,13 +777,9 @@ export default class WaypointManagerWidget
 
     // Restore form overlay
     const overlay = this.shadowRoot!.querySelector('.form-overlay') as HTMLElement;
-    const form = this.shadowRoot!.querySelector('.create-form') as HTMLElement;
 
     if (overlay) {
-      overlay.style.display = 'block';
-    }
-    if (form) {
-      form.style.display = 'block';
+      overlay.style.display = 'flex';
     }
   }
 
@@ -879,64 +862,64 @@ export default class WaypointManagerWidget
           <div class="no-session">Select a session to view waypoints</div>
         </div>
 
-        <div class="form-overlay" style="display: none;"></div>
-
-        <div class="create-form" style="display: none;">
-          <div class="form-container">
-            <div class="form-header">
+        <div class="form-overlay overlay" style="display: none;">
+          <div class="create-form overlay-content overlay-md">
+            <div class="form-header overlay-header">
               <h4>Add Waypoint</h4>
-              <button class="cancel-btn">×</button>
+              <button type="button" class="cancel-btn overlay-close">×</button>
             </div>
 
             <form id="waypoint-form">
-              <div class="form-group">
-                <label for="name">Name</label>
-                <input type="text" id="name" name="name" required>
-              </div>
+              <div class="form-container overlay-body">
+                <div class="form-group">
+                  <label for="name">Name</label>
+                  <input type="text" id="name" name="name" required>
+                </div>
 
-              <div class="form-group">
-                <label for="type">Type</label>
-                <select id="type" name="type" required>
-                  <option value="generic">Generic</option>
-                  <option value="food">Food</option>
-                  <option value="water">Water</option>
-                  <option value="shelter">Shelter</option>
-                  <option value="transition">Transition</option>
-                  <option value="viewpoint">Viewpoint</option>
-                  <option value="camping">Camping</option>
-                  <option value="parking">Parking</option>
-                  <option value="danger">Danger</option>
-                  <option value="medical">Medical</option>
-                  <option value="fuel">Fuel</option>
-                </select>
-              </div>
+                <div class="form-group">
+                  <label for="type">Type</label>
+                  <select id="type" name="type" required>
+                    <option value="generic">Generic</option>
+                    <option value="food">Food</option>
+                    <option value="water">Water</option>
+                    <option value="shelter">Shelter</option>
+                    <option value="transition">Transition</option>
+                    <option value="viewpoint">Viewpoint</option>
+                    <option value="camping">Camping</option>
+                    <option value="parking">Parking</option>
+                    <option value="danger">Danger</option>
+                    <option value="medical">Medical</option>
+                    <option value="fuel">Fuel</option>
+                  </select>
+                </div>
 
-              <div class="coordinates-section">
-                <div class="coordinates-header">
-                  <h5>Location</h5>
-                  <div class="coordinate-actions">
-                    <button type="button" class="pick-from-map-btn">📍 Pick from Map</button>
-                    <button type="button" class="cancel-map-selection-btn" style="display: none;">Cancel Selection</button>
+                <div class="coordinates-section">
+                  <div class="coordinates-header">
+                    <h5>Location</h5>
+                    <div class="coordinate-actions">
+                      <button type="button" class="pick-from-map-btn">📍 Pick from Map</button>
+                      <button type="button" class="cancel-map-selection-btn" style="display: none;">Cancel Selection</button>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="latitude">Latitude</label>
+                      <input type="number" class="coordinate-input" id="latitude" name="latitude" step="any" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="longitude">Longitude</label>
+                      <input type="number" class="coordinate-input" id="longitude" name="longitude" step="any" required>
+                    </div>
                   </div>
                 </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="latitude">Latitude</label>
-                    <input type="number" class="coordinate-input" id="latitude" name="latitude" step="any" required>
-                  </div>
-                  <div class="form-group">
-                    <label for="longitude">Longitude</label>
-                    <input type="number" class="coordinate-input" id="longitude" name="longitude" step="any" required>
-                  </div>
+
+                <div class="form-group">
+                  <label for="description">Description</label>
+                  <textarea id="description" name="description" rows="3"></textarea>
                 </div>
               </div>
 
-              <div class="form-group">
-                <label for="description">Description</label>
-                <textarea id="description" name="description" rows="3"></textarea>
-              </div>
-
-              <div class="form-actions">
+              <div class="form-actions overlay-footer">
                 <button type="button" class="cancel-btn">Cancel</button>
                 <button type="submit" class="submit-btn">Create Waypoint</button>
               </div>
