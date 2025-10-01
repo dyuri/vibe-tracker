@@ -1,11 +1,5 @@
 import styles from '@/styles/components/widgets/session-map-panel-widget.css?inline';
 
-// Import widgets
-import './chart-widget';
-import './track-comparison-widget';
-import './gpx-upload-widget';
-import './waypoint-manager-widget';
-
 import type {
   SessionMapPanelWidgetElement,
   ChartWidgetElement,
@@ -51,8 +45,11 @@ export default class SessionMapPanelWidget
   private currentUser: User | null = null;
   private currentSessionData: SessionData | null = null;
   private currentLocationData: LocationsResponse | null = null;
+  private currentGpxTrack: GpxTrackPointsResponse | null = null;
+  private currentWaypoints: WaypointsResponse | null = null;
   private activeTab: string = 'overview';
   private isCollapsed: boolean = false;
+  private loadedWidgets = new Set<string>();
   private locationControls: LocationControls = {
     watchId: null,
     wakeLockSentinel: null,
@@ -152,13 +149,13 @@ export default class SessionMapPanelWidget
   displayData(data: LocationsResponse | LocationResponse): void {
     this.currentLocationData = data.type === 'FeatureCollection' ? data : null;
 
-    // Pass data to chart widget
+    // Pass data to chart widget if it's loaded
     const chartWidget = this.shadowRoot!.querySelector('chart-widget') as ChartWidgetElement;
     if (chartWidget) {
       chartWidget.displayData(data);
     }
 
-    // Update comparison widget if it has location data
+    // Update comparison widget if it has location data and is loaded
     this.updateTrackComparison();
   }
 
@@ -166,7 +163,10 @@ export default class SessionMapPanelWidget
    * Display GPX track data
    */
   displayGpxTrack(data: GpxTrackPointsResponse): void {
-    // Update comparison widget with GPX data
+    // Store GPX track data
+    this.currentGpxTrack = data;
+
+    // Update comparison widget with GPX data if it's loaded
     const comparisonWidget = this.shadowRoot!.querySelector(
       'track-comparison-widget'
     ) as TrackComparisonWidgetElement;
@@ -179,7 +179,10 @@ export default class SessionMapPanelWidget
    * Display waypoints data
    */
   displayWaypoints(data: WaypointsResponse): void {
-    // Pass to waypoint manager if it exists - use optimized method that avoids API call
+    // Store waypoints data
+    this.currentWaypoints = data;
+
+    // Pass to waypoint manager if it exists and is loaded
     const waypointWidget = this.shadowRoot!.querySelector(
       'waypoint-manager-widget'
     ) as WaypointManagerWidgetElement;
@@ -341,12 +344,12 @@ export default class SessionMapPanelWidget
 
           <!-- Chart Tab -->
           <div class="tab-content" data-tab="chart">
-            <chart-widget></chart-widget>
+            <div class="widget-container" data-widget="chart-widget"></div>
           </div>
 
           <!-- Track Comparison Tab -->
           <div class="tab-content" data-tab="comparison">
-            <track-comparison-widget></track-comparison-widget>
+            <div class="widget-container" data-widget="track-comparison-widget"></div>
           </div>
 
           <!-- Session Edit Tab -->
@@ -383,12 +386,12 @@ export default class SessionMapPanelWidget
 
           <!-- GPX Track Tab -->
           <div class="tab-content" data-tab="gpx">
-            <gpx-upload-widget></gpx-upload-widget>
+            <div class="widget-container" data-widget="gpx-upload-widget"></div>
           </div>
 
           <!-- Waypoints Tab -->
           <div class="tab-content" data-tab="waypoints">
-            <waypoint-manager-widget></waypoint-manager-widget>
+            <div class="widget-container" data-widget="waypoint-manager-widget"></div>
           </div>
 
           <!-- Profile Tab -->
@@ -499,41 +502,8 @@ export default class SessionMapPanelWidget
     // Location controls event listeners
     this.setupLocationControls();
 
-    // Forward chart events
-    const chartWidget = this.shadowRoot!.querySelector('chart-widget') as ChartWidgetElement;
-    if (chartWidget) {
-      chartWidget.addEventListener('chart-hover', (e: Event) => {
-        this.dispatchEvent(new CustomEvent('chart-hover', { detail: (e as CustomEvent).detail }));
-      });
-      chartWidget.addEventListener('chart-hover-out', (e: Event) => {
-        this.dispatchEvent(
-          new CustomEvent('chart-hover-out', { detail: (e as CustomEvent).detail })
-        );
-      });
-      chartWidget.addEventListener('chart-click', (e: Event) => {
-        this.dispatchEvent(new CustomEvent('chart-click', { detail: (e as CustomEvent).detail }));
-      });
-    }
-
-    // Listen for waypoint events from waypoint manager widget
-    const waypointWidget = this.shadowRoot!.querySelector(
-      'waypoint-manager-widget'
-    ) as WaypointManagerWidgetElement;
-    if (waypointWidget) {
-      waypointWidget.addEventListener('waypoint-created', () => {
-        this.refreshWaypointsOnMap();
-      });
-      waypointWidget.addEventListener('waypoint-updated', () => {
-        this.refreshWaypointsOnMap();
-      });
-      waypointWidget.addEventListener('waypoint-deleted', () => {
-        this.refreshWaypointsOnMap();
-      });
-      waypointWidget.addEventListener('center-on-waypoint', (event: CustomEvent) => {
-        const { latitude, longitude, waypointId } = event.detail;
-        this.centerMapOnLocation(latitude, longitude, waypointId);
-      });
-    }
+    // Note: Chart and Waypoint widget event listeners are now set up
+    // in loadTabWidget() after they are dynamically loaded
   }
 
   private updateTabVisibility(): void {
@@ -581,8 +551,126 @@ export default class SessionMapPanelWidget
     return this.currentUser.username === this.currentSessionData.username;
   }
 
-  private switchTab(tabId: string): void {
+  /**
+   * Dynamically load a widget for a specific tab
+   */
+  private async loadTabWidget(tabId: string): Promise<void> {
+    if (this.loadedWidgets.has(tabId)) {
+      return; // Already loaded
+    }
+
+    const container = this.shadowRoot!.querySelector(
+      `[data-tab="${tabId}"] .widget-container`
+    ) as HTMLElement;
+
+    if (!container) {
+      return;
+    }
+
+    try {
+      // Show loading state
+      container.innerHTML = '<div class="loading">Loading...</div>';
+
+      // Dynamic import based on tab
+      switch (tabId) {
+        case 'chart': {
+          await import('./chart-widget');
+          container.innerHTML = '<chart-widget></chart-widget>';
+          // Initialize with stored data
+          const chartWidget = container.querySelector('chart-widget') as ChartWidgetElement;
+          if (chartWidget) {
+            // Set up event listeners for chart widget
+            chartWidget.addEventListener('chart-hover', (e: Event) => {
+              this.dispatchEvent(
+                new CustomEvent('chart-hover', { detail: (e as CustomEvent).detail })
+              );
+            });
+            chartWidget.addEventListener('chart-hover-out', (e: Event) => {
+              this.dispatchEvent(
+                new CustomEvent('chart-hover-out', { detail: (e as CustomEvent).detail })
+              );
+            });
+            chartWidget.addEventListener('chart-click', (e: Event) => {
+              this.dispatchEvent(
+                new CustomEvent('chart-click', { detail: (e as CustomEvent).detail })
+              );
+            });
+
+            // Load data if available
+            if (this.currentLocationData) {
+              chartWidget.displayData(this.currentLocationData);
+            }
+          }
+          break;
+        }
+        case 'comparison': {
+          await import('./track-comparison-widget');
+          container.innerHTML = '<track-comparison-widget></track-comparison-widget>';
+          // Initialize with stored data
+          if (this.currentGpxTrack) {
+            const comparisonWidget = container.querySelector(
+              'track-comparison-widget'
+            ) as TrackComparisonWidgetElement;
+            if (comparisonWidget) {
+              comparisonWidget.setPlannedTrack(this.currentGpxTrack);
+            }
+          }
+          // Update with location data
+          this.updateTrackComparison();
+          break;
+        }
+        case 'gpx': {
+          await import('./gpx-upload-widget');
+          container.innerHTML = '<gpx-upload-widget></gpx-upload-widget>';
+          break;
+        }
+        case 'waypoints': {
+          await import('./waypoint-manager-widget');
+          container.innerHTML = '<waypoint-manager-widget></waypoint-manager-widget>';
+          // Initialize with stored data
+          const waypointWidget = container.querySelector(
+            'waypoint-manager-widget'
+          ) as WaypointManagerWidgetElement;
+          if (waypointWidget) {
+            // Set up event listeners for waypoint widget
+            waypointWidget.addEventListener('waypoint-created', () => {
+              this.refreshWaypointsOnMap();
+            });
+            waypointWidget.addEventListener('waypoint-updated', () => {
+              this.refreshWaypointsOnMap();
+            });
+            waypointWidget.addEventListener('waypoint-deleted', () => {
+              this.refreshWaypointsOnMap();
+            });
+            waypointWidget.addEventListener('center-on-waypoint', (event: CustomEvent) => {
+              const { latitude, longitude, waypointId } = event.detail;
+              this.centerMapOnLocation(latitude, longitude, waypointId);
+            });
+
+            // Load waypoints data if available
+            if (this.currentWaypoints && this.currentSessionData) {
+              waypointWidget.loadWaypointsFromData(
+                this.currentSessionData.sessionId,
+                this.currentWaypoints
+              );
+            }
+          }
+          break;
+        }
+      }
+
+      this.loadedWidgets.add(tabId);
+    } catch (error) {
+      console.error(`Failed to load widget for tab ${tabId}:`, error);
+      container.innerHTML = '<div class="error">Failed to load widget</div>';
+    }
+  }
+
+  private async switchTab(tabId: string): Promise<void> {
     this.activeTab = tabId;
+
+    // Load widget if not already loaded
+    await this.loadTabWidget(tabId);
 
     // Update tab buttons
     this.shadowRoot!.querySelectorAll('.tab-btn').forEach(btn => {

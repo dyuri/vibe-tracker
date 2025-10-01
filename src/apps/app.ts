@@ -14,7 +14,6 @@ import type {
 import { AuthService } from '@/services';
 import { initializePWA } from '@/utils/service-worker';
 import { Router } from '@/utils/router';
-import '@/components/widgets/chart-widget';
 import '@/components/widgets/session-map-panel-widget';
 import '@/components/widgets/map-widget';
 import '@/apps/theme-init';
