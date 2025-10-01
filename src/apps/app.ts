@@ -34,6 +34,7 @@ const router = new Router();
 // View elements
 const profileView = document.getElementById('profile-view') as HTMLElement | null;
 const sessionsView = document.getElementById('sessions-view') as HTMLElement | null;
+const uiDemoView = document.getElementById('ui-demo-view') as HTMLElement | null;
 
 // Widget containers for dynamic loading
 const profileWidgetContainer = document.getElementById(
@@ -42,22 +43,27 @@ const profileWidgetContainer = document.getElementById(
 const sessionWidgetContainer = document.getElementById(
   'session-widget-container'
 ) as HTMLElement | null;
+const uiDemoContainer = document.getElementById('ui-demo-container') as HTMLElement | null;
 
 // Track loaded widgets to avoid duplicate loading
 let profileWidgetLoaded = false;
 let sessionWidgetLoaded = false;
+let uiDemoLoaded = false;
 
 /**
  * Show a specific view and hide others
  * Main view is always visible as background, overlays are shown/hidden
  */
-function showView(viewName: 'main' | 'profile' | 'sessions'): void {
+function showView(viewName: 'main' | 'profile' | 'sessions' | 'ui-demo'): void {
   // Hide all overlay views
   if (profileView) {
     profileView.classList.add('hidden');
   }
   if (sessionsView) {
     sessionsView.classList.add('hidden');
+  }
+  if (uiDemoView) {
+    uiDemoView.classList.add('hidden');
   }
 
   // Show the requested overlay view (main view is always visible)
@@ -73,6 +79,11 @@ function showView(viewName: 'main' | 'profile' | 'sessions'): void {
     case 'sessions':
       if (sessionsView) {
         sessionsView.classList.remove('hidden');
+      }
+      break;
+    case 'ui-demo':
+      if (uiDemoView) {
+        uiDemoView.classList.remove('hidden');
       }
       break;
   }
@@ -121,6 +132,28 @@ async function loadSessionWidget(): Promise<void> {
     sessionWidgetLoaded = true;
   } catch (error) {
     console.error('Failed to load session widget:', error);
+  }
+}
+
+/**
+ * Dynamically load and initialize the UI demo component
+ */
+async function loadUiDemo(): Promise<void> {
+  if (uiDemoLoaded || !uiDemoContainer) {
+    return;
+  }
+
+  try {
+    // Dynamic import of UI demo component
+    await import('@/components/ui/ui-demo');
+
+    // Create and append UI demo
+    const uiDemo = document.createElement('ui-demo');
+    uiDemoContainer.appendChild(uiDemo);
+
+    uiDemoLoaded = true;
+  } catch (error) {
+    console.error('Failed to load UI demo:', error);
   }
 }
 
@@ -192,6 +225,29 @@ router.addRoute('/profile/sessions', async () => {
   } finally {
     if (sessionsView) {
       sessionsView.classList.remove('view-transition-loading');
+    }
+  }
+});
+
+router.addRoute('/ui-demo', async () => {
+  // Clear any running intervals when leaving main view
+  clearRefreshInterval();
+
+  // Reset main view initialization since we're leaving it
+  isInitialized = false;
+
+  showView('ui-demo');
+
+  // Show loading state during widget load
+  if (uiDemoView) {
+    uiDemoView.classList.add('view-transition-loading');
+  }
+
+  try {
+    await loadUiDemo();
+  } finally {
+    if (uiDemoView) {
+      uiDemoView.classList.remove('view-transition-loading');
     }
   }
 });

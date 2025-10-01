@@ -1,0 +1,68 @@
+/**
+ * Textarea Styles
+ * Generic textarea styles for use in web components
+ */
+
+textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  box-sizing: border-box;
+  font-size: var(--font-size-base);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-family-base);
+  transition: var(--transition-base);
+  resize: vertical;
+  min-height: 80px;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-alpha, rgba(0, 123, 255, 0.1));
+}
+
+textarea:disabled {
+  background-color: var(--bg-secondary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+/* Textarea Error State */
+textarea.error {
+  border-color: var(--color-danger);
+}
+
+textarea.error:focus {
+  box-shadow: 0 0 0 2px var(--color-danger-alpha, rgba(220, 53, 69, 0.1));
+}
+
+/* Textarea Success State */
+textarea.success {
+  border-color: var(--color-success);
+}
+
+textarea.success:focus {
+  box-shadow: 0 0 0 2px var(--color-success-alpha, rgba(40, 167, 69, 0.1));
+}
+
+/* Textarea with fixed height */
+textarea.no-resize {
+  resize: none;
+}
+
+textarea.resize-horizontal {
+  resize: horizontal;
+}
+
+textarea.resize-both {
+  resize: both;
+}
