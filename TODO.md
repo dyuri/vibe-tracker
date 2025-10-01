@@ -1,3 +1,6 @@
+- bugs
+  - manual "add waypoint" is broken, the popup is opened at the bottom of the content (not as a popup)
+
 - frontend improvements
   - waypoint / marker styles are inconsistent
   - "UI framework", e.g. generic classes for buttons, inputs, etc.

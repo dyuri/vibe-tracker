@@ -1,5 +1,10 @@
-/* Photo Waypoint Upload Widget Styles */
+/* Import UI component styles */
+@import '@/styles/ui/button.css';
+@import '@/styles/ui/input.css';
+@import '@/styles/ui/textarea.css';
+@import '@/styles/ui/label.css';
 
+/* Component-specific styles */
 .upload-dialog {
   position: fixed;
   top: 0;
@@ -24,7 +29,7 @@
   max-width: 600px;
   max-height: 90vh;
   margin: 5vh auto;
-  background: var(--background-color);
+  background: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
@@ -39,12 +44,12 @@
   align-items: center;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border-color);
-  background: var(--surface-color);
+  background: var(--bg-secondary);
 }
 
 .dialog-header h3 {
   margin: 0;
-  color: var(--text-color);
+  color: var(--text-primary);
   font-size: 1.25rem;
   font-weight: 600;
 }
@@ -61,8 +66,8 @@
 }
 
 .close-btn:hover {
-  color: var(--text-color);
-  background: var(--hover-color);
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
 }
 
 .upload-form {
@@ -77,7 +82,7 @@
   border-radius: 8px;
   padding: 2rem;
   text-align: center;
-  background: var(--surface-color);
+  background: var(--bg-secondary);
   transition:
     border-color 0.2s ease,
     background-color 0.2s ease;
@@ -87,7 +92,7 @@
 .drop-zone:hover,
 .drop-zone.drag-over {
   border-color: var(--color-primary);
-  background: var(--color-primary-light);
+  background: var(--color-primary-alpha);
 }
 
 .drop-zone-content {
@@ -100,246 +105,134 @@
   opacity: 0.7;
 }
 
-.drop-zone-text p {
-  margin: 0.5rem 0;
+.drop-zone-text {
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.drop-zone-text strong {
+  color: var(--color-primary);
+}
+
+.file-requirements {
+  font-size: 0.875rem;
   color: var(--text-muted);
 }
 
-.file-input-trigger {
-  background: none;
-  border: none;
-  color: var(--color-primary);
-  text-decoration: underline;
-  cursor: pointer;
-  font: inherit;
-  pointer-events: auto;
-}
-
-.file-input-trigger:hover {
-  color: var(--color-primary-dark);
-}
-
-/* Photo Preview Styles */
+/* Preview Styles */
 .photo-preview {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.preview-image {
+  margin-top: 1rem;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid var(--border-color);
-  background: var(--surface-color);
 }
 
-.preview-image img {
+.photo-preview img {
   width: 100%;
-  height: auto;
-  max-height: 200px;
-  object-fit: cover;
   display: block;
 }
 
-.preview-info {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+/* Form Section */
+.form-section {
+  margin-top: 1.5rem;
 }
 
-.exif-info,
-.location-info {
-  background: var(--surface-color);
-  padding: 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-}
-
-.exif-info h4,
-.location-info h4 {
-  margin: 0 0 0.5rem 0;
-  color: var(--text-color);
+.form-section h4 {
+  margin: 0 0 1rem 0;
   font-size: 1rem;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
-.exif-info p,
-.location-info p {
-  margin: 0.25rem 0;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-.no-exif,
-.no-location {
-  color: var(--text-muted);
-  font-style: italic;
-}
-
-.detected-location {
-  color: var(--color-success) !important;
-}
-
-.manual-location {
-  color: var(--color-primary) !important;
-}
-
-.pick-location-btn {
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
-  transition: background-color 0.2s ease;
-}
-
-.pick-location-btn:hover {
-  background: var(--color-primary-dark);
-}
-
-.pick-location-btn:disabled {
-  background: var(--color-muted);
-  cursor: not-allowed;
-}
-
-/* Form Fields */
-.form-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-group label {
-  font-weight: 600;
-  color: var(--text-color);
-  font-size: 0.9rem;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  padding: 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background: var(--background-color);
-  color: var(--text-color);
-  font: inherit;
-  transition: border-color 0.2s ease;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-light);
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-/* Error Message */
-.error-message {
-  margin-bottom: 1rem;
+.exif-info {
+  background: var(--bg-secondary);
+  border-radius: 8px;
   padding: 1rem;
-  background: var(--color-danger-light);
-  border: 1px solid var(--color-danger);
-  border-radius: 4px;
-  color: var(--color-danger-dark);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-top: 1rem;
 }
 
-.error-message p {
-  margin: 0;
-  font-size: 0.9rem;
+.exif-info strong {
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 0.5rem;
 }
 
-/* Action Buttons */
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  padding-top: 1rem;
+.exif-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+  margin-top: 0.5rem;
+}
+
+.exif-label {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.exif-value {
+  color: var(--text-secondary);
+}
+
+/* Dialog Footer */
+.dialog-footer {
+  padding: 1rem 1.5rem;
   border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
 }
 
-.cancel-btn,
-.submit-btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
+.dialog-footer button {
+  margin: 0;
+}
+
+/* Status Messages */
+.upload-status {
+  padding: 0.75rem 1rem;
   border-radius: 4px;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 600;
-  transition: all 0.2s ease;
+  margin-top: 1rem;
+  font-size: 0.875rem;
 }
 
-.cancel-btn {
-  background: var(--surface-color);
-  color: var(--text-muted);
+.upload-status.success {
+  background: var(--color-success-alpha);
+  border: 1px solid var(--color-success);
+  color: var(--color-success);
+}
+
+.upload-status.error {
+  background: var(--color-danger-alpha);
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+}
+
+.upload-status.loading {
+  background: var(--bg-secondary);
   border: 1px solid var(--border-color);
+  color: var(--text-secondary);
 }
 
-.cancel-btn:hover:not(:disabled) {
-  color: var(--text-color);
-  border-color: var(--text-muted);
-}
-
-.submit-btn {
-  background: var(--color-primary);
-  color: white;
-}
-
-.submit-btn:hover:not(:disabled) {
-  background: var(--color-primary-dark);
-}
-
-.cancel-btn:disabled,
-.submit-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Responsive Design */
+/* Responsive */
 @media (max-width: 768px) {
   .dialog-content {
-    margin: 2vh 1rem;
-    max-height: 95vh;
+    max-width: 95vw;
+    margin: 2vh auto;
+    max-height: 96vh;
   }
 
-  .photo-preview {
-    grid-template-columns: 1fr;
+  .drop-zone {
+    padding: 1.5rem 1rem;
   }
 
-  .preview-image img {
-    max-height: 150px;
-  }
-
-  .form-actions {
+  .dialog-footer {
     flex-direction: column-reverse;
   }
 
-  .form-actions button {
+  .dialog-footer button {
     width: 100%;
-  }
-}
-
-/* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-  .drop-zone:hover,
-  .drop-zone.drag-over {
-    background: rgba(var(--color-primary-rgb), 0.1);
   }
 }

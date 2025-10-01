@@ -301,30 +301,30 @@ export default class SessionMapPanelWidget
                 <div class="overview-card">
                   <h4>Location & Display Controls</h4>
                   <div class="control-grid">
-                    <label class="control-item">
+                    <div class="checkbox-group">
                       <input type="checkbox" id="overview-refresh-checkbox">
-                      <span>Auto Refresh</span>
-                    </label>
-                    <label class="control-item">
+                      <label for="overview-refresh-checkbox" class="inline">Auto Refresh</label>
+                    </div>
+                    <div class="checkbox-group">
                       <input type="checkbox" id="overview-show-position-checkbox">
-                      <span>Show Position</span>
-                    </label>
-                    <label class="control-item">
+                      <label for="overview-show-position-checkbox" class="inline">Show Position</label>
+                    </div>
+                    <div class="checkbox-group">
                       <input type="checkbox" id="overview-dark-theme-checkbox">
-                      <span>Dark Theme</span>
-                    </label>
-                    <label class="control-item">
+                      <label for="overview-dark-theme-checkbox" class="inline">Dark Theme</label>
+                    </div>
+                    <div class="checkbox-group">
                       <input type="checkbox" id="overview-dark-map-checkbox">
-                      <span>Dark Map</span>
-                    </label>
-                    <label class="control-item">
+                      <label for="overview-dark-map-checkbox" class="inline">Dark Map</label>
+                    </div>
+                    <div class="checkbox-group">
                       <input type="checkbox" id="overview-wake-lock-checkbox">
-                      <span>Wake Lock</span>
-                    </label>
-                    <label class="control-item">
+                      <label for="overview-wake-lock-checkbox" class="inline">Wake Lock</label>
+                    </div>
+                    <div class="checkbox-group">
                       <input type="checkbox" id="overview-show-waypoints-checkbox">
-                      <span>Show Waypoints</span>
-                    </label>
+                      <label for="overview-show-waypoints-checkbox" class="inline">Show Waypoints</label>
+                    </div>
                   </div>
                 </div>
 

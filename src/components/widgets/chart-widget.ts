@@ -52,36 +52,36 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
             <div id="chart-controls" class="chart-controls">
               <div class="control-group">
                 <div class="control-label">Axis:</div>
-                <div class="axis-toggle">
-                  <label>
-                    <input type="radio" name="axis" value="time" checked>
-                    Time
-                  </label>
-                  <label>
-                    <input type="radio" name="axis" value="distance">
-                    Distance
-                  </label>
+                <div class="radio-group horizontal">
+                  <div class="radio-option">
+                    <input type="radio" id="axis-time" name="axis" value="time" checked>
+                    <label for="axis-time" class="inline">Time</label>
+                  </div>
+                  <div class="radio-option">
+                    <input type="radio" id="axis-distance" name="axis" value="distance">
+                    <label for="axis-distance" class="inline">Distance</label>
+                  </div>
                 </div>
               </div>
               <div class="control-group">
                 <div class="control-label">Metrics:</div>
                 <div class="metric-toggles">
-                  <label>
-                    <input type="checkbox" name="metric" value="elevation" checked>
-                    Elevation
-                  </label>
-                  <label>
-                    <input type="checkbox" name="metric" value="heartRate" checked>
-                    Heart Rate
-                  </label>
-                  <label>
-                    <input type="checkbox" name="metric" value="pace" checked>
-                    Pace
-                  </label>
-                  <label>
-                    <input type="checkbox" name="metric" value="speed">
-                    Speed
-                  </label>
+                  <div class="checkbox-group">
+                    <input type="checkbox" id="metric-elevation" name="metric" value="elevation" checked>
+                    <label for="metric-elevation" class="inline">Elevation</label>
+                  </div>
+                  <div class="checkbox-group">
+                    <input type="checkbox" id="metric-heartRate" name="metric" value="heartRate" checked>
+                    <label for="metric-heartRate" class="inline">Heart Rate</label>
+                  </div>
+                  <div class="checkbox-group">
+                    <input type="checkbox" id="metric-pace" name="metric" value="pace" checked>
+                    <label for="metric-pace" class="inline">Pace</label>
+                  </div>
+                  <div class="checkbox-group">
+                    <input type="checkbox" id="metric-speed" name="metric" value="speed">
+                    <label for="metric-speed" class="inline">Speed</label>
+                  </div>
                 </div>
               </div>
               <div class="control-group mobile-close-group">

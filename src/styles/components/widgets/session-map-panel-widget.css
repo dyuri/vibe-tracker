@@ -1,3 +1,10 @@
+/* Import UI component styles */
+@import '@/styles/ui/checkbox.css';
+@import '@/styles/ui/label.css';
+@import '@/styles/ui/button.css';
+@import '@/styles/ui/input.css';
+@import '@/styles/ui/textarea.css';
+
 :host {
   font-family: var(--font-family-base, sans-serif);
   display: block;
@@ -188,23 +195,9 @@
   gap: var(--spacing-sm);
 }
 
-.control-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  cursor: pointer;
+/* Control grid uses checkbox-group from UI styles */
+.control-grid .checkbox-group {
   font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  transition: color 0.2s ease;
-}
-
-.control-item:hover {
-  color: var(--text-primary);
-}
-
-.control-item input[type='checkbox'] {
-  margin: 0;
-  accent-color: var(--color-primary);
 }
 
 /* Location Data in Overview Card */

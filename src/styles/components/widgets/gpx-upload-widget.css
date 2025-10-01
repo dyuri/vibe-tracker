@@ -1,8 +1,12 @@
+/* Import UI component styles */
+@import '@/styles/ui/button.css';
+
 :host {
   display: block;
   width: 100%;
 }
 
+/* Component-specific styles */
 .gpx-upload-widget {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
@@ -145,31 +149,7 @@
 
 .upload-btn,
 .clear-btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
   min-width: 120px;
-}
-
-.upload-btn {
-  background: var(--color-primary);
-  color: white;
-}
-
-.upload-btn:hover:not(:disabled) {
-  background: var(--color-primary-dark);
-  transform: translateY(-1px);
-}
-
-.upload-btn:disabled {
-  background: var(--bg-tertiary);
-  color: var(--text-tertiary);
-  cursor: not-allowed;
-  transform: none;
 }
 
 .clear-btn {
@@ -222,7 +202,7 @@
   }
 }
 
-.upload-btn:disabled {
+button:disabled {
   animation: pulse 1.5s ease-in-out infinite;
 }
 

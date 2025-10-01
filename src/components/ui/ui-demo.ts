@@ -411,6 +411,82 @@ export default class UiDemo extends HTMLElement {
           </div>
         </div>
       </div>
+
+      <!-- Links -->
+      <div class="demo-section">
+        <h2 class="demo-title">Links</h2>
+
+        <div class="demo-group">
+          <div class="demo-label">Basic Links</div>
+          <div class="demo-row">
+            <a href="#">Regular Link</a>
+            <a href="#" class="disabled">Disabled Link</a>
+            <a href="https://example.com" target="_blank">External Link</a>
+            <a href="https://example.com" target="_blank" class="no-external-icon">External (no icon)</a>
+          </div>
+          <div class="demo-description">
+            Links with <code>target="_blank"</code> get an external indicator automatically
+          </div>
+        </div>
+
+        <div class="demo-group">
+          <div class="demo-label">Link as Button</div>
+          <div class="demo-row">
+            <a href="#" class="link-btn">Link Button</a>
+            <a href="#" class="btn-filled">Filled Link</a>
+            <a href="#" class="btn-secondary">Secondary Link</a>
+            <a href="#" class="btn-danger">Danger Link</a>
+          </div>
+          <div class="demo-description">
+            Use <code>link-btn</code>, <code>btn-filled</code>, <code>btn-secondary</code>, or <code>btn-danger</code> classes
+          </div>
+        </div>
+
+        <div class="demo-group">
+          <div class="demo-label">Back Link</div>
+          <a href="#" class="back-link">← Back to Map</a>
+          <div class="demo-description">
+            Use <code>back-link</code> class for navigation back links
+          </div>
+        </div>
+
+        <div class="demo-group">
+          <div class="demo-label">Link Sizes</div>
+          <div class="demo-row">
+            <a href="#" class="link-btn link-sm">Small</a>
+            <a href="#" class="link-btn">Default</a>
+            <a href="#" class="link-btn link-lg">Large</a>
+          </div>
+          <div class="demo-description">
+            Use <code>link-sm</code> or <code>link-lg</code> classes
+          </div>
+        </div>
+
+        <div class="demo-group">
+          <div class="demo-label">Nav Menu (Vertical)</div>
+          <ul class="nav-menu">
+            <li><a href="#">Dashboard</a></li>
+            <li><a href="#">Profile</a></li>
+            <li><a href="#">Settings</a></li>
+            <li><a href="#">Logout</a></li>
+          </ul>
+          <div class="demo-description">
+            Use <code>nav-menu</code> class for vertical navigation lists
+          </div>
+        </div>
+
+        <div class="demo-group">
+          <div class="demo-label">Nav Links (Horizontal)</div>
+          <div class="nav-horizontal">
+            <a href="#">← Back to Map</a>
+            <a href="#">Sessions</a>
+            <a href="#">Profile</a>
+          </div>
+          <div class="demo-description">
+            Use <code>nav-horizontal</code> class for horizontal navigation
+          </div>
+        </div>
+      </div>
     `;
   }
 }

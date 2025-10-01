@@ -1,0 +1,217 @@
+/**
+ * Link Styles
+ * Generic link styles for use in web components
+ */
+
+/* Base link styles */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: var(--transition-base);
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+a:active {
+  color: var(--color-primary);
+}
+
+a:visited {
+  color: var(--color-primary);
+}
+
+/* Link as button - primary style */
+a.btn,
+a.link-btn {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-base);
+  text-decoration: none;
+  color: var(--color-primary);
+  background-color: transparent;
+  transition: var(--transition-base);
+  font-weight: var(--font-weight-normal);
+  text-align: center;
+  cursor: pointer;
+}
+
+a.btn:hover,
+a.link-btn:hover {
+  background-color: var(--color-primary);
+  color: var(--text-inverse);
+  text-decoration: none;
+}
+
+a.btn:active,
+a.link-btn:active {
+  transform: translateY(1px);
+}
+
+/* Link as button - filled style */
+a.btn-filled {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-base);
+  text-decoration: none;
+  color: var(--text-inverse);
+  background-color: var(--color-primary);
+  transition: var(--transition-base);
+  font-weight: var(--font-weight-normal);
+  text-align: center;
+  cursor: pointer;
+}
+
+a.btn-filled:hover {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  text-decoration: none;
+}
+
+a.btn-filled:active {
+  transform: translateY(1px);
+}
+
+/* Link as button - secondary style */
+a.btn-secondary {
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+  background-color: var(--bg-secondary);
+}
+
+a.btn-secondary:hover {
+  background-color: var(--bg-tertiary);
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+/* Link as button - danger style */
+a.btn-danger {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background-color: transparent;
+}
+
+a.btn-danger:hover {
+  background-color: var(--color-danger);
+  color: var(--text-inverse);
+}
+
+/* Nav menu links (vertical list) */
+.nav-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.nav-menu li {
+  margin: 0;
+}
+
+.nav-menu a {
+  display: block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  text-decoration: none;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-light);
+  transition: var(--transition-base);
+  font-size: var(--font-size-base);
+  text-align: center;
+}
+
+.nav-menu a:hover {
+  background-color: var(--color-primary);
+  color: var(--text-inverse);
+  border-color: var(--color-primary);
+}
+
+.nav-menu a:active {
+  transform: translateY(1px);
+}
+
+/* Horizontal nav links */
+.nav-horizontal {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.nav-horizontal a {
+  color: var(--color-primary);
+  text-decoration: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-base);
+  transition: var(--transition-base);
+}
+
+.nav-horizontal a:hover {
+  background-color: var(--color-primary);
+  color: var(--text-inverse);
+}
+
+/* Back link style */
+a.back-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: var(--font-size-large);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-base);
+  display: inline-block;
+}
+
+a.back-link:hover {
+  background-color: var(--color-primary);
+  color: var(--text-inverse);
+  text-decoration: none;
+}
+
+/* Link sizes */
+a.link-sm {
+  font-size: var(--font-size-small);
+  padding: calc(var(--spacing-xs) * 0.5) var(--spacing-xs);
+}
+
+a.link-lg {
+  font-size: var(--font-size-large);
+  padding: var(--spacing-sm) var(--spacing-lg);
+}
+
+/* Link with icon */
+a.link-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* Disabled link */
+a.disabled,
+a[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* External link indicator */
+a[target='_blank']::after {
+  content: ' ↗';
+  font-size: 0.8em;
+}
+
+a.no-external-icon[target='_blank']::after {
+  content: '';
+}

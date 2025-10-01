@@ -1,3 +1,9 @@
+/* Import UI component styles */
+@import '@/styles/ui/checkbox.css';
+@import '@/styles/ui/radio.css';
+@import '@/styles/ui/label.css';
+@import '@/styles/ui/button.css';
+
 /* Chart Widget Styles */
 .chart-container {
   position: relative;
@@ -53,27 +59,10 @@
   margin-bottom: var(--spacing-xs, 4px);
 }
 
-.axis-toggle,
 .metric-toggles {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs, 4px);
-}
-
-.axis-toggle label,
-.metric-toggles label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 500;
-  color: var(--text-primary, #212529);
-  cursor: pointer;
-  user-select: none;
-}
-
-.axis-toggle input,
-.metric-toggles input {
-  margin: 0;
 }
 
 /* Mobile close button - hidden by default, only visible on mobile */
@@ -160,11 +149,6 @@
   color: var(--text-primary-dark, #f7fafc);
 }
 
-[data-theme='dark'] .axis-toggle label,
-[data-theme='dark'] .metric-toggles label {
-  color: var(--text-primary-dark, #f7fafc);
-}
-
 /* Responsive design - drawer style on mobile */
 @media (max-width: 768px) {
   .chart-content {
@@ -195,16 +179,20 @@
     display: none;
   }
 
-  .axis-toggle,
+  .radio-group.horizontal,
   .metric-toggles {
     flex-direction: row;
     flex-wrap: wrap;
     gap: var(--spacing-xs, 4px);
   }
 
-  .axis-toggle label,
-  .metric-toggles label {
+  .radio-group.horizontal .radio-option,
+  .metric-toggles .checkbox-group {
     font-size: var(--font-size-xs, 11px);
+  }
+
+  .radio-group.horizontal label,
+  .metric-toggles label {
     padding: 2px 4px;
     border-radius: var(--border-radius-sm, 4px);
     background: var(--bg-secondary, #f8f9fa);
@@ -217,7 +205,7 @@
     border-right: none;
   }
 
-  [data-theme='dark'] .axis-toggle label,
+  [data-theme='dark'] .radio-group.horizontal label,
   [data-theme='dark'] .metric-toggles label {
     background: var(--bg-secondary-dark, #4a5568);
     border-color: var(--border-color-dark, #718096);
@@ -251,7 +239,7 @@
     gap: 2px;
   }
 
-  .axis-toggle label,
+  .radio-group.horizontal label,
   .metric-toggles label {
     font-size: var(--font-size-xs, 10px);
     padding: 1px 3px;

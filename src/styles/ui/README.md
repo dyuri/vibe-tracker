@@ -11,6 +11,7 @@ This directory contains reusable CSS files for generic UI elements. These styles
 - **checkbox.css** - Checkbox styles with group layout helpers
 - **radio.css** - Radio button styles with group layout helpers (vertical/horizontal)
 - **label.css** - Label styles with form group helpers
+- **link.css** - Link styles including button-like links, nav menus, and various link variants
 - **index.css** - Imports all UI component styles
 
 ## Usage
@@ -105,6 +106,56 @@ Visit `/ui-demo` to see all available styles and their variants in action.
 ```
 
 For horizontal layout: `<div class="radio-group horizontal">`
+
+### Links
+
+**Basic Links:**
+
+```html
+<a href="#">Regular Link</a>
+<a href="#" class="disabled">Disabled Link</a>
+<a href="https://example.com" target="_blank">External Link</a>
+```
+
+**Link as Button:**
+
+```html
+<a href="#" class="link-btn">Link Button</a>
+<a href="#" class="btn-filled">Filled Button Link</a>
+<a href="#" class="btn-secondary">Secondary Link</a>
+<a href="#" class="btn-danger">Danger Link</a>
+```
+
+**Back Link:**
+
+```html
+<a href="#" class="back-link">← Back to Map</a>
+```
+
+**Link Sizes:**
+
+```html
+<a href="#" class="link-btn link-sm">Small</a>
+<a href="#" class="link-btn link-lg">Large</a>
+```
+
+**Nav Menu (Vertical):**
+
+```html
+<ul class="nav-menu">
+  <li><a href="#">Item 1</a></li>
+  <li><a href="#">Item 2</a></li>
+</ul>
+```
+
+**Nav Links (Horizontal):**
+
+```html
+<div class="nav-horizontal">
+  <a href="#">Link 1</a>
+  <a href="#">Link 2</a>
+</div>
+```
 
 ## Design Tokens
 

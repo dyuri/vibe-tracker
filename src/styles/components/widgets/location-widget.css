@@ -1,6 +1,12 @@
+/* Import UI component styles */
+@import '@/styles/ui/checkbox.css';
+@import '@/styles/ui/label.css';
+
 :host {
-  font-family: sans-serif;
+  font-family: var(--font-family-base, sans-serif);
 }
+
+/* Component-specific styles */
 #toggle-button {
   background-color: var(--color-primary);
   color: var(--text-inverse);
@@ -15,8 +21,9 @@
   cursor: pointer;
   box-shadow: var(--shadow-heavy);
 }
+
 #info-panel {
-  display: none; /* Hidden by default */
+  display: none;
   background-color: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
@@ -24,7 +31,9 @@
   box-shadow: var(--shadow-medium);
   margin-top: var(--spacing-sm);
   position: relative;
+  min-width: 200px;
 }
+
 #close-button {
   position: absolute;
   top: var(--spacing-xs);
@@ -33,21 +42,22 @@
   cursor: pointer;
   color: var(--text-muted);
 }
+
 .property {
   margin-bottom: var(--spacing-xs);
   color: var(--text-primary);
 }
+
 .label {
   font-weight: var(--font-weight-bold);
   color: var(--text-secondary);
 }
+
 .refresh-container {
   margin-top: var(--spacing-sm);
   border-top: 1px solid var(--border-color);
   padding-top: var(--spacing-sm);
-  & label {
-    display: block;
-    margin: var(--spacing-xs) 0;
-    color: var(--text-primary);
-  }
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
 }

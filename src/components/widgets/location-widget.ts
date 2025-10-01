@@ -19,26 +19,26 @@ export default class LocationWidget extends HTMLElement implements LocationWidge
         <span id="close-button">×</span>
         <div id="widget-content"></div>
         <div class="refresh-container">
-          <label>
+          <div class="checkbox-group">
             <input type="checkbox" id="refresh-checkbox">
-            Refresh
-          </label>
-          <label>
+            <label for="refresh-checkbox" class="inline">Refresh</label>
+          </div>
+          <div class="checkbox-group">
             <input type="checkbox" id="show-position-checkbox">
-            Show my position
-          </label>
-          <label>
+            <label for="show-position-checkbox" class="inline">Show my position</label>
+          </div>
+          <div class="checkbox-group">
             <input type="checkbox" id="dark-theme-checkbox">
-            Dark theme
-          </label>
-          <label>
+            <label for="dark-theme-checkbox" class="inline">Dark theme</label>
+          </div>
+          <div class="checkbox-group">
             <input type="checkbox" id="dark-map-checkbox">
-            Dark map
-          </label>
-          <label>
+            <label for="dark-map-checkbox" class="inline">Dark map</label>
+          </div>
+          <div class="checkbox-group">
             <input type="checkbox" id="wake-lock-checkbox">
-            Wake Lock
-          </label>
+            <label for="wake-lock-checkbox" class="inline">Wake Lock</label>
+          </div>
         </div>
       </div>
     `;
