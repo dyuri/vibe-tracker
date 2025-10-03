@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v5"
@@ -88,13 +90,16 @@ func (h *SessionHandler) ListSessions(c echo.Context) error {
 	sessionList := make([]map[string]any, len(sessions))
 	for i, session := range sessions {
 		sessionList[i] = map[string]any{
-			"id":          session.Id,
-			"name":        session.GetString("name"),
-			"title":       session.GetString("title"),
-			"description": session.GetString("description"),
-			"public":      session.GetBool("public"),
-			"created":     session.GetDateTime("created").Time().Format(time.RFC3339),
-			"updated":     session.GetDateTime("updated").Time().Format(time.RFC3339),
+			"id":                session.Id,
+			"name":              session.GetString("name"),
+			"title":             session.GetString("title"),
+			"description":       session.GetString("description"),
+			"public":            session.GetBool("public"),
+			"created":           session.GetDateTime("created").Time().Format(time.RFC3339),
+			"updated":           session.GetDateTime("updated").Time().Format(time.RFC3339),
+			"gpx_track":         session.GetString("gpx_track"),
+			"track_name":        session.GetString("track_name"),
+			"track_description": session.GetString("track_description"),
 		}
 	}
 
@@ -136,13 +141,16 @@ func (h *SessionHandler) GetSession(c echo.Context) error {
 	}
 
 	sessionData := map[string]any{
-		"id":          session.Id,
-		"name":        session.GetString("name"),
-		"title":       session.GetString("title"),
-		"description": session.GetString("description"),
-		"public":      session.GetBool("public"),
-		"created":     session.GetDateTime("created").Time().Format(time.RFC3339),
-		"updated":     session.GetDateTime("updated").Time().Format(time.RFC3339),
+		"id":                session.Id,
+		"name":              session.GetString("name"),
+		"title":             session.GetString("title"),
+		"description":       session.GetString("description"),
+		"public":            session.GetBool("public"),
+		"created":           session.GetDateTime("created").Time().Format(time.RFC3339),
+		"updated":           session.GetDateTime("updated").Time().Format(time.RFC3339),
+		"gpx_track":         session.GetString("gpx_track"),
+		"track_name":        session.GetString("track_name"),
+		"track_description": session.GetString("track_description"),
 	}
 
 	return utils.SendSuccess(c, http.StatusOK, sessionData, "")
@@ -203,13 +211,16 @@ func (h *SessionHandler) CreateSession(c echo.Context) error {
 	}
 
 	sessionData := map[string]any{
-		"id":          session.Id,
-		"name":        session.GetString("name"),
-		"title":       session.GetString("title"),
-		"description": session.GetString("description"),
-		"public":      session.GetBool("public"),
-		"created":     session.GetDateTime("created").Time().Format(time.RFC3339),
-		"updated":     session.GetDateTime("updated").Time().Format(time.RFC3339),
+		"id":                session.Id,
+		"name":              session.GetString("name"),
+		"title":             session.GetString("title"),
+		"description":       session.GetString("description"),
+		"public":            session.GetBool("public"),
+		"created":           session.GetDateTime("created").Time().Format(time.RFC3339),
+		"updated":           session.GetDateTime("updated").Time().Format(time.RFC3339),
+		"gpx_track":         session.GetString("gpx_track"),
+		"track_name":        session.GetString("track_name"),
+		"track_description": session.GetString("track_description"),
 	}
 
 	return utils.SendSuccess(c, http.StatusCreated, sessionData, "Session created successfully")
@@ -268,13 +279,16 @@ func (h *SessionHandler) UpdateSession(c echo.Context) error {
 	}
 
 	sessionData := map[string]any{
-		"id":          session.Id,
-		"name":        session.GetString("name"),
-		"title":       session.GetString("title"),
-		"description": session.GetString("description"),
-		"public":      session.GetBool("public"),
-		"created":     session.GetDateTime("created").Time().Format(time.RFC3339),
-		"updated":     session.GetDateTime("updated").Time().Format(time.RFC3339),
+		"id":                session.Id,
+		"name":              session.GetString("name"),
+		"title":             session.GetString("title"),
+		"description":       session.GetString("description"),
+		"public":            session.GetBool("public"),
+		"created":           session.GetDateTime("created").Time().Format(time.RFC3339),
+		"updated":           session.GetDateTime("updated").Time().Format(time.RFC3339),
+		"gpx_track":         session.GetString("gpx_track"),
+		"track_name":        session.GetString("track_name"),
+		"track_description": session.GetString("track_description"),
 	}
 
 	return utils.SendSuccess(c, http.StatusOK, sessionData, "Session updated successfully")
@@ -318,4 +332,315 @@ func (h *SessionHandler) DeleteSession(c echo.Context) error {
 	}
 
 	return utils.SendSuccess(c, http.StatusOK, nil, "Session deleted successfully")
+}
+
+// UploadGPXTrack uploads and processes a GPX file for a session
+//
+//	@Summary		Upload GPX track
+//	@Description	Uploads a GPX file to a session and processes track points and waypoints
+//	@Tags			Sessions
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			username	path		string	true	"Username"
+//	@Param			name		path		string	true	"Session name"
+//	@Param			gpx_file	formData	file	true	"GPX file to upload"
+//	@Success		200			{object}	models.SuccessResponse	"GPX track uploaded successfully"
+//	@Failure		400			{object}	models.ErrorResponse		"Invalid request or file"
+//	@Failure		401			{object}	models.ErrorResponse		"Authentication required"
+//	@Failure		403			{object}	models.ErrorResponse		"Forbidden"
+//	@Failure		404			{object}	models.ErrorResponse		"Session not found"
+//	@Router			/sessions/{username}/{name}/gpx [post]
+func (h *SessionHandler) UploadGPXTrack(c echo.Context) error {
+	record, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
+	if record == nil {
+		return apis.NewUnauthorizedError("Authentication required", nil)
+	}
+
+	username := c.PathParam("username")
+	sessionName := c.PathParam("name")
+
+	// Verify user matches authenticated user
+	if record.Username() != username {
+		return apis.NewForbiddenError("Cannot modify another user's sessions", nil)
+	}
+
+	// Find the session
+	session, err := findSessionByNameAndUser(h.app.Dao(), sessionName, record.Id)
+	if err != nil {
+		return apis.NewNotFoundError("Session not found", err)
+	}
+
+	// Get the uploaded file
+	file, fileHeader, err := c.Request().FormFile("gpx_file")
+	if err != nil {
+		return apis.NewBadRequestError("No GPX file provided", err)
+	}
+	defer file.Close()
+
+	// Validate file type
+	if !isValidGPXFile(fileHeader.Filename, fileHeader.Header.Get("Content-Type")) {
+		return apis.NewBadRequestError("Invalid file type. Please upload a GPX file", nil)
+	}
+
+	// Parse the GPX file
+	gpxData, err := utils.ParseGPX(file)
+	if err != nil {
+		return apis.NewBadRequestError(fmt.Sprintf("Failed to parse GPX file: %v", err), err)
+	}
+
+	// Reset file reader for storage
+	file.Seek(0, 0)
+
+	// Store the original GPX file
+	fs, err := h.app.NewFilesystem()
+	if err != nil {
+		return apis.NewApiError(http.StatusInternalServerError, "Failed to initialize filesystem", err)
+	}
+	defer fs.Close()
+
+	// Generate unique file key
+	gpxFileName := session.Id + "_" + fileHeader.Filename
+
+	err = fs.UploadMultipart(fileHeader, gpxFileName)
+	if err != nil {
+		return apis.NewApiError(http.StatusInternalServerError, "Failed to upload GPX file", err)
+	}
+
+	// Update session with GPX data
+	session.Set("gpx_track", gpxFileName)
+	session.Set("track_name", gpxData.TrackName)
+	session.Set("track_description", gpxData.TrackDescription)
+
+	if err := h.app.Dao().SaveRecord(session); err != nil {
+		return apis.NewApiError(http.StatusInternalServerError, "Failed to update session", err)
+	}
+
+	// Process track points
+	trackPointsCount, err := h.processGPXTrackPoints(session.Id, gpxData.TrackPoints)
+	if err != nil {
+		return apis.NewApiError(http.StatusInternalServerError, "Failed to process track points", err)
+	}
+
+	// Process waypoints
+	waypointsCount, err := h.processGPXWaypoints(session.Id, gpxData.Waypoints)
+	if err != nil {
+		return apis.NewApiError(http.StatusInternalServerError, "Failed to process waypoints", err)
+	}
+
+	response := map[string]interface{}{
+		"message":           "GPX track uploaded successfully",
+		"track_name":        gpxData.TrackName,
+		"track_description": gpxData.TrackDescription,
+		"track_points":      trackPointsCount,
+		"waypoints":         waypointsCount,
+	}
+
+	return utils.SendSuccess(c, http.StatusOK, response, "GPX track uploaded successfully")
+}
+
+// GetTrackData retrieves the planned track points for a session
+//
+//	@Summary		Get session track data
+//	@Description	Returns the planned track points from uploaded GPX for a session
+//	@Tags			Sessions
+//	@Produce		json
+//	@Param			username	path		string	true	"Username"
+//	@Param			name		path		string	true	"Session name"
+//	@Param			simplified	query		bool	false	"Return simplified track (default: true)"
+//	@Success		200			{object}	models.SuccessResponse	"Track data retrieved successfully"
+//	@Failure		404			{object}	models.ErrorResponse		"Session or track not found"
+//	@Router			/sessions/{username}/{name}/track [get]
+func (h *SessionHandler) GetTrackData(c echo.Context) error {
+	username := c.PathParam("username")
+	sessionName := c.PathParam("name")
+
+	// Find user
+	user, err := findUserByUsername(h.app.Dao(), username)
+	if err != nil {
+		return apis.NewNotFoundError("User not found", err)
+	}
+
+	// Find session
+	session, err := findSessionByNameAndUser(h.app.Dao(), sessionName, user.Id)
+	if err != nil {
+		return apis.NewNotFoundError("Session not found", err)
+	}
+
+	// Check if user has access to this session
+	authRecord, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
+	if !session.GetBool("public") && (authRecord == nil || authRecord.Id != user.Id) {
+		return apis.NewForbiddenError("Access denied", nil)
+	}
+
+	// Get simplified parameter (default to true)
+	simplified := true
+	if simplifiedStr := c.QueryParam("simplified"); simplifiedStr == "false" {
+		simplified = false
+	}
+
+	// Get track points
+	var orderBy string
+	if simplified {
+		// For simplified tracks, we might want to add a simplified flag in the future
+		orderBy = "sequence ASC"
+	} else {
+		orderBy = "sequence ASC"
+	}
+
+	trackPoints, err := h.app.Dao().FindRecordsByFilter(
+		"gpx_tracks",
+		"session_id = {:session_id}",
+		orderBy,
+		0, 0, // No limit
+		dbx.Params{"session_id": session.Id},
+	)
+
+	if err != nil {
+		return apis.NewApiError(http.StatusInternalServerError, "Failed to fetch track points", err)
+	}
+
+	// Format track points
+	points := make([]map[string]interface{}, len(trackPoints))
+	for i, point := range trackPoints {
+		pointData := map[string]interface{}{
+			"latitude":  point.GetFloat("latitude"),
+			"longitude": point.GetFloat("longitude"),
+			"sequence":  point.GetInt("sequence"),
+		}
+
+		if altitude := point.GetFloat("altitude"); altitude != 0 {
+			pointData["altitude"] = altitude
+		}
+
+		points[i] = pointData
+	}
+
+	response := map[string]interface{}{
+		"session_id":        session.Id,
+		"track_name":        session.GetString("track_name"),
+		"track_description": session.GetString("track_description"),
+		"track_points":      points,
+		"point_count":       len(points),
+	}
+
+	return utils.SendSuccess(c, http.StatusOK, response, "Track data retrieved successfully")
+}
+
+// processGPXTrackPoints saves track points to the database with optional simplification
+func (h *SessionHandler) processGPXTrackPoints(sessionID string, points []utils.ParsedTrackPoint) (int, error) {
+	if len(points) == 0 {
+		return 0, nil
+	}
+
+	// Apply simplification for long tracks
+	simplifiedPoints := points
+	if len(points) > 100 {
+		epsilon := utils.CalculateSimplificationEpsilon(points)
+		if epsilon > 0 {
+			simplifiedPoints = utils.SimplifyTrack(points, epsilon)
+		}
+	}
+
+	// Get the gpx_tracks collection
+	collection, err := h.app.Dao().FindCollectionByNameOrId("gpx_tracks")
+	if err != nil {
+		return 0, fmt.Errorf("gpx_tracks collection not found: %v", err)
+	}
+
+	// Delete existing track points for this session
+	existingPoints, err := h.app.Dao().FindRecordsByFilter(
+		"gpx_tracks",
+		"session_id = {:session_id}",
+		"",
+		0, 0,
+		dbx.Params{"session_id": sessionID},
+	)
+	if err == nil {
+		for _, point := range existingPoints {
+			h.app.Dao().DeleteRecord(point)
+		}
+	}
+
+	// Create new track point records
+	for _, point := range simplifiedPoints {
+		record := models.NewRecord(collection)
+		record.Set("session_id", sessionID)
+		record.Set("latitude", point.Latitude)
+		record.Set("longitude", point.Longitude)
+		record.Set("sequence", point.Sequence)
+
+		if point.Altitude != nil {
+			record.Set("altitude", *point.Altitude)
+		}
+
+		if err := h.app.Dao().SaveRecord(record); err != nil {
+			return 0, fmt.Errorf("failed to save track point: %v", err)
+		}
+	}
+
+	return len(simplifiedPoints), nil
+}
+
+// processGPXWaypoints saves waypoints from GPX to the database
+func (h *SessionHandler) processGPXWaypoints(sessionID string, waypoints []utils.ParsedWaypoint) (int, error) {
+	if len(waypoints) == 0 {
+		return 0, nil
+	}
+
+	// Get the waypoints collection
+	collection, err := h.app.Dao().FindCollectionByNameOrId("waypoints")
+	if err != nil {
+		return 0, fmt.Errorf("waypoints collection not found: %v", err)
+	}
+
+	// Create waypoint records
+	savedCount := 0
+	for _, wp := range waypoints {
+		record := models.NewRecord(collection)
+		record.Set("session_id", sessionID)
+		record.Set("name", wp.Name)
+		record.Set("type", wp.Type)
+		record.Set("description", wp.Description)
+		record.Set("latitude", wp.Latitude)
+		record.Set("longitude", wp.Longitude)
+		record.Set("source", wp.Source)
+		record.Set("position_confidence", wp.PositionConfidence)
+
+		if wp.Altitude != nil {
+			record.Set("altitude", *wp.Altitude)
+		}
+
+		if err := h.app.Dao().SaveRecord(record); err != nil {
+			// Log error but continue with other waypoints
+			continue
+		}
+		savedCount++
+	}
+
+	return savedCount, nil
+}
+
+// isValidGPXFile checks if the uploaded file is a valid GPX file
+func isValidGPXFile(filename, contentType string) bool {
+	// Check file extension
+	if !strings.HasSuffix(strings.ToLower(filename), ".gpx") {
+		return false
+	}
+
+	// Check content type
+	validTypes := []string{
+		"application/gpx+xml",
+		"application/xml",
+		"text/xml",
+		"application/octet-stream", // Some browsers might send this
+	}
+
+	for _, validType := range validTypes {
+		if contentType == validType {
+			return true
+		}
+	}
+
+	return false
 }

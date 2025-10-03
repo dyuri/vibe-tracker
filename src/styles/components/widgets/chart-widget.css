@@ -1,55 +1,22 @@
+/* Import UI component styles */
+@import '@/styles/ui/checkbox.css';
+@import '@/styles/ui/radio.css';
+@import '@/styles/ui/label.css';
+@import '@/styles/ui/button.css';
+
 /* Chart Widget Styles */
 .chart-container {
   position: relative;
   height: 100%;
   width: 100%;
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   justify-content: center;
-}
-
-/* Prevent map interaction blocking when collapsed */
-:host(.collapsed) {
-  pointer-events: none;
-}
-
-:host(.collapsed) .toggle-button {
-  pointer-events: auto;
-}
-
-.toggle-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: var(--color-primary, #007bff);
-  color: var(--text-inverse, #ffffff);
-  border: none;
-  border-radius: var(--border-radius-full, 50%);
-  box-shadow: var(--shadow-heavy, 0 4px 8px rgba(0, 0, 0, 0.2));
-  cursor: pointer;
-  font-size: 18px;
-  transition: all 0.2s ease;
-  user-select: none;
-}
-
-.toggle-button:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-large, 0 6px 12px rgba(0, 0, 0, 0.15));
-}
-
-.toggle-button:active {
-  transform: translateY(0);
 }
 
 .chart-panel {
-  display: none;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  display: flex;
+  position: static;
   flex-direction: column;
   height: 100%;
   width: 100%;
@@ -57,43 +24,6 @@
   border-radius: var(--border-radius-md, 8px);
   box-shadow: var(--shadow-medium, 0 4px 6px rgba(0, 0, 0, 0.1));
   overflow: hidden;
-}
-
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
-  background: var(--bg-secondary, #f8f9fa);
-  border-bottom: 1px solid var(--border-color, #e9ecef);
-  min-height: 40px;
-}
-
-.chart-title {
-  font-weight: 600;
-  color: var(--text-primary, #212529);
-  font-size: var(--font-size-md, 16px);
-}
-
-.close-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: none;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 18px;
-  color: var(--text-secondary, #6c757d);
-  transition: all 0.2s ease;
-  user-select: none;
-}
-
-.close-button:hover {
-  background: var(--bg-hover, rgba(0, 0, 0, 0.05));
-  color: var(--text-primary, #212529);
 }
 
 .chart-content {
@@ -129,27 +59,10 @@
   margin-bottom: var(--spacing-xs, 4px);
 }
 
-.axis-toggle,
 .metric-toggles {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs, 4px);
-}
-
-.axis-toggle label,
-.metric-toggles label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 500;
-  color: var(--text-primary, #212529);
-  cursor: pointer;
-  user-select: none;
-}
-
-.axis-toggle input,
-.metric-toggles input {
-  margin: 0;
 }
 
 /* Mobile close button - hidden by default, only visible on mobile */
@@ -213,16 +126,6 @@
 }
 
 /* Dark theme support */
-[data-theme='dark'] .toggle-button {
-  background: var(--color-primary, #007bff);
-  color: var(--text-inverse, #ffffff);
-  box-shadow: var(--shadow-heavy, 0 4px 8px rgba(0, 0, 0, 0.3));
-}
-
-[data-theme='dark'] .toggle-button:hover {
-  box-shadow: var(--shadow-large, 0 6px 12px rgba(0, 0, 0, 0.4));
-}
-
 [data-theme='dark'] .chart-panel {
   background: var(--bg-panel-dark, #2d3748);
   box-shadow: var(--shadow-medium-dark, 0 4px 6px rgba(0, 0, 0, 0.3));
@@ -237,15 +140,6 @@
   color: var(--text-primary-dark, #f7fafc);
 }
 
-[data-theme='dark'] .close-button {
-  color: var(--text-secondary-dark, #cbd5e0);
-}
-
-[data-theme='dark'] .close-button:hover {
-  background: var(--bg-hover-dark, rgba(255, 255, 255, 0.1));
-  color: var(--text-primary-dark, #f7fafc);
-}
-
 [data-theme='dark'] .chart-controls {
   background: var(--bg-secondary-dark, #4a5568);
   border-right-color: var(--border-color-dark, #718096);
@@ -255,18 +149,8 @@
   color: var(--text-primary-dark, #f7fafc);
 }
 
-[data-theme='dark'] .axis-toggle label,
-[data-theme='dark'] .metric-toggles label {
-  color: var(--text-primary-dark, #f7fafc);
-}
-
 /* Responsive design - drawer style on mobile */
 @media (max-width: 768px) {
-  /* Hide header on mobile for cleaner drawer look */
-  .chart-header {
-    display: none;
-  }
-
   .chart-content {
     flex-direction: column;
     flex: 1;
@@ -295,16 +179,20 @@
     display: none;
   }
 
-  .axis-toggle,
+  .radio-group.horizontal,
   .metric-toggles {
     flex-direction: row;
     flex-wrap: wrap;
     gap: var(--spacing-xs, 4px);
   }
 
-  .axis-toggle label,
-  .metric-toggles label {
+  .radio-group.horizontal .radio-option,
+  .metric-toggles .checkbox-group {
     font-size: var(--font-size-xs, 11px);
+  }
+
+  .radio-group.horizontal label,
+  .metric-toggles label {
     padding: 2px 4px;
     border-radius: var(--border-radius-sm, 4px);
     background: var(--bg-secondary, #f8f9fa);
@@ -317,7 +205,7 @@
     border-right: none;
   }
 
-  [data-theme='dark'] .axis-toggle label,
+  [data-theme='dark'] .radio-group.horizontal label,
   [data-theme='dark'] .metric-toggles label {
     background: var(--bg-secondary-dark, #4a5568);
     border-color: var(--border-color-dark, #718096);
@@ -351,7 +239,7 @@
     gap: 2px;
   }
 
-  .axis-toggle label,
+  .radio-group.horizontal label,
   .metric-toggles label {
     font-size: var(--font-size-xs, 10px);
     padding: 1px 3px;

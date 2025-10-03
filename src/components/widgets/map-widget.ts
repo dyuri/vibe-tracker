@@ -5,6 +5,11 @@ import type {
   GeolocationCoordinates,
   GeoJSONFeature,
   LocationProperties,
+  GpxTrackPointsResponse,
+  WaypointsResponse,
+  WaypointFeature,
+  WaypointType,
+  PositionConfidence,
 } from '@/types';
 import { createMarker } from '@/components/ui';
 import styles from '@/styles/components/widgets/map-widget.css?inline';
@@ -21,7 +26,14 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   private currentPositionLayerGroup: L.LayerGroup | null = null;
   private hoverMarkerLayerGroup: L.LayerGroup | null = null;
   private eventMarkerLayerGroup: L.LayerGroup | null = null;
+  // New layer groups for GPX tracks and waypoints
+  private gpxTrackLayerGroup: L.LayerGroup | null = null;
+  private waypointsLayerGroup: L.LayerGroup | null = null;
   private currentFeatureCollection: LocationsResponse | null = null;
+  // Waypoint selection properties
+  private waypointSelectionMode: boolean = false;
+  private waypointSelectionMarker: L.Marker | null = null;
+  private selectedWaypointCoords: [number, number] | null = null;
   private colorScale: Array<Array<number>> = [
     [0, 0, 255], // Blue
     [0, 255, 0], // Green
@@ -56,10 +68,21 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       });
 
       this.map = L.map(this.shadowRoot!.getElementById('map')!);
+
+      // Create custom map panes for proper layering control
+      this.map.createPane('gpxPane');
+      this.map.getPane('gpxPane')!.style.zIndex = '400'; // Lower z-index for GPX tracks
+      this.map.getPane('overlayPane')!.style.zIndex = '600'; // Higher z-index for main tracks
+
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(this.map);
+
+      // Initialize GPX and waypoint layer groups with custom pane (bottom layers)
+      this.gpxTrackLayerGroup = L.layerGroup().addTo(this.map);
+      this.waypointsLayerGroup = L.layerGroup().addTo(this.map);
+      // Initialize main data layers on top (uses default overlay pane with zIndex 600)
       this.dataLayerGroup = L.layerGroup().addTo(this.map);
       this.currentPositionLayerGroup = L.layerGroup().addTo(this.map);
       this.hoverMarkerLayerGroup = L.layerGroup().addTo(this.map);
@@ -79,25 +102,76 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   setViewFromUrlHash(): boolean {
     const hash = window.location.hash;
     if (hash.startsWith('#map=')) {
-      const parts = hash.substring(5).split('/');
-      if (parts.length === 3) {
-        const lat = parseFloat(parts[0]);
-        const lon = parseFloat(parts[1]);
-        const zoom = parseInt(parts[2], 10);
-        if (!isNaN(lat) && !isNaN(lon) && !isNaN(zoom)) {
-          this.map!.setView([lat, lon], zoom);
-          return true;
+      const hashParts = hash.substring(1).split('&');
+      const mapParam = hashParts.find(p => p.startsWith('map='));
+
+      if (mapParam) {
+        const parts = mapParam.substring(4).split('/');
+        if (parts.length === 3) {
+          const lat = parseFloat(parts[0]);
+          const lon = parseFloat(parts[1]);
+          const zoom = parseInt(parts[2], 10);
+          if (!isNaN(lat) && !isNaN(lon) && !isNaN(zoom)) {
+            this.map!.setView([lat, lon], zoom);
+            // Note: waypoint parameter is handled in displayWaypoints() after waypoints are loaded
+            return true;
+          }
         }
       }
     }
     return false;
   }
 
-  updateUrlHash(): void {
+  updateUrlHash(waypointId?: string): void {
+    const center = this.map!.getCenter();
+    const zoom = this.map!.getZoom();
+    let hash = `#map=${center.lat.toFixed(6)}/${center.lng.toFixed(6)}/${zoom}`;
+
+    // If waypointId is explicitly provided, use it
+    // If not provided but we want to preserve existing waypoint, extract it from current URL
+    if (waypointId) {
+      hash += `&wp=${waypointId}`;
+    } else {
+      // Preserve existing waypoint parameter if present
+      const currentHash = window.location.hash;
+      if (currentHash.includes('&wp=')) {
+        const wpMatch = currentHash.match(/&wp=([^&]+)/);
+        if (wpMatch) {
+          hash += `&wp=${wpMatch[1]}`;
+        }
+      }
+    }
+
+    history.replaceState(null, null, hash);
+  }
+
+  /**
+   * Removes waypoint parameter from URL
+   */
+  private clearWaypointFromUrl(): void {
     const center = this.map!.getCenter();
     const zoom = this.map!.getZoom();
     const hash = `#map=${center.lat.toFixed(6)}/${center.lng.toFixed(6)}/${zoom}`;
     history.replaceState(null, null, hash);
+  }
+
+  /**
+   * Opens a waypoint popup by waypoint ID
+   */
+  private openWaypointPopupById(waypointId: string): void {
+    if (!this.waypointsLayerGroup) {
+      return;
+    }
+
+    // Search through all waypoint markers to find the matching one
+    this.waypointsLayerGroup.eachLayer((layer: any) => {
+      if (layer.waypointId === waypointId) {
+        // Found the marker, open its popup
+        if (layer.openPopup) {
+          layer.openPopup();
+        }
+      }
+    });
   }
 
   /**
@@ -115,6 +189,228 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     } else {
       this.currentFeatureCollection = null; // Single point mode
       this.displayPoint(data);
+    }
+  }
+
+  /**
+   * Displays GPX track data as a planned route
+   */
+  displayGpxTrack(data: GpxTrackPointsResponse): void {
+    if (!this.map || !this.gpxTrackLayerGroup) {
+      console.warn('Map not initialized, cannot display GPX track');
+      return;
+    }
+
+    this.gpxTrackLayerGroup.clearLayers();
+
+    if (!data.features || data.features.length === 0) {
+      return;
+    }
+
+    // Sort track points by sequence
+    const sortedPoints = [...data.features].sort(
+      (a, b) => a.properties.sequence - b.properties.sequence
+    );
+
+    // Create the planned track polyline (dashed blue)
+    const trackCoordinates: [number, number][] = sortedPoints.map(point => [
+      point.geometry.coordinates[1], // latitude
+      point.geometry.coordinates[0], // longitude
+    ]);
+
+    const plannedTrack = L.polyline(trackCoordinates, {
+      color: 'hsl(320, 100%, 60%)', // Bright pink color for planned track
+      weight: 4,
+      opacity: 0.8,
+      dashArray: '10, 15', // Dashed line with bigger gaps to distinguish from actual track
+      pane: 'gpxPane', // Use custom GPX pane with lower z-index
+    });
+
+    // Add popup to show track information
+    plannedTrack.bindPopup(`
+      <div class="gpx-track-popup">
+        <h4>Planned Track</h4>
+        <b>Points:</b> ${sortedPoints.length}<br>
+        <b>Type:</b> GPX Track
+      </div>
+    `);
+
+    this.gpxTrackLayerGroup.addLayer(plannedTrack);
+  }
+
+  /**
+   * Displays waypoints on the map
+   */
+  displayWaypoints(data: WaypointsResponse): void {
+    if (!this.map || !this.waypointsLayerGroup) {
+      console.warn('Map not initialized, cannot display waypoints');
+      return;
+    }
+
+    this.waypointsLayerGroup.clearLayers();
+
+    if (!data.features || data.features.length === 0) {
+      return;
+    }
+
+    data.features.forEach(waypoint => {
+      const marker = this.createWaypointMarker(waypoint);
+
+      const popupContent = this.createWaypointPopupContent(waypoint);
+      marker.bindPopup(popupContent);
+
+      // Update URL when popup is opened
+      marker.on('popupopen', () => {
+        this.updateUrlHash(waypoint.properties.id);
+      });
+
+      // Remove waypoint parameter when popup is closed
+      marker.on('popupclose', () => {
+        this.clearWaypointFromUrl();
+      });
+
+      this.waypointsLayerGroup!.addLayer(marker);
+    });
+
+    // After waypoints are loaded, check if URL has a waypoint parameter to open
+    const hash = window.location.hash;
+    if (hash.includes('&wp=')) {
+      const wpMatch = hash.match(/&wp=([^&]+)/);
+      if (wpMatch) {
+        const waypointId = wpMatch[1];
+        // Use setTimeout to ensure markers are fully added to the map
+        setTimeout(() => {
+          this.openWaypointPopupById(waypointId);
+        }, 100);
+      }
+    }
+  }
+
+  /**
+   * Creates a marker for a waypoint with appropriate icon
+   */
+  createWaypointMarker(waypoint: WaypointFeature): L.Marker {
+    const [longitude, latitude] = waypoint.geometry.coordinates;
+    const icon = this.getWaypointIcon(
+      waypoint.properties.type,
+      waypoint.properties.position_confidence
+    );
+
+    const marker = L.marker([latitude, longitude], { icon });
+    // Store waypoint ID on marker for later retrieval
+    (marker as any).waypointId = waypoint.properties.id;
+    return marker;
+  }
+
+  /**
+   * Returns appropriate icon for waypoint type and confidence
+   */
+  getWaypointIcon(type: WaypointType, confidence: PositionConfidence): L.DivIcon {
+    const config = this.getWaypointConfig(type);
+    const confidenceStyle = this.getConfidenceStyle(confidence);
+
+    return L.divIcon({
+      className: `waypoint-marker waypoint-marker-${type}`,
+      html: `<div class="waypoint-marker-content" style="background-color: ${config.color}; ${confidenceStyle}">
+               <span class="waypoint-marker-icon">${config.icon}</span>
+             </div>`,
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+      popupAnchor: [0, -10],
+    });
+  }
+
+  /**
+   * Returns configuration for different waypoint types
+   */
+  getWaypointConfig(type: WaypointType): { color: string; icon: string } {
+    const configs: Record<WaypointType, { color: string; icon: string }> = {
+      generic: { color: '#6c757d', icon: '📍' },
+      food: { color: '#fd7e14', icon: '🍽️' },
+      water: { color: '#0dcaf0', icon: '💧' },
+      shelter: { color: '#198754', icon: '🏠' },
+      transition: { color: '#6f42c1', icon: '🚌' },
+      viewpoint: { color: '#e83e8c', icon: '👁️' },
+      camping: { color: '#20c997', icon: '⛺' },
+      parking: { color: '#495057', icon: '🅿️' },
+      danger: { color: '#dc3545', icon: '⚠️' },
+      medical: { color: '#0d6efd', icon: '🏥' },
+      fuel: { color: '#ffc107', icon: '⛽' },
+    };
+
+    return configs[type] || configs.generic;
+  }
+
+  /**
+   * Returns style adjustments based on position confidence
+   */
+  getConfidenceStyle(confidence: PositionConfidence): string {
+    const styles: Record<PositionConfidence, string> = {
+      gps: 'border: 2px solid #28a745;', // Green border for GPS
+      time_matched: 'border: 2px solid #007bff;', // Blue border
+      tracked: 'border: 2px solid #17a2b8;', // Cyan border
+      gpx_track: 'border: 2px solid #6f42c1;', // Purple border
+      last_known: 'border: 2px solid #fd7e14;', // Orange border
+      manual: 'border: 2px solid #6c757d;', // Gray border
+    };
+
+    return styles[confidence] || styles.manual;
+  }
+
+  /**
+   * Creates popup content for waypoints
+   */
+  createWaypointPopupContent(waypoint: WaypointFeature): string {
+    const { name, type, description, altitude, source, position_confidence, photo, id } =
+      waypoint.properties;
+    const coords = waypoint.geometry.coordinates;
+
+    const altitudeText = altitude ? `<b>Altitude:</b> ${altitude} m<br>` : '';
+    const descriptionText = description ? `<b>Description:</b> ${description}<br>` : '';
+
+    // Add photo display if available
+    let photoHtml = '';
+    if (photo) {
+      const photoUrl = `/api/files/waypoints/${id}/${photo}`;
+      const thumbnailUrl = `${photoUrl}?thumb=150x150`;
+      photoHtml = `
+        <div class="waypoint-photo">
+          <a href="${photoUrl}" target="_blank" rel="noopener noreferrer">
+            <img src="${thumbnailUrl}" alt="${name}" />
+          </a>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="waypoint-popup">
+        <h4>${name}</h4>
+        ${photoHtml}
+        <b>Type:</b> ${type.charAt(0).toUpperCase() + type.slice(1)}<br>
+        ${descriptionText}
+        <b>Coordinates:</b> ${coords[1].toFixed(6)}, ${coords[0].toFixed(6)}<br>
+        ${altitudeText}
+        <b>Source:</b> ${source}<br>
+        <b>Confidence:</b> ${position_confidence.replace('_', ' ')}
+      </div>
+    `;
+  }
+
+  /**
+   * Clears GPX track from the map
+   */
+  clearGpxTrack(): void {
+    if (this.gpxTrackLayerGroup) {
+      this.gpxTrackLayerGroup.clearLayers();
+    }
+  }
+
+  /**
+   * Clears waypoints from the map
+   */
+  clearWaypoints(): void {
+    if (this.waypointsLayerGroup) {
+      this.waypointsLayerGroup.clearLayers();
     }
   }
 
@@ -270,14 +566,7 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
         });
 
         if (closestPoint) {
-          const coords: [number, number, number] =
-            closestPoint.geometry.coordinates.length === 2
-              ? ([...closestPoint.geometry.coordinates, 0] as [number, number, number])
-              : (closestPoint.geometry.coordinates as [number, number, number]);
-          const popupContent = this.createPopupContent(closestPoint.properties, coords);
-          L.popup().setLatLng(e.latlng).setContent(popupContent).openOn(this.map!);
-
-          // Dispatch event for chart synchronization
+          // Dispatch event for chart synchronization and location data display
           const pointIndex =
             this.currentFeatureCollection?.features.findIndex(f => f === closestPoint) ?? -1;
           if (pointIndex !== -1) {
@@ -550,13 +839,34 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   /**
    * Center map on specific coordinates
    */
-  centerOnCoordinates(latitude: number, longitude: number, zoom?: number): void {
+  centerOnCoordinates(
+    latitude: number,
+    longitude: number,
+    zoomOrWaypointId?: number | string
+  ): void {
     if (!this.map) {
       console.warn('Map not initialized, cannot center on coordinates');
       return;
     }
 
+    let zoom: number | undefined;
+    let waypointId: string | undefined;
+
+    // Handle overloaded parameters
+    if (typeof zoomOrWaypointId === 'number') {
+      zoom = zoomOrWaypointId;
+    } else if (typeof zoomOrWaypointId === 'string') {
+      waypointId = zoomOrWaypointId;
+    }
+
     this.map.setView([latitude, longitude], zoom || this.map.getZoom());
+
+    // Update URL hash with waypoint ID if provided
+    if (waypointId) {
+      this.updateUrlHash(waypointId);
+      // Also open the waypoint popup
+      this.openWaypointPopupById(waypointId);
+    }
   }
 
   /**
@@ -594,6 +904,199 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     }
 
     this.hoverMarkerLayerGroup.clearLayers();
+  }
+
+  /**
+   * Show persistent selected marker at specific coordinates
+   */
+  showSelectedMarker(latitude: number, longitude: number): void {
+    if (!this.hoverMarkerLayerGroup) {
+      console.warn('Map not initialized, cannot show selected marker');
+      return;
+    }
+
+    // Clear any existing markers (both hover and selected use same layer group)
+    this.hoverMarkerLayerGroup.clearLayers();
+
+    // Create a distinctive selected marker (same visual as hover marker for now)
+    const selectedMarker = L.circleMarker([latitude, longitude], {
+      radius: 8,
+      fillColor: '#ff0000',
+      color: '#ffffff',
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.8,
+    });
+
+    this.hoverMarkerLayerGroup.addLayer(selectedMarker);
+  }
+
+  /**
+   * Hide selected marker
+   */
+  hideSelectedMarker(): void {
+    if (!this.hoverMarkerLayerGroup) {
+      console.warn('Map not initialized, cannot hide selected marker');
+      return;
+    }
+
+    this.hoverMarkerLayerGroup.clearLayers();
+  }
+
+  /**
+   * Check if a marker is currently shown
+   */
+  hasSelectedMarker(): boolean {
+    if (!this.hoverMarkerLayerGroup) {
+      return false;
+    }
+
+    return this.hoverMarkerLayerGroup.getLayers().length > 0;
+  }
+
+  /**
+   * Start waypoint selection mode
+   */
+  startWaypointSelection(): void {
+    if (!this.map) {
+      console.warn('Map not initialized, cannot start waypoint selection');
+      return;
+    }
+
+    this.waypointSelectionMode = true;
+    this.selectedWaypointCoords = null;
+
+    // Change cursor to crosshair
+    const mapContainer = this.map.getContainer();
+    mapContainer.style.cursor = 'crosshair';
+
+    // Add click handler for waypoint selection
+    this.map.on('click', this.handleWaypointSelection.bind(this));
+
+    // Show instruction overlay
+    this.showWaypointSelectionInstructions();
+
+    console.log('Started waypoint selection mode');
+  }
+
+  /**
+   * Stop waypoint selection mode
+   */
+  stopWaypointSelection(): void {
+    if (!this.map) {
+      return;
+    }
+
+    this.waypointSelectionMode = false;
+    this.selectedWaypointCoords = null;
+
+    // Reset cursor
+    const mapContainer = this.map.getContainer();
+    mapContainer.style.cursor = '';
+
+    // Remove click handler
+    this.map.off('click', this.handleWaypointSelection);
+
+    // Clear selection marker
+    if (this.waypointSelectionMarker) {
+      this.map.removeLayer(this.waypointSelectionMarker);
+      this.waypointSelectionMarker = null;
+    }
+
+    // Hide instruction overlay
+    this.hideWaypointSelectionInstructions();
+
+    console.log('Stopped waypoint selection mode');
+  }
+
+  /**
+   * Check if currently in waypoint selection mode
+   */
+  isInWaypointSelectionMode(): boolean {
+    return this.waypointSelectionMode;
+  }
+
+  /**
+   * Get selected waypoint coordinates
+   */
+  getSelectedWaypointCoordinates(): [number, number] | null {
+    return this.selectedWaypointCoords;
+  }
+
+  /**
+   * Handle waypoint selection click
+   */
+  private handleWaypointSelection(e: L.LeafletMouseEvent): void {
+    if (!this.waypointSelectionMode || !this.map) {
+      return;
+    }
+
+    const { lat, lng } = e.latlng;
+    this.selectedWaypointCoords = [lat, lng];
+
+    // Clear existing selection marker
+    if (this.waypointSelectionMarker) {
+      this.map.removeLayer(this.waypointSelectionMarker);
+    }
+
+    // Create new selection marker
+    this.waypointSelectionMarker = L.marker([lat, lng], {
+      icon: L.divIcon({
+        html: `<div class="waypoint-selection-marker">📍</div>`,
+        className: 'waypoint-selection-marker-container',
+        iconSize: [30, 30],
+        iconAnchor: [15, 30],
+      }),
+    });
+
+    this.map.addLayer(this.waypointSelectionMarker);
+
+    // Dispatch event with selected coordinates
+    this.dispatchEvent(
+      new CustomEvent('waypoint-selected', {
+        detail: {
+          latitude: lat,
+          longitude: lng,
+          coordinates: [lat, lng],
+        },
+        bubbles: true,
+      })
+    );
+
+    console.log('Waypoint selected at:', lat, lng);
+  }
+
+  /**
+   * Show waypoint selection instructions
+   */
+  private showWaypointSelectionInstructions(): void {
+    const mapContainer = this.shadowRoot!.getElementById('map')!;
+
+    // Check if instruction overlay already exists
+    if (mapContainer.querySelector('.waypoint-instructions')) {
+      return;
+    }
+
+    const instructionOverlay = document.createElement('div');
+    instructionOverlay.className = 'waypoint-instructions';
+    instructionOverlay.innerHTML = `
+      <div class="waypoint-instruction-content">
+        <span>📍 Click on the map to select waypoint location</span>
+        <button class="instruction-close-btn" onclick="this.closest('map-widget').stopWaypointSelection()">×</button>
+      </div>
+    `;
+
+    mapContainer.appendChild(instructionOverlay);
+  }
+
+  /**
+   * Hide waypoint selection instructions
+   */
+  private hideWaypointSelectionInstructions(): void {
+    const instructionOverlay = this.shadowRoot!.querySelector('.waypoint-instructions');
+    if (instructionOverlay) {
+      instructionOverlay.remove();
+    }
   }
 }
 

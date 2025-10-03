@@ -1,0 +1,45 @@
+/**
+ * Label Styles
+ * Generic label styles for use in web components
+ */
+
+label {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  cursor: default;
+}
+
+/* Inline Label (for checkboxes/radios) */
+label.inline {
+  display: inline;
+  margin: 0;
+  font-weight: var(--font-weight-normal);
+  cursor: pointer;
+}
+
+/* Required Field Indicator */
+label.required::after {
+  content: ' *';
+  color: var(--color-danger);
+}
+
+/* Form Group */
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+  margin-bottom: var(--spacing-xs);
+}
+
+/* Label with Help Text */
+.label-help {
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+  font-weight: var(--font-weight-normal);
+  margin-top: 2px;
+  display: block;
+}

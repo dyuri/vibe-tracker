@@ -143,3 +143,132 @@
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 4px;
 }
+
+/* Waypoint marker styles */
+.waypoint-marker {
+  border: none;
+  background: transparent;
+}
+
+.waypoint-marker-content {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+}
+
+.waypoint-marker-content:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+}
+
+.waypoint-marker-icon {
+  font-size: 8px;
+  line-height: 1;
+}
+
+/* Waypoint type-specific styles */
+.waypoint-marker-generic .waypoint-marker-content {
+  background-color: #6c757d;
+}
+
+.waypoint-marker-food .waypoint-marker-content {
+  background-color: #fd7e14;
+}
+
+.waypoint-marker-water .waypoint-marker-content {
+  background-color: #0dcaf0;
+}
+
+.waypoint-marker-shelter .waypoint-marker-content {
+  background-color: #198754;
+}
+
+.waypoint-marker-transition .waypoint-marker-content {
+  background-color: #6f42c1;
+}
+
+.waypoint-marker-viewpoint .waypoint-marker-content {
+  background-color: #e83e8c;
+}
+
+.waypoint-marker-camping .waypoint-marker-content {
+  background-color: #20c997;
+}
+
+.waypoint-marker-parking .waypoint-marker-content {
+  background-color: #495057;
+}
+
+.waypoint-marker-danger .waypoint-marker-content {
+  background-color: #dc3545;
+}
+
+.waypoint-marker-medical .waypoint-marker-content {
+  background-color: #0d6efd;
+}
+
+.waypoint-marker-fuel .waypoint-marker-content {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+/* Waypoint popup styles */
+.waypoint-popup {
+  min-width: 220px;
+}
+
+.waypoint-popup h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--color-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 4px;
+}
+
+/* GPX track popup styles */
+.gpx-track-popup {
+  min-width: 180px;
+}
+
+.gpx-track-popup h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: #007bff;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 4px;
+}
+
+/* Waypoint photo in popup */
+.waypoint-photo {
+  margin: 10px 0;
+  text-align: center;
+}
+
+.waypoint-photo a {
+  display: inline-block;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: opacity 0.2s;
+}
+
+.waypoint-photo a:hover {
+  opacity: 0.8;
+}
+
+.waypoint-photo img {
+  display: block;
+  max-width: 150px;
+  height: auto;
+}

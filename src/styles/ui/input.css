@@ -1,0 +1,105 @@
+/**
+ * Input Styles
+ * Generic text input styles for use in web components
+ */
+
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='number'],
+input[type='tel'],
+input[type='url'],
+input[type='search'],
+input[type='date'],
+input[type='time'],
+input[type='datetime-local'] {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  box-sizing: border-box;
+  font-size: var(--font-size-base);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-family-base);
+  transition: var(--transition-base);
+}
+
+input[type='text']:focus,
+input[type='email']:focus,
+input[type='password']:focus,
+input[type='number']:focus,
+input[type='tel']:focus,
+input[type='url']:focus,
+input[type='search']:focus,
+input[type='date']:focus,
+input[type='time']:focus,
+input[type='datetime-local']:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-alpha, rgba(0, 123, 255, 0.1));
+}
+
+input[type='text']:disabled,
+input[type='email']:disabled,
+input[type='password']:disabled,
+input[type='number']:disabled,
+input[type='tel']:disabled,
+input[type='url']:disabled,
+input[type='search']:disabled,
+input[type='date']:disabled,
+input[type='time']:disabled,
+input[type='datetime-local']:disabled {
+  background-color: var(--bg-secondary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+input[type='text']::placeholder,
+input[type='email']::placeholder,
+input[type='password']::placeholder,
+input[type='number']::placeholder,
+input[type='tel']::placeholder,
+input[type='url']::placeholder,
+input[type='search']::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+/* Input Error State */
+input.error {
+  border-color: var(--color-danger);
+}
+
+input.error:focus {
+  box-shadow: 0 0 0 2px var(--color-danger-alpha, rgba(220, 53, 69, 0.1));
+}
+
+/* Input Success State */
+input.success {
+  border-color: var(--color-success);
+}
+
+input.success:focus {
+  box-shadow: 0 0 0 2px var(--color-success-alpha, rgba(40, 167, 69, 0.1));
+}
+
+/* File Input */
+input[type='file'] {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  box-sizing: border-box;
+  font-size: var(--font-size-base);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-family-base);
+  cursor: pointer;
+}
+
+input[type='file']:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

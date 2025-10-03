@@ -115,6 +115,136 @@ export interface Session {
   user?: string;
   created: string;
   updated: string;
+  gpx_track?: string;
+  track_name?: string;
+  track_description?: string;
+}
+
+// GPX Track Point types
+export interface GpxTrackPoint {
+  id: string;
+  session_id: string;
+  latitude: number;
+  longitude: number;
+  altitude?: number;
+  sequence: number;
+  created: string;
+  updated: string;
+}
+
+export interface GpxTrackPointsResponse {
+  type: 'FeatureCollection';
+  features: GpxTrackPointFeature[];
+}
+
+export interface GpxTrackPointFeature {
+  type: 'Feature';
+  geometry: Geometry;
+  properties: GpxTrackPointProperties;
+}
+
+export interface GpxTrackPointProperties {
+  sequence: number;
+  altitude?: number;
+}
+
+// Waypoint types
+export interface Waypoint {
+  id: string;
+  name: string;
+  type: WaypointType;
+  description?: string;
+  latitude: number;
+  longitude: number;
+  altitude?: number;
+  photo?: string;
+  session_id: string;
+  source: WaypointSource;
+  position_confidence: PositionConfidence;
+  created: string;
+  updated: string;
+}
+
+export type WaypointType =
+  | 'generic'
+  | 'food'
+  | 'water'
+  | 'shelter'
+  | 'transition'
+  | 'viewpoint'
+  | 'camping'
+  | 'parking'
+  | 'danger'
+  | 'medical'
+  | 'fuel';
+
+export type WaypointSource = 'gpx' | 'manual' | 'photo';
+
+export type PositionConfidence =
+  | 'gps'
+  | 'time_matched'
+  | 'tracked'
+  | 'gpx_track'
+  | 'last_known'
+  | 'manual';
+
+export interface WaypointsResponse {
+  type: 'FeatureCollection';
+  features: WaypointFeature[];
+}
+
+export interface WaypointFeature {
+  type: 'Feature';
+  geometry: Geometry;
+  properties: WaypointProperties;
+}
+
+export interface WaypointProperties {
+  id: string;
+  name: string;
+  type: WaypointType;
+  description?: string;
+  altitude?: number;
+  photo?: string;
+  source: WaypointSource;
+  position_confidence: PositionConfidence;
+}
+
+// Enhanced Session interface with GPX fields
+export interface EnhancedSession extends Session {
+  gpx_track?: string;
+  track_name?: string;
+  track_description?: string;
+}
+
+// GPX Upload request
+export interface GpxUploadRequest {
+  gpx_file: File;
+}
+
+// Waypoint requests
+export interface CreateWaypointRequest {
+  name: string;
+  type: WaypointType;
+  description?: string;
+  latitude: number;
+  longitude: number;
+  altitude?: number;
+  session_id: string;
+  source: WaypointSource;
+  position_confidence: PositionConfidence;
+}
+
+export interface UpdateWaypointRequest extends Partial<CreateWaypointRequest> {
+  id: string;
+}
+
+export interface PhotoWaypointUploadRequest {
+  photo: File;
+  session_id: string;
+  name?: string;
+  type?: WaypointType;
+  description?: string;
 }
 
 export interface SessionsListResponse {

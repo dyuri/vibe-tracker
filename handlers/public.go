@@ -244,10 +244,29 @@ func (h *PublicHandler) GetSessionData(c echo.Context) error {
 
 	// Get session metadata if available
 	sessionTitle := session // fallback to session name
+	var gpxTrackFile, trackName, trackDescription string
+	var sessionRecordId string
+	var sessionMetadata map[string]any
 	if session != "" {
 		if sessionRecord, err := findSessionByNameAndUser(h.app.Dao(), session, user.Id); err == nil && sessionRecord != nil {
+			sessionRecordId = sessionRecord.Id
 			if title := sessionRecord.GetString("title"); title != "" {
 				sessionTitle = title
+			}
+			// Extract GPX track data
+			gpxTrackFile = sessionRecord.GetString("gpx_track")
+			trackName = sessionRecord.GetString("track_name")
+			trackDescription = sessionRecord.GetString("track_description")
+
+			// Build complete session metadata
+			sessionMetadata = map[string]any{
+				"id":          sessionRecord.Id,
+				"name":        sessionRecord.GetString("name"),
+				"title":       sessionRecord.GetString("title"),
+				"description": sessionRecord.GetString("description"),
+				"public":      sessionRecord.GetBool("public"),
+				"created":     sessionRecord.GetDateTime("created").Time().Format(time.RFC3339),
+				"updated":     sessionRecord.GetDateTime("updated").Time().Format(time.RFC3339),
 			}
 		}
 	}
@@ -325,10 +344,123 @@ func (h *PublicHandler) GetSessionData(c echo.Context) error {
 		features[i] = pointFeature
 	}
 
-	featureCollection := map[string]interface{}{
+	// Create the response structure that includes both tracked data and GPX data
+	response := map[string]interface{}{
 		"type":     "FeatureCollection",
 		"features": features,
 	}
 
-	return utils.SendGeoJSON(c, http.StatusOK, featureCollection, "")
+	// Add session metadata if available
+	if sessionMetadata != nil {
+		response["session"] = sessionMetadata
+	}
+
+	// Add GPX track information if available
+	if gpxTrackFile != "" || trackName != "" || trackDescription != "" || sessionRecordId != "" {
+		gpxData := map[string]interface{}{
+			"track_file":        gpxTrackFile,
+			"track_name":        trackName,
+			"track_description": trackDescription,
+		}
+
+		// Fetch GPX track points if session ID is available
+		if sessionRecordId != "" {
+			gpxRecords, err := h.app.Dao().FindRecordsByFilter(
+				"gpx_tracks",
+				"session_id = {:sessionId}",
+				"sequence", // Order by sequence to maintain track point order
+				0,          // No limit
+				0,          // No offset
+				dbx.Params{"sessionId": sessionRecordId},
+			)
+
+			if err == nil && len(gpxRecords) > 0 {
+				gpxFeatures := make([]interface{}, len(gpxRecords))
+				for i, record := range gpxRecords {
+					pointCoordinates := []float64{
+						record.GetFloat("longitude"),
+						record.GetFloat("latitude"),
+						record.GetFloat("altitude"),
+					}
+					pointProperties := map[string]interface{}{
+						"sequence": record.GetFloat("sequence"),
+					}
+
+					gpxFeature := map[string]interface{}{
+						"type": "Feature",
+						"geometry": map[string]interface{}{
+							"type":        "Point",
+							"coordinates": pointCoordinates,
+						},
+						"properties": pointProperties,
+					}
+					gpxFeatures[i] = gpxFeature
+				}
+
+				gpxData["track_points"] = map[string]interface{}{
+					"type":     "FeatureCollection",
+					"features": gpxFeatures,
+				}
+			}
+		}
+
+		response["gpx"] = gpxData
+	}
+
+	// Fetch waypoints if session ID is available
+	if sessionRecordId != "" {
+		waypointRecords, err := h.app.Dao().FindRecordsByFilter(
+			"waypoints",
+			"session_id = {:sessionId}",
+			"-created", // Order by newest first
+			0,          // No limit
+			0,          // No offset
+			dbx.Params{"sessionId": sessionRecordId},
+		)
+
+		if err == nil && len(waypointRecords) > 0 {
+			waypointFeatures := make([]map[string]any, len(waypointRecords))
+			for i, waypoint := range waypointRecords {
+				waypointFeatures[i] = map[string]any{
+					"type": "Feature",
+					"id":   waypoint.Id,
+					"geometry": map[string]any{
+						"type": "Point",
+						"coordinates": []float64{
+							waypoint.GetFloat("longitude"),
+							waypoint.GetFloat("latitude"),
+						},
+					},
+					"properties": map[string]any{
+						"id":                  waypoint.Id,
+						"name":                waypoint.GetString("name"),
+						"type":                waypoint.GetString("type"),
+						"description":         waypoint.GetString("description"),
+						"session_id":          waypoint.GetString("session_id"),
+						"source":              waypoint.GetString("source"),
+						"position_confidence": waypoint.GetString("position_confidence"),
+						"created":             waypoint.GetDateTime("created").Time().Format(time.RFC3339),
+						"updated":             waypoint.GetDateTime("updated").Time().Format(time.RFC3339),
+					},
+				}
+
+				// Add optional fields
+				if altitude := waypoint.GetFloat("altitude"); altitude != 0 {
+					waypointFeatures[i]["properties"].(map[string]any)["altitude"] = altitude
+				}
+
+				if photo := waypoint.GetString("photo"); photo != "" {
+					waypointFeatures[i]["properties"].(map[string]any)["photo"] = photo
+				}
+			}
+
+			// Add waypoints to response as GeoJSON FeatureCollection
+			response["waypoints"] = map[string]any{
+				"type":     "FeatureCollection",
+				"features": waypointFeatures,
+			}
+		}
+	}
+
+	return utils.SendGeoJSON(c, http.StatusOK, response, "")
 }

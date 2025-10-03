@@ -1,0 +1,220 @@
+/**
+ * Overlay Styles
+ * Generic overlay/modal styles for use in web components
+ */
+
+/* Full-screen overlay backdrop */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: var(--spacing-md);
+  backdrop-filter: blur(2px);
+}
+
+/* Dark overlay variant */
+.overlay.overlay-dark {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+/* Light overlay variant */
+.overlay.overlay-light {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* Overlay content container */
+.overlay-content {
+  background: var(--bg-panel);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-heavy);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Overlay content sizes */
+.overlay-content.overlay-sm {
+  max-width: 400px;
+}
+
+.overlay-content.overlay-md {
+  max-width: 600px;
+}
+
+.overlay-content.overlay-lg {
+  max-width: 800px;
+}
+
+.overlay-content.overlay-xl {
+  max-width: 1200px;
+}
+
+.overlay-content.overlay-full {
+  max-width: 95vw;
+  max-height: 95vh;
+}
+
+/* Overlay header */
+.overlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  background: var(--bg-panel);
+  z-index: 1;
+}
+
+.overlay-header h2,
+.overlay-header h3,
+.overlay-header h4 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+/* Overlay close button */
+.overlay-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-base);
+  flex-shrink: 0;
+}
+
+.overlay-close:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Overlay body */
+.overlay-body {
+  padding: var(--spacing-lg);
+}
+
+/* Overlay footer */
+.overlay-footer {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-panel);
+}
+
+/* Click outside to close - overlay should handle this via event listener */
+.overlay[data-dismiss='backdrop'] {
+  cursor: pointer;
+}
+
+.overlay[data-dismiss='backdrop'] .overlay-content {
+  cursor: default;
+}
+
+/* Animation */
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes overlaySlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.overlay {
+  animation: overlayFadeIn 0.2s ease-out;
+}
+
+.overlay-content {
+  animation: overlaySlideIn 0.3s ease-out;
+}
+
+/* Dark theme support */
+[data-theme='dark'] .overlay-content {
+  background: var(--bg-panel-dark, #2d3748);
+}
+
+[data-theme='dark'] .overlay-header {
+  background: var(--bg-panel-dark, #2d3748);
+  border-bottom-color: var(--border-color-dark, #4a5568);
+}
+
+[data-theme='dark'] .overlay-footer {
+  background: var(--bg-panel-dark, #2d3748);
+  border-top-color: var(--border-color-dark, #4a5568);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .overlay {
+    padding: var(--spacing-xs);
+  }
+
+  .overlay-content {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+  }
+
+  .overlay-content.overlay-sm,
+  .overlay-content.overlay-md,
+  .overlay-content.overlay-lg,
+  .overlay-content.overlay-xl {
+    max-width: 100%;
+  }
+
+  .overlay-header,
+  .overlay-body,
+  .overlay-footer {
+    padding: var(--spacing-md);
+  }
+}
+
+/* Scrollbar styling for overlay content */
+.overlay-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overlay-content::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.overlay-content::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 4px;
+}
+
+.overlay-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}

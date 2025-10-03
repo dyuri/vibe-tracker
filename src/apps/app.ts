@@ -4,22 +4,18 @@ import type {
   LocationResponse,
   LocationsResponse,
   MapWidgetElement,
-  LocationWidgetElement,
-  LoginWidgetElement,
   ProfileWidgetElement,
   SessionManagementWidgetElement,
-  ChartWidgetElement,
+  SessionMapPanelWidgetElement,
+  WaypointsResponse,
 } from '@/types';
 
 // Import modules
 import { AuthService } from '@/services';
 import { initializePWA } from '@/utils/service-worker';
 import { Router } from '@/utils/router';
-import '@/components/widgets/chart-widget';
-import '@/components/widgets/login-widget';
-import '@/components/widgets/location-widget';
+import '@/components/widgets/session-map-panel-widget';
 import '@/components/widgets/map-widget';
-import '@/components/widgets/theme-toggle';
 import '@/apps/theme-init';
 import '@/styles/transitions.css';
 
@@ -37,6 +33,7 @@ const router = new Router();
 // View elements
 const profileView = document.getElementById('profile-view') as HTMLElement | null;
 const sessionsView = document.getElementById('sessions-view') as HTMLElement | null;
+const uiDemoView = document.getElementById('ui-demo-view') as HTMLElement | null;
 
 // Widget containers for dynamic loading
 const profileWidgetContainer = document.getElementById(
@@ -45,22 +42,27 @@ const profileWidgetContainer = document.getElementById(
 const sessionWidgetContainer = document.getElementById(
   'session-widget-container'
 ) as HTMLElement | null;
+const uiDemoContainer = document.getElementById('ui-demo-container') as HTMLElement | null;
 
 // Track loaded widgets to avoid duplicate loading
 let profileWidgetLoaded = false;
 let sessionWidgetLoaded = false;
+let uiDemoLoaded = false;
 
 /**
  * Show a specific view and hide others
  * Main view is always visible as background, overlays are shown/hidden
  */
-function showView(viewName: 'main' | 'profile' | 'sessions'): void {
+function showView(viewName: 'main' | 'profile' | 'sessions' | 'ui-demo'): void {
   // Hide all overlay views
   if (profileView) {
     profileView.classList.add('hidden');
   }
   if (sessionsView) {
     sessionsView.classList.add('hidden');
+  }
+  if (uiDemoView) {
+    uiDemoView.classList.add('hidden');
   }
 
   // Show the requested overlay view (main view is always visible)
@@ -76,6 +78,11 @@ function showView(viewName: 'main' | 'profile' | 'sessions'): void {
     case 'sessions':
       if (sessionsView) {
         sessionsView.classList.remove('hidden');
+      }
+      break;
+    case 'ui-demo':
+      if (uiDemoView) {
+        uiDemoView.classList.remove('hidden');
       }
       break;
   }
@@ -128,30 +135,41 @@ async function loadSessionWidget(): Promise<void> {
 }
 
 /**
- * Check authentication and configure global login widget
+ * Dynamically load and initialize the UI demo component
  */
-function checkAuthAndConfigureLogin(): void {
-  const loginWidget = document.getElementById('global-login') as LoginWidgetElement | null;
-  if (!loginWidget) {
+async function loadUiDemo(): Promise<void> {
+  if (uiDemoLoaded || !uiDemoContainer) {
     return;
   }
 
-  if (!window.authService.isAuthenticated()) {
-    setTimeout(() => {
-      try {
-        loginWidget.showPanel();
-      } catch (error) {
-        console.warn('Could not show login panel:', error);
-      }
-    }, 100);
+  try {
+    // Dynamic import of UI demo component
+    await import('@/components/ui/ui-demo');
+
+    // Create and append UI demo
+    const uiDemo = document.createElement('ui-demo');
+    uiDemoContainer.appendChild(uiDemo);
+
+    uiDemoLoaded = true;
+  } catch (error) {
+    console.error('Failed to load UI demo:', error);
   }
+}
+
+/**
+ * Check authentication and configure global login widget
+ */
+function checkAuthAndConfigureLogin(): void {
+  // Login functionality is now handled by the Profile tab in the session panel widget
+  // No additional configuration needed here
 }
 
 // Get widget references
 const mapWidget = document.querySelector('map-widget') as MapWidgetElement | null;
 const errorMessage = document.getElementById('error-message') as HTMLDivElement | null;
-const locationWidget = document.querySelector('location-widget') as LocationWidgetElement | null;
-const chartWidget = document.querySelector('chart-widget') as ChartWidgetElement | null;
+const sessionPanelWidget = document.querySelector(
+  'session-map-panel-widget'
+) as SessionMapPanelWidgetElement | null;
 const pageHeader = document.getElementById('page-header') as HTMLElement | null;
 const pageTitle = document.getElementById('page-title') as HTMLElement | null;
 const pageSubtitle = document.getElementById('page-subtitle') as HTMLElement | null;
@@ -206,6 +224,29 @@ router.addRoute('/profile/sessions', async () => {
   } finally {
     if (sessionsView) {
       sessionsView.classList.remove('view-transition-loading');
+    }
+  }
+});
+
+router.addRoute('/ui-demo', async () => {
+  // Clear any running intervals when leaving main view
+  clearRefreshInterval();
+
+  // Reset main view initialization since we're leaving it
+  isInitialized = false;
+
+  showView('ui-demo');
+
+  // Show loading state during widget load
+  if (uiDemoView) {
+    uiDemoView.classList.add('view-transition-loading');
+  }
+
+  try {
+    await loadUiDemo();
+  } finally {
+    if (uiDemoView) {
+      uiDemoView.classList.remove('view-transition-loading');
     }
   }
 });
@@ -269,8 +310,15 @@ let lastRequestTime: number = 0;
 const MIN_REQUEST_INTERVAL = 5000; // 5 seconds
 /** Track if initial data has been loaded to prevent multiple initial fetches */
 let isInitialized: boolean = false;
-/** Store current chart data for delta updates */
-let currentChartData: LocationsResponse | null = null;
+/** Store current session data for session panel */
+let _currentSessionData: any = null;
+
+/** Global state for selected location point */
+let selectedLocationPoint: {
+  feature: any;
+  index: number;
+  coordinates: [number, number];
+} | null = null;
 
 /**
  * Update page header based on current username and session
@@ -389,30 +437,82 @@ function fetchData(isInitialLoad: boolean = false, useDelta: boolean = false): v
         if (mapWidget) {
           mapWidget.appendData(data);
         }
-        // For chart widget, merge new data with existing data and refresh
-        if (chartWidget && currentChartData) {
-          // Merge new features with existing ones
-          const mergedFeatures = [...currentChartData.features, ...data.features];
-          const mergedData: LocationsResponse = {
-            type: 'FeatureCollection',
-            features: mergedFeatures,
-          };
-          currentChartData = mergedData;
-          chartWidget.displayData(mergedData);
+        // For session panel widget, pass the new data
+        if (sessionPanelWidget) {
+          sessionPanelWidget.displayData(data);
         }
         // Update latest timestamp
         const timestamps = data.features.map(f => f.properties.timestamp);
         latestTimestamp = Math.max(...timestamps);
       } else {
         // Initial load or full refresh - display all data
+        // Reset location selection when loading new session data
+        clearSelectedPoint();
+
         if (mapWidget) {
           mapWidget.displayData(data);
+
+          // Display GPX track if available
+          if (data.gpx && data.gpx.track_points) {
+            mapWidget.displayGpxTrack(data.gpx.track_points);
+          }
         }
-        // Update chart widget with the same data and store it
-        if (chartWidget && data.features && data.features.length > 0) {
-          currentChartData = data;
-          chartWidget.displayData(data);
+
+        // Update session panel widget with the data
+        if (sessionPanelWidget && username) {
+          // Determine session name: explicit from URL or extracted from API response
+          let sessionName = session;
+          if (!sessionName && data.features && data.features.length > 0) {
+            // Extract session name from the latest location data
+            sessionName = data.features[data.features.length - 1].properties?.session;
+          }
+
+          // Create session data from URL parameters and API response
+          console.log('DEBUG: data object:', data);
+          console.log('DEBUG: data.session:', data.session);
+          console.log('DEBUG: data.session?.id:', data.session?.id);
+
+          const sessionData = {
+            username: username,
+            sessionName: sessionName || 'latest',
+            sessionId: data.session?.id || `${username}-${sessionName || 'latest'}`,
+            title:
+              data.session?.title ||
+              (data.features && data.features.length > 0
+                ? data.features[0].properties?.session_title
+                : undefined),
+            description: data.session?.description,
+            public: data.session?.public ?? true,
+            created: data.session?.created,
+            updated: data.session?.updated,
+            gpx_track: data.gpx?.track_name || data.gpx?.track_file,
+            track_name: data.gpx?.track_name,
+            track_description: data.gpx?.track_description,
+          };
+
+          _currentSessionData = sessionData;
+          sessionPanelWidget.setSessionData(sessionData);
+
+          // Display location data
+          if (data.features && data.features.length > 0) {
+            sessionPanelWidget.displayData(data);
+          }
+
+          // Display GPX track if available
+          if (data.gpx && data.gpx.track_points) {
+            sessionPanelWidget.displayGpxTrack(data.gpx.track_points);
+          }
+
+          // Display waypoints if available and enabled
+          if (data.waypoints) {
+            const showWaypoints = localStorage.getItem('show-waypoints-enabled');
+            // Default to enabled (true) if no saved preference exists, otherwise respect the setting
+            if (showWaypoints !== 'false') {
+              sessionPanelWidget.displayWaypoints(data.waypoints);
+            }
+          }
         }
+
         // Extract and store the latest timestamp (only for user-specific views)
         if (username && data.features && data.features.length > 0) {
           const timestamps = data.features.map(f => f.properties.timestamp);
@@ -471,30 +571,31 @@ function initializeMainView(): void {
 
   if (username) {
     // User-specific view - enable all features
-    // Show location widget
-    if (locationWidget) {
-      locationWidget.style.display = 'block';
-    }
+    // Location controls are now integrated into the session panel widget
 
     // Remove existing event listeners to prevent duplicates
-    locationWidget?.removeEventListener('refresh-change', handleRefreshChange);
-    locationWidget?.removeEventListener('show-current-position', handleShowCurrentPosition);
-    locationWidget?.removeEventListener('hide-current-position', handleHideCurrentPosition);
+    sessionPanelWidget?.removeEventListener('refresh-change', handleRefreshChange);
+    sessionPanelWidget?.removeEventListener('show-current-position', handleShowCurrentPosition);
+    sessionPanelWidget?.removeEventListener('hide-current-position', handleHideCurrentPosition);
+    sessionPanelWidget?.removeEventListener('display-waypoints', handleDisplayWaypoints);
+    sessionPanelWidget?.removeEventListener('clear-waypoints', handleClearWaypoints);
     mapWidget?.removeEventListener('location-update', handleLocationUpdate);
     mapWidget?.removeEventListener('map-point-click', handleMapPointClick);
-    chartWidget?.removeEventListener('chart-hover', handleChartHover);
-    chartWidget?.removeEventListener('chart-hover-out', handleChartHoverOut);
-    chartWidget?.removeEventListener('chart-click', handleChartClick);
+    sessionPanelWidget?.removeEventListener('chart-hover', handleChartHover);
+    sessionPanelWidget?.removeEventListener('chart-hover-out', handleChartHoverOut);
+    sessionPanelWidget?.removeEventListener('chart-click', handleChartClick);
 
     // Add event listeners
-    locationWidget?.addEventListener('refresh-change', handleRefreshChange);
-    locationWidget?.addEventListener('show-current-position', handleShowCurrentPosition);
-    locationWidget?.addEventListener('hide-current-position', handleHideCurrentPosition);
+    sessionPanelWidget?.addEventListener('refresh-change', handleRefreshChange);
+    sessionPanelWidget?.addEventListener('show-current-position', handleShowCurrentPosition);
+    sessionPanelWidget?.addEventListener('hide-current-position', handleHideCurrentPosition);
+    sessionPanelWidget?.addEventListener('display-waypoints', handleDisplayWaypoints);
+    sessionPanelWidget?.addEventListener('clear-waypoints', handleClearWaypoints);
     mapWidget?.addEventListener('location-update', handleLocationUpdate);
     mapWidget?.addEventListener('map-point-click', handleMapPointClick);
-    chartWidget?.addEventListener('chart-hover', handleChartHover);
-    chartWidget?.addEventListener('chart-hover-out', handleChartHoverOut);
-    chartWidget?.addEventListener('chart-click', handleChartClick);
+    sessionPanelWidget?.addEventListener('chart-hover', handleChartHover);
+    sessionPanelWidget?.addEventListener('chart-hover-out', handleChartHoverOut);
+    sessionPanelWidget?.addEventListener('chart-click', handleChartClick);
 
     // Only do initial fetch if refresh is not already enabled (to avoid duplicate fetches)
     const savedRefresh = localStorage.getItem('refresh-enabled');
@@ -503,10 +604,7 @@ function initializeMainView(): void {
     }
   } else {
     // Public locations view - limited features
-    // Hide location widget controls since we're not tracking a specific user
-    if (locationWidget) {
-      locationWidget.style.display = 'none';
-    }
+    // Location controls are integrated into the session panel widget
 
     // Do initial fetch of public locations
     fetchData(true);
@@ -549,10 +647,23 @@ function handleHideCurrentPosition(_e: Event): void {
   }
 }
 
+function handleDisplayWaypoints(e: Event): void {
+  const customEvent = e as CustomEvent<WaypointsResponse>;
+  if (mapWidget) {
+    mapWidget.displayWaypoints(customEvent.detail);
+  }
+}
+
+function handleClearWaypoints(_e: Event): void {
+  if (mapWidget) {
+    mapWidget.clearWaypoints();
+  }
+}
+
 function handleLocationUpdate(e: Event): void {
   const customEvent = e as CustomEvent<LocationUpdateEventDetail>;
-  if (locationWidget) {
-    locationWidget.update(customEvent.detail);
+  if (sessionPanelWidget) {
+    sessionPanelWidget.updateLocationData(customEvent.detail);
   }
 }
 
@@ -568,28 +679,43 @@ function handleChartHover(e: Event): void {
 }
 
 function handleChartHoverOut(_e: Event): void {
-  if (mapWidget) {
+  // Clear temporary hover effects
+  // Keep selected marker if one exists
+  if (!selectedLocationPoint && mapWidget) {
     mapWidget.hideHoverMarker();
-    console.log('Chart hover out - hiding marker');
+    console.log('Chart hover out - hiding hover marker');
   }
 }
 
 function handleChartClick(e: Event): void {
   const customEvent = e as CustomEvent<{ feature: any; index: number }>;
-  const feature = customEvent.detail.feature;
+  const { feature, index } = customEvent.detail;
 
-  if (feature && feature.geometry && feature.geometry.coordinates) {
+  if (feature?.geometry?.coordinates) {
     const [longitude, latitude] = feature.geometry.coordinates;
 
-    // Center map on the clicked point
+    // Set global selected point state
+    selectedLocationPoint = {
+      feature,
+      index,
+      coordinates: [longitude, latitude],
+    };
+
+    // Show persistent red marker
     if (mapWidget) {
+      mapWidget.showSelectedMarker(latitude, longitude);
+      // Center map on the clicked point
       mapWidget.centerOnCoordinates(latitude, longitude);
-      console.log('Chart click - centered map on:', latitude, longitude);
+      console.log(
+        'Chart click - showing selected marker and centered map on:',
+        latitude,
+        longitude
+      );
     }
 
-    // Update location widget with the selected point data
-    if (locationWidget) {
-      locationWidget.update(feature);
+    // Update location data in overview tab
+    if (sessionPanelWidget) {
+      sessionPanelWidget.updateLocationData(feature);
     }
   }
 }
@@ -598,15 +724,41 @@ function handleMapPointClick(e: Event): void {
   const customEvent = e as CustomEvent<{ feature: any; index: number }>;
   const { feature, index } = customEvent.detail;
 
-  // Highlight the corresponding point on the chart
-  if (chartWidget) {
-    chartWidget.highlightPoint(index);
-    console.log('Map point click - highlighted chart point at index:', index);
+  // Set global selected point state
+  selectedLocationPoint = {
+    feature,
+    index,
+    coordinates: [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
+  };
+
+  // Show persistent red marker (already at clicked location)
+  if (feature?.geometry?.coordinates && mapWidget) {
+    const [longitude, latitude] = feature.geometry.coordinates;
+    mapWidget.showSelectedMarker(latitude, longitude);
+    console.log('Map point click - showing selected marker at:', latitude, longitude);
   }
 
-  // Update location widget with the selected point data
-  if (locationWidget) {
-    locationWidget.update(feature);
+  // Expand panel and switch to overview tab to show the location data
+  if (sessionPanelWidget) {
+    sessionPanelWidget.expandPanel();
+    sessionPanelWidget.switchToTab('overview');
+    sessionPanelWidget.highlightPoint(index);
+    sessionPanelWidget.updateLocationData(feature);
+  }
+}
+
+/**
+ * Clear the currently selected location point
+ */
+function clearSelectedPoint(): void {
+  selectedLocationPoint = null;
+  if (mapWidget) {
+    mapWidget.hideSelectedMarker();
+  }
+
+  // Update location data to show latest point or empty state
+  if (sessionPanelWidget) {
+    sessionPanelWidget.updateLocationData(); // No parameter = use fallback
   }
 }
 

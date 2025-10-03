@@ -1,0 +1,47 @@
+/**
+ * Radio Button Styles
+ * Generic radio button styles for use in web components
+ */
+
+input[type='radio'] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+input[type='radio']:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Radio Group Layout */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin: 0.5em 0;
+}
+
+.radio-group.horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+}
+
+.radio-option label {
+  cursor: pointer;
+  user-select: none;
+  margin: 0;
+}
+
+.radio-option input[type='radio']:disabled + label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

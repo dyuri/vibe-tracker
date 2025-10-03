@@ -1,0 +1,90 @@
+/**
+ * Button Styles
+ * Generic button styles for use in web components
+ */
+
+button {
+  background-color: var(--color-primary);
+  color: var(--text-inverse);
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  transition: var(--transition-base);
+  font-family: var(--font-family-base);
+}
+
+button:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+button:disabled {
+  background-color: var(--color-logged-out);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Button Variants */
+button.btn-secondary {
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+button.btn-secondary:hover:not(:disabled) {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+button.btn-danger {
+  background-color: var(--color-danger);
+}
+
+button.btn-danger:hover:not(:disabled) {
+  background-color: var(--color-danger-hover);
+}
+
+button.btn-success {
+  background-color: var(--color-success);
+}
+
+button.btn-success:hover:not(:disabled) {
+  background-color: var(--color-success-dark, #28a745);
+}
+
+/* Button Sizes */
+button.btn-sm {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-small);
+}
+
+button.btn-lg {
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: var(--font-size-large);
+}
+
+/* Button Width */
+button.btn-full-width {
+  width: 100%;
+}
+
+/* Button as Link */
+button.btn-link {
+  background: none;
+  color: var(--color-primary);
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+}
+
+button.btn-link:hover:not(:disabled) {
+  color: var(--color-primary-hover);
+  background: none;
+}

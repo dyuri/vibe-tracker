@@ -1,0 +1,359 @@
+/* Import UI component styles */
+@import '@/styles/ui/button.css';
+@import '@/styles/ui/checkbox.css';
+@import '@/styles/ui/input.css';
+@import '@/styles/ui/textarea.css';
+@import '@/styles/ui/select.css';
+@import '@/styles/ui/label.css';
+@import '@/styles/ui/overlay.css';
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+/* Component-specific styles */
+.waypoint-manager-widget {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-small);
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  border-radius: 8px 8px 0 0;
+}
+
+.widget-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.map-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.add-waypoint-btn,
+.add-photo-waypoint-btn {
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.add-photo-waypoint-btn {
+  background: var(--color-secondary, #6f42c1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.add-photo-waypoint-btn:hover {
+  background: var(--color-secondary-dark, #5a2d91);
+}
+
+.add-photo-waypoint-btn:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.waypoints-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  min-height: 200px;
+}
+
+.no-session,
+.no-waypoints,
+.loading,
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+}
+
+.error {
+  color: var(--color-danger);
+}
+
+.waypoint-item {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  padding: 12px;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.waypoint-item:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-medium);
+}
+
+.waypoint-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.waypoint-icon {
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.waypoint-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.waypoint-name {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.waypoint-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11px;
+}
+
+.waypoint-type,
+.waypoint-confidence,
+.waypoint-source {
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.waypoint-confidence.confidence-high {
+  background: #d4edda;
+  color: #155724;
+}
+
+.waypoint-confidence.confidence-good {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.waypoint-confidence.confidence-medium {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.waypoint-confidence.confidence-low {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.waypoint-description {
+  margin: 8px 0 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.waypoint-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.waypoint-actions button {
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+}
+
+.waypoint-thumbnail {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.waypoint-thumbnail:hover {
+  transform: scale(1.02);
+}
+
+/* Photo modal styles */
+.photo-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.photo-modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.photo-modal img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.photo-modal-close {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 32px;
+  height: 32px;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  transition: background-color 0.2s ease;
+}
+
+.photo-modal-close:hover {
+  background: #f0f0f0;
+}
+
+/* Form-specific styles - uses generic overlay styles from ui/overlay.css */
+
+/* Coordinates section styling */
+.coordinates-section {
+  background: var(--bg-secondary);
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.coordinates-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.coordinates-header h5 {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.coordinate-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pick-from-map-btn,
+.cancel-map-selection-btn {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.pick-from-map-btn {
+  background: var(--color-secondary, #6f42c1);
+  color: white;
+}
+
+.pick-from-map-btn:hover {
+  background: var(--color-secondary-dark, #5a2d91);
+}
+
+.cancel-map-selection-btn {
+  background: var(--color-danger);
+  color: white;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.coordinate-input {
+  font-family: monospace;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .widget-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .header-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .add-waypoint-btn,
+  .add-photo-waypoint-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .photo-modal-close {
+    top: 10px;
+    right: 10px;
+  }
+}

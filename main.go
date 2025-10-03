@@ -127,6 +127,24 @@ func setupAPIRoutes(router *echo.Echo, di *container.Container) {
 	api.PUT("/sessions/:username/:name", di.SessionHandler.UpdateSession, append(sessionMiddleware, di.AuthMiddleware.RequireJWTAuth(), di.UserMiddleware.RequireUserOwnership(), di.ValidationMiddleware.ValidateJSON(&models.UpdateSessionRequest{}))...)
 	api.DELETE("/sessions/:username/:name", di.SessionHandler.DeleteSession, append(sessionMiddleware, di.AuthMiddleware.RequireJWTAuth(), di.UserMiddleware.RequireUserOwnership())...)
 
+	// GPX track endpoints
+	api.POST("/sessions/:username/:name/gpx", di.SessionHandler.UploadGPXTrack, append(sessionMiddleware, di.AuthMiddleware.RequireJWTAuth(), di.UserMiddleware.RequireUserOwnership())...)
+	api.GET("/sessions/:username/:name/track", di.SessionHandler.GetTrackData, append(sessionMiddleware, di.UserMiddleware.LoadUserFromPath())...)
+
+	// Waypoint endpoints
+	var waypointMiddleware []echo.MiddlewareFunc
+	if di.RateLimitMiddleware != nil {
+		waypointMiddleware = append(waypointMiddleware, di.RateLimitMiddleware.SessionEndpoints()) // Use same rate limiting as sessions
+	}
+
+	api.GET("/waypoints/:username", di.WaypointHandler.ListWaypoints, append(waypointMiddleware, di.UserMiddleware.LoadUserFromPath())...)
+	api.GET("/waypoints/by-session/:sessionId", di.WaypointHandler.ListWaypointsBySession, waypointMiddleware...)
+	api.GET("/waypoints/detail/:id", di.WaypointHandler.GetWaypoint, waypointMiddleware...)
+	api.POST("/waypoints", di.WaypointHandler.CreateWaypoint, append(waypointMiddleware, di.AuthMiddleware.RequireJWTAuth(), di.ValidationMiddleware.ValidateJSON(&models.CreateWaypointRequest{}))...)
+	api.PUT("/waypoints/:id", di.WaypointHandler.UpdateWaypoint, append(waypointMiddleware, di.AuthMiddleware.RequireJWTAuth(), di.ValidationMiddleware.ValidateJSON(&models.UpdateWaypointRequest{}))...)
+	api.DELETE("/waypoints/:id", di.WaypointHandler.DeleteWaypoint, append(waypointMiddleware, di.AuthMiddleware.RequireJWTAuth())...)
+	api.POST("/waypoints/photo", di.WaypointHandler.UploadPhotoWaypoint, append(waypointMiddleware, di.AuthMiddleware.RequireJWTAuth())...)
+
 	// Authentication endpoints
 	var authMiddleware []echo.MiddlewareFunc
 	if di.RateLimitMiddleware != nil {

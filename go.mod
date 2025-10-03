@@ -8,6 +8,7 @@ require (
 	github.com/pocketbase/dbx v1.10.1
 	github.com/pocketbase/pocketbase v0.22.11
 	github.com/rs/zerolog v1.34.0
+	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/stretchr/testify v1.10.0
 	github.com/swaggo/swag v1.16.6
 	golang.org/x/time v0.12.0

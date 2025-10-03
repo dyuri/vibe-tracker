@@ -33,10 +33,7 @@
       <p id="page-subtitle" class="page-subtitle"></p>
     </header>
     <!-- Global widgets - shared across all views -->
-    <login-widget id="global-login"></login-widget>
-    <theme-toggle id="global-theme-toggle"></theme-toggle>
-    <location-widget id="global-location"></location-widget>
-    <chart-widget id="global-chart"></chart-widget>
+    <session-map-panel-widget id="global-session-panel"></session-map-panel-widget>
 
     <div id="content">
       <!-- Main app view (map, location tracking) - Always visible as background -->
@@ -70,6 +67,19 @@
             </nav>
           </header>
           <div id="session-widget-container"></div>
+        </div>
+      </div>
+
+      <!-- UI Demo view overlay -->
+      <div id="ui-demo-view" class="view-overlay hidden">
+        <div class="overlay-container">
+          <header class="profile-header">
+            <h1>UI Component Demo</h1>
+            <nav class="overlay-nav">
+              <a href="/" data-route="/">← Back to Map</a>
+            </nav>
+          </header>
+          <div id="ui-demo-container"></div>
         </div>
       </div>
     </div>

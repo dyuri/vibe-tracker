@@ -33,7 +33,6 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
   private canvas: HTMLCanvasElement | null = null;
   private data: LocationsResponse | null = null;
   private axisType: 'time' | 'distance' = 'time';
-  private isExpanded: boolean = false;
   private visibleMetrics = {
     elevation: true,
     speed: false,
@@ -48,46 +47,41 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
     this.shadowRoot!.innerHTML = `
       <style>${styles}</style>
       <div id="chart-container" class="chart-container">
-        <div id="toggle-button" class="toggle-button">📊</div>
         <div id="chart-panel" class="chart-panel">
-          <div class="chart-header">
-            <span class="chart-title">Track Data</span>
-            <span id="close-button" class="close-button">×</span>
-          </div>
           <div class="chart-content">
             <div id="chart-controls" class="chart-controls">
               <div class="control-group">
                 <div class="control-label">Axis:</div>
-                <div class="axis-toggle">
-                  <label>
-                    <input type="radio" name="axis" value="time" checked>
-                    Time
-                  </label>
-                  <label>
-                    <input type="radio" name="axis" value="distance">
-                    Distance
-                  </label>
+                <div class="radio-group horizontal">
+                  <div class="radio-option">
+                    <input type="radio" id="axis-time" name="axis" value="time" checked>
+                    <label for="axis-time" class="inline">Time</label>
+                  </div>
+                  <div class="radio-option">
+                    <input type="radio" id="axis-distance" name="axis" value="distance">
+                    <label for="axis-distance" class="inline">Distance</label>
+                  </div>
                 </div>
               </div>
               <div class="control-group">
                 <div class="control-label">Metrics:</div>
                 <div class="metric-toggles">
-                  <label>
-                    <input type="checkbox" name="metric" value="elevation" checked>
-                    Elevation
-                  </label>
-                  <label>
-                    <input type="checkbox" name="metric" value="heartRate" checked>
-                    Heart Rate
-                  </label>
-                  <label>
-                    <input type="checkbox" name="metric" value="pace" checked>
-                    Pace
-                  </label>
-                  <label>
-                    <input type="checkbox" name="metric" value="speed">
-                    Speed
-                  </label>
+                  <div class="checkbox-group">
+                    <input type="checkbox" id="metric-elevation" name="metric" value="elevation" checked>
+                    <label for="metric-elevation" class="inline">Elevation</label>
+                  </div>
+                  <div class="checkbox-group">
+                    <input type="checkbox" id="metric-heartRate" name="metric" value="heartRate" checked>
+                    <label for="metric-heartRate" class="inline">Heart Rate</label>
+                  </div>
+                  <div class="checkbox-group">
+                    <input type="checkbox" id="metric-pace" name="metric" value="pace" checked>
+                    <label for="metric-pace" class="inline">Pace</label>
+                  </div>
+                  <div class="checkbox-group">
+                    <input type="checkbox" id="metric-speed" name="metric" value="speed">
+                    <label for="metric-speed" class="inline">Speed</label>
+                  </div>
                 </div>
               </div>
               <div class="control-group mobile-close-group">
@@ -107,8 +101,8 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
   }
 
   connectedCallback(): void {
-    // Don't initialize chart here - only when first expanded
-    // This prevents the canvas reuse error
+    // Initialize chart when added to DOM
+    this.initializeChart();
   }
 
   disconnectedCallback(): void {
@@ -119,24 +113,6 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
   }
 
   private setupEventListeners(): void {
-    // Toggle button functionality
-    const toggleButton = this.shadowRoot!.getElementById('toggle-button') as HTMLElement;
-    const closeButton = this.shadowRoot!.getElementById('close-button') as HTMLElement;
-    const mobileCloseButton = this.shadowRoot!.getElementById('mobile-close-button') as HTMLElement;
-
-    toggleButton.addEventListener('click', () => {
-      this.expandChart();
-    });
-
-    closeButton.addEventListener('click', () => {
-      this.collapseChart();
-    });
-
-    // Mobile close button (same functionality as regular close button)
-    mobileCloseButton.addEventListener('click', () => {
-      this.collapseChart();
-    });
-
     // Axis type toggle
     const axisInputs = this.shadowRoot!.querySelectorAll('input[name="axis"]');
     axisInputs.forEach(input => {
@@ -159,9 +135,6 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
         this.updateChart();
       });
     });
-
-    // Restore saved state
-    this.restoreState();
   }
 
   private initChart(): void {
@@ -514,85 +487,19 @@ export default class ChartWidget extends HTMLElement implements ChartWidgetEleme
   }
 
   /**
-   * Expand the chart panel
+   * Initialize chart when component is ready
    */
-  /**
-   * Expand the chart panel
-   */
-  private expandChart(): void {
-    const toggleButton = this.shadowRoot!.getElementById('toggle-button') as HTMLElement;
+  private initializeChart(): void {
     const chartPanel = this.shadowRoot!.getElementById('chart-panel') as HTMLElement;
-    const chartWrapper = this.shadowRoot!.getElementById('chart-wrapper') as HTMLElement;
-
-    this.isExpanded = true;
-    toggleButton.style.display = 'none';
     chartPanel.style.display = 'flex';
 
-    // Hide chart during opening animation to prevent Chart.js rendering issues
-    chartWrapper.style.opacity = '0';
-
-    // Update host element CSS class
-    this.classList.remove('collapsed');
-    this.classList.add('expanded');
-
-    // Initialize chart when first expanded
+    // Initialize chart
     if (!this.chart) {
       this.initChart();
       // If we have data, update the chart immediately
       if (this.data) {
         this.updateChart();
       }
-    }
-
-    // Show chart after opening animation completes
-    setTimeout(() => {
-      chartWrapper.style.opacity = '1';
-      // Force chart resize after container is fully expanded
-      if (this.chart) {
-        this.chart.resize();
-      }
-    }, 300); // Match the transition duration from CSS
-
-    // Save state to localStorage
-    localStorage.setItem('chart-widget-expanded', 'true');
-  }
-
-  /**
-   * Collapse the chart panel
-   */
-  private collapseChart(): void {
-    const toggleButton = this.shadowRoot!.getElementById('toggle-button') as HTMLElement;
-    const chartPanel = this.shadowRoot!.getElementById('chart-panel') as HTMLElement;
-
-    this.isExpanded = false;
-    toggleButton.style.display = 'flex';
-    chartPanel.style.display = 'none';
-
-    // Update host element CSS class
-    this.classList.remove('expanded');
-    this.classList.add('collapsed');
-
-    // Clear any hover markers when chart is collapsed
-    this.dispatchEvent(
-      new CustomEvent('chart-hover-out', {
-        bubbles: true,
-        composed: true,
-      })
-    );
-
-    // Save state to localStorage
-    localStorage.setItem('chart-widget-expanded', 'false');
-  }
-
-  /**
-   * Restore widget state from localStorage
-   */
-  private restoreState(): void {
-    const savedState = localStorage.getItem('chart-widget-expanded');
-    if (savedState === 'true') {
-      this.expandChart();
-    } else {
-      this.collapseChart();
     }
   }
 }

@@ -34,6 +34,7 @@ type Container struct {
 	SessionHandler  *handlers.SessionHandler
 	TrackingHandler *handlers.TrackingHandler
 	PublicHandler   *handlers.PublicHandler
+	WaypointHandler *handlers.WaypointHandler
 	DocsHandler     *handlers.DocsHandler
 	HealthHandler   *handlers.HealthHandler
 
@@ -102,6 +103,7 @@ func (c *Container) initHandlers() {
 	c.SessionHandler = handlers.NewSessionHandler(c.App, c.SessionService)
 	c.TrackingHandler = handlers.NewTrackingHandler(c.App, c.LocationService)
 	c.PublicHandler = handlers.NewPublicHandler(c.App, c.LocationService, c.UserService)
+	c.WaypointHandler = handlers.NewWaypointHandler(c.App)
 	c.DocsHandler = handlers.NewDocsHandler(c.App)
 	c.HealthHandler = handlers.NewHealthHandler(c.App, c.HealthService, &c.Config.Health)
 }
@@ -157,8 +159,8 @@ func (c *Container) GetServices() (*services.AuthService, *services.UserService,
 }
 
 // GetHandlers returns all handlers for testing purposes
-func (c *Container) GetHandlers() (*handlers.AuthHandler, *handlers.SessionHandler, *handlers.TrackingHandler, *handlers.PublicHandler, *handlers.DocsHandler, *handlers.HealthHandler) {
-	return c.AuthHandler, c.SessionHandler, c.TrackingHandler, c.PublicHandler, c.DocsHandler, c.HealthHandler
+func (c *Container) GetHandlers() (*handlers.AuthHandler, *handlers.SessionHandler, *handlers.TrackingHandler, *handlers.PublicHandler, *handlers.WaypointHandler, *handlers.DocsHandler, *handlers.HealthHandler) {
+	return c.AuthHandler, c.SessionHandler, c.TrackingHandler, c.PublicHandler, c.WaypointHandler, c.DocsHandler, c.HealthHandler
 }
 
 // GetMiddleware returns all middleware for testing purposes
