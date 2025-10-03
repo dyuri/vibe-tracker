@@ -1,6 +1,5 @@
 - bugs
   - token expiration / refresh
-  - manage session buttons should just go to the session page
 
 - better (location tracking) session management
   - multi-user sessions

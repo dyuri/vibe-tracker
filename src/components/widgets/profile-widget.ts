@@ -114,12 +114,12 @@ export default class ProfileWidget extends HTMLElement implements ProfileWidgetE
         
         <!-- Navigation Section -->
         <div class="profile-section">
-          <div class="section-title">Session Management</div>
-          
+          <div class="section-title">Sessions</div>
+
           <div class="form-group">
-            <p>Manage your tracking sessions, create new ones, and organize your location data.</p>
+            <p>View your tracking sessions and session list.</p>
             <a href="/profile/sessions" class="button-link">
-              Manage Sessions →
+              View Sessions →
             </a>
           </div>
         </div>

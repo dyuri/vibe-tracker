@@ -42,8 +42,6 @@ export default class SessionManagementWidget
   private perPage: number = 20;
   private totalPages: number = 1;
   private editingSession: Session | null = null;
-  private currentSessionView: string | null = null; // 'details', 'gpx', 'waypoints'
-  private currentSession: Session | null = null; // Currently viewed session
 
   // Auth state elements
   private notAuthenticated!: HTMLElement;
@@ -68,23 +66,6 @@ export default class SessionManagementWidget
   private paginationInfo!: HTMLElement;
   private prevBtn!: HTMLButtonElement;
   private nextBtn!: HTMLButtonElement;
-
-  // Session detail elements
-  private sessionDetailView!: HTMLElement;
-  private sessionDetailTabs!: HTMLElement;
-  private sessionDetailContent!: HTMLElement;
-  private backToListBtn!: HTMLButtonElement;
-  // Detail form elements
-  private detailSessionForm!: HTMLFormElement;
-  private detailSessionNameInput!: HTMLInputElement;
-  private detailSessionTitleInput!: HTMLInputElement;
-  private detailSessionDescriptionInput!: HTMLTextAreaElement;
-  private detailSessionPublicInput!: HTMLInputElement;
-  private detailFormActions!: HTMLElement;
-  private saveChangesBtn!: HTMLButtonElement;
-  private cancelChangesBtn!: HTMLButtonElement;
-  private detailFormMessage!: HTMLElement;
-  private isDetailFormDirty: boolean = false;
 
   constructor() {
     super();
@@ -158,119 +139,6 @@ export default class SessionManagementWidget
             </div>
           </div>
         </div>
-
-        <!-- Session Detail View -->
-        <div class="session-detail-view hidden" id="session-detail-view">
-          <div class="session-detail-header">
-            <button id="back-to-list-btn" class="btn-secondary">← Back to Sessions</button>
-            <div class="session-detail-title">
-              <h2 id="detail-session-name"></h2>
-              <p id="detail-session-description"></p>
-            </div>
-          </div>
-
-          <div class="session-detail-tabs" id="session-detail-tabs">
-            <button class="tab-btn active" data-tab="overview">Overview</button>
-            <button class="tab-btn" data-tab="gpx">GPX Track</button>
-            <button class="tab-btn" data-tab="waypoints">Waypoints</button>
-            <button class="tab-btn" data-tab="comparison">Track Comparison</button>
-          </div>
-
-          <div class="session-detail-content" id="session-detail-content">
-            <!-- Overview Tab -->
-            <div class="tab-content active" data-tab="overview">
-              <div class="overview-container">
-                <!-- Session Basic Info (Inline Editable) -->
-                <div class="stat-card">
-                  <h4>Session Information</h4>
-                  <form id="detail-session-form" class="session-detail-form">
-                    <div class="form-group">
-                      <label for="detail-session-name-input">Session Name</label>
-                      <input type="text" id="detail-session-name-input" readonly class="readonly-field">
-                      <small class="form-help-text">Session name cannot be changed after creation</small>
-                    </div>
-                    
-                    <div class="form-group">
-                      <label for="detail-session-title-input">Session Title</label>
-                      <input type="text" id="detail-session-title-input" placeholder="e.g., Morning Run 2024">
-                    </div>
-                    
-                    <div class="form-group">
-                      <label for="detail-session-description-input">Description</label>
-                      <textarea id="detail-session-description-input" placeholder="Optional description of this session..."></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                      <div class="checkbox-group">
-                        <input type="checkbox" id="detail-session-public-input">
-                        <label for="detail-session-public-input">Make this session public</label>
-                      </div>
-                      <small class="form-help-text">Public sessions can be viewed by anyone</small>
-                    </div>
-                    
-                    <div class="form-actions hidden" id="detail-form-actions">
-                      <button type="button" id="save-changes-btn" class="action-btn">Save Changes</button>
-                      <button type="button" id="cancel-changes-btn" class="btn-secondary">Cancel</button>
-                    </div>
-                    
-                    <div id="detail-form-message"></div>
-                  </form>
-                </div>
-
-                <!-- Session Statistics -->
-                <div class="stat-card">
-                  <h4>Session Details</h4>
-                  <div class="session-details-info">
-                    <div class="detail-row">
-                      <span class="label">Created:</span>
-                      <span id="detail-created">-</span>
-                    </div>
-                    <div class="detail-row">
-                      <span class="label">Updated:</span>
-                      <span id="detail-updated">-</span>
-                    </div>
-                    <div class="detail-row">
-                      <span class="label">Visibility:</span>
-                      <span id="detail-visibility">-</span>
-                    </div>
-                    <div class="detail-row">
-                      <span class="label">GPX Track:</span>
-                      <span id="detail-has-gpx">-</span>
-                    </div>
-                    <div class="detail-row">
-                      <span class="label">Waypoints:</span>
-                      <span id="detail-waypoint-count">-</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Quick Actions -->
-                <div class="stat-card">
-                  <h4>Quick Actions</h4>
-                  <div class="quick-actions">
-                    <button class="action-btn" id="view-tracking-btn">View Tracking</button>
-                    <button class="action-btn btn-danger" id="delete-session-btn">Delete Session</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- GPX Track Tab -->
-            <div class="tab-content" data-tab="gpx">
-              <gpx-upload-widget id="gpx-upload"></gpx-upload-widget>
-            </div>
-
-            <!-- Waypoints Tab -->
-            <div class="tab-content" data-tab="waypoints">
-              <waypoint-manager-widget id="waypoint-manager"></waypoint-manager-widget>
-            </div>
-
-            <!-- Track Comparison Tab -->
-            <div class="tab-content" data-tab="comparison">
-              <track-comparison-widget id="track-comparison"></track-comparison-widget>
-            </div>
-          </div>
-        </div>
       </div>
     `;
 
@@ -318,35 +186,6 @@ export default class SessionManagementWidget
     this.paginationInfo = this.shadowRoot!.getElementById('pagination-info')!;
     this.prevBtn = this.shadowRoot!.getElementById('prev-btn')! as HTMLButtonElement;
     this.nextBtn = this.shadowRoot!.getElementById('next-btn')! as HTMLButtonElement;
-
-    // Session detail elements
-    this.sessionDetailView = this.shadowRoot!.getElementById('session-detail-view')!;
-    this.sessionDetailTabs = this.shadowRoot!.getElementById('session-detail-tabs')!;
-    this.sessionDetailContent = this.shadowRoot!.getElementById('session-detail-content')!;
-    this.backToListBtn = this.shadowRoot!.getElementById('back-to-list-btn')! as HTMLButtonElement;
-
-    // Detail form elements
-    this.detailSessionForm = this.shadowRoot!.getElementById(
-      'detail-session-form'
-    )! as HTMLFormElement;
-    this.detailSessionNameInput = this.shadowRoot!.getElementById(
-      'detail-session-name-input'
-    )! as HTMLInputElement;
-    this.detailSessionTitleInput = this.shadowRoot!.getElementById(
-      'detail-session-title-input'
-    )! as HTMLInputElement;
-    this.detailSessionDescriptionInput = this.shadowRoot!.getElementById(
-      'detail-session-description-input'
-    )! as HTMLTextAreaElement;
-    this.detailSessionPublicInput = this.shadowRoot!.getElementById(
-      'detail-session-public-input'
-    )! as HTMLInputElement;
-    this.detailFormActions = this.shadowRoot!.getElementById('detail-form-actions')!;
-    this.saveChangesBtn = this.shadowRoot!.getElementById('save-changes-btn')! as HTMLButtonElement;
-    this.cancelChangesBtn = this.shadowRoot!.getElementById(
-      'cancel-changes-btn'
-    )! as HTMLButtonElement;
-    this.detailFormMessage = this.shadowRoot!.getElementById('detail-form-message')!;
   }
 
   setupEventListeners(): void {
@@ -354,15 +193,6 @@ export default class SessionManagementWidget
     this.cancelBtn.addEventListener('click', () => this.cancelEdit());
     this.prevBtn.addEventListener('click', () => this.previousPage());
     this.nextBtn.addEventListener('click', () => this.nextPage());
-    this.backToListBtn.addEventListener('click', () => this.showSessionList());
-
-    // Tab switching
-    this.sessionDetailTabs.addEventListener('click', (e: Event) => {
-      const target = e.target as HTMLElement;
-      if (target.classList.contains('tab-btn')) {
-        this.switchTab(target.dataset.tab!);
-      }
-    });
 
     // Auto-generate title from name
     this.sessionNameInput.addEventListener('input', () => {
@@ -370,17 +200,6 @@ export default class SessionManagementWidget
         this.sessionTitleInput.value = this.generateTitle(this.sessionNameInput.value);
       }
     });
-
-    // Detail form event listeners
-    this.saveChangesBtn.addEventListener('click', () => this.handleDetailFormSave());
-    this.cancelChangesBtn.addEventListener('click', () => this.handleDetailFormCancel());
-
-    // Track changes in detail form
-    this.detailSessionTitleInput.addEventListener('input', () => this.handleDetailFormChange());
-    this.detailSessionDescriptionInput.addEventListener('input', () =>
-      this.handleDetailFormChange()
-    );
-    this.detailSessionPublicInput.addEventListener('change', () => this.handleDetailFormChange());
 
     // Listen for GPX upload success
     this.shadowRoot!.addEventListener('gpx-uploaded', ((e: CustomEvent) => {
@@ -417,279 +236,11 @@ export default class SessionManagementWidget
 
   showSessionList(): void {
     this.shadowRoot!.querySelector('.session-list-view')!.classList.remove('hidden');
-    this.sessionDetailView.classList.add('hidden');
-    this.currentSessionView = null;
-    this.currentSession = null; // Clear current session
-  }
-
-  showSessionDetails(session: Session): void {
-    this.currentSession = session; // Store current session
-    this.shadowRoot!.querySelector('.session-list-view')!.classList.add('hidden');
-    this.sessionDetailView.classList.remove('hidden');
-    this.currentSessionView = 'details';
-
-    // Update detail view with session info
-    this.shadowRoot!.getElementById('detail-session-name')!.textContent =
-      session.title || session.name;
-    this.shadowRoot!.getElementById('detail-session-description')!.textContent =
-      session.description || '';
-    this.shadowRoot!.getElementById('detail-created')!.textContent = new Date(
-      session.created
-    ).toLocaleDateString();
-    this.shadowRoot!.getElementById('detail-updated')!.textContent = new Date(
-      session.updated
-    ).toLocaleDateString();
-    this.shadowRoot!.getElementById('detail-visibility')!.textContent = session.public
-      ? 'Public'
-      : 'Private';
-
-    // Populate the inline edit form
-    this.detailSessionNameInput.value = session.name;
-    this.detailSessionTitleInput.value = session.title || '';
-    this.detailSessionDescriptionInput.value = session.description || '';
-    this.detailSessionPublicInput.checked = session.public || false;
-
-    // Reset form state
-    this.isDetailFormDirty = false;
-    this.detailFormActions.classList.add('hidden');
-    this.detailFormMessage.textContent = '';
-    this.detailFormMessage.className = '';
-
-    // Update GPX track information
-    const hasGpx = session.gpx_track && session.gpx_track.trim() !== '';
-    const gpxElement = this.shadowRoot!.getElementById('detail-has-gpx')!;
-    if (hasGpx && session.track_name) {
-      gpxElement.textContent = `✅ ${session.track_name}`;
-      gpxElement.style.color = 'var(--color-success)';
-    } else if (hasGpx) {
-      gpxElement.textContent = '✅ GPX Track Uploaded';
-      gpxElement.style.color = 'var(--color-success)';
-    } else {
-      gpxElement.textContent = '❌ No GPX Track';
-      gpxElement.style.color = 'var(--text-muted)';
-    }
-
-    // Initialize waypoint widget with session data
-    const waypointManager = this.shadowRoot!.getElementById('waypoint-manager') as any;
-
-    if (waypointManager) {
-      // Load session data to get waypoints if available
-      this.loadSessionDataForWaypoints(session);
-    }
-
-    // Set up session actions
-    this.setupSessionActions(session);
-
-    // Switch to overview tab by default
-    this.switchTab('overview');
-  }
-
-  private async loadSessionDataForWaypoints(session: Session): Promise<void> {
-    if (!this.user) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/session/${this.user.username}/${session.name}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to load session data: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      const data = result.data || result;
-
-      // Update waypoint count display
-      const waypointCountElement = this.shadowRoot!.getElementById('detail-waypoint-count')!;
-      if (data.waypoints && data.waypoints.features) {
-        const count = data.waypoints.features.length;
-        waypointCountElement.textContent = `${count} waypoint${count !== 1 ? 's' : ''}`;
-        waypointCountElement.style.color = count > 0 ? 'var(--color-success)' : 'var(--text-muted)';
-      } else {
-        waypointCountElement.textContent = '0 waypoints';
-        waypointCountElement.style.color = 'var(--text-muted)';
-      }
-
-      // Initialize waypoint widget with session data if waypoints are available
-      const waypointManager = this.shadowRoot!.getElementById('waypoint-manager') as any;
-      if (waypointManager && data.waypoints && waypointManager.loadWaypointsFromData) {
-        waypointManager.loadWaypointsFromData(session.id, data.waypoints);
-      } else if (waypointManager && waypointManager.loadWaypoints) {
-        // Fallback to API call if loadWaypointsFromData is not available
-        waypointManager.loadWaypoints(session.id);
-      }
-    } catch (error: any) {
-      console.error('Error loading session data for waypoints:', error);
-
-      // Fallback to direct API call if session data loading fails
-      const waypointManager = this.shadowRoot!.getElementById('waypoint-manager') as any;
-      if (waypointManager && waypointManager.loadWaypoints) {
-        waypointManager.loadWaypoints(session.id);
-      }
-    }
-  }
-
-  setupSessionActions(session: Session): void {
-    const viewBtn = this.shadowRoot!.getElementById('view-tracking-btn')!;
-    const deleteBtn = this.shadowRoot!.getElementById('delete-session-btn')!;
-
-    viewBtn.onclick = () => {
-      window.location.href = `/u/${this.user!.username}/s/${session.name}`;
-    };
-
-    deleteBtn.onclick = () => {
-      this.deleteSession(session.name);
-    };
-  }
-
-  handleDetailFormChange(): void {
-    this.isDetailFormDirty = true;
-    this.detailFormActions.classList.remove('hidden');
-  }
-
-  async handleDetailFormSave(): Promise<void> {
-    if (!this.currentSession || !this.isDetailFormDirty) {
-      return;
-    }
-
-    const title = this.detailSessionTitleInput.value.trim();
-    const description = this.detailSessionDescriptionInput.value.trim();
-    const isPublic = this.detailSessionPublicInput.checked;
-
-    this.saveChangesBtn.disabled = true;
-    this.saveChangesBtn.textContent = 'Saving...';
-
-    try {
-      await this.updateSession(this.currentSession.name, {
-        title,
-        description,
-        public: isPublic,
-      });
-
-      // Update the current session object
-      this.currentSession.title = title;
-      this.currentSession.description = description;
-      this.currentSession.public = isPublic;
-
-      // Update the header display
-      this.shadowRoot!.getElementById('detail-session-name')!.textContent =
-        title || this.currentSession.name;
-      this.shadowRoot!.getElementById('detail-session-description')!.textContent =
-        description || '';
-
-      // Update visibility display
-      this.shadowRoot!.getElementById('detail-visibility')!.textContent = isPublic
-        ? 'Public'
-        : 'Private';
-
-      this.isDetailFormDirty = false;
-      this.detailFormActions.classList.add('hidden');
-      this.showMessage(this.detailFormMessage, 'Session updated successfully!', 'success');
-
-      // Reload the session list to reflect changes
-      this.loadSessions();
-    } catch (error: any) {
-      this.showMessage(
-        this.detailFormMessage,
-        error.message || 'Failed to update session',
-        'error'
-      );
-    } finally {
-      this.saveChangesBtn.disabled = false;
-      this.saveChangesBtn.textContent = 'Save Changes';
-    }
-  }
-
-  handleDetailFormCancel(): void {
-    if (!this.currentSession) {
-      return;
-    }
-
-    // Reset form fields to original values
-    this.detailSessionTitleInput.value = this.currentSession.title || '';
-    this.detailSessionDescriptionInput.value = this.currentSession.description || '';
-    this.detailSessionPublicInput.checked = this.currentSession.public || false;
-
-    this.isDetailFormDirty = false;
-    this.detailFormActions.classList.add('hidden');
-    this.detailFormMessage.textContent = '';
-    this.detailFormMessage.className = '';
-  }
-
-  async loadTrackDataForComparison(): Promise<void> {
-    if (!this.currentSession || !this.user) {
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `/api/session/${this.user.username}/${this.currentSession.name}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to load session data: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      const data = result.data || result;
-
-      // Get track comparison widget
-      const trackComparisonWidget = this.shadowRoot!.getElementById('track-comparison') as any;
-
-      if (trackComparisonWidget) {
-        // Set planned track (GPX) data if available
-        if (data.gpx && data.gpx.track_points) {
-          trackComparisonWidget.setPlannedTrack(data.gpx.track_points);
-        }
-
-        // Set actual track (location) data if available
-        if (data.features && data.features.length > 0) {
-          const actualTrackData = {
-            type: 'FeatureCollection',
-            features: data.features,
-          };
-          trackComparisonWidget.setActualTrack(actualTrackData);
-        }
-      }
-    } catch (error: any) {
-      console.error('Error loading track data for comparison:', error);
-    }
-  }
-
-  switchTab(tabName: string): void {
-    // Update active tab button
-    this.sessionDetailTabs.querySelectorAll('.tab-btn').forEach(btn => {
-      const htmlBtn = btn as HTMLElement;
-      btn.classList.toggle('active', htmlBtn.dataset.tab === tabName);
-    });
-
-    // Update active tab content
-    this.sessionDetailContent.querySelectorAll('.tab-content').forEach(content => {
-      const htmlContent = content as HTMLElement;
-      content.classList.toggle('active', htmlContent.dataset.tab === tabName);
-    });
-
-    // Load track data when switching to comparison tab
-    if (tabName === 'comparison') {
-      this.loadTrackDataForComparison();
-    }
   }
 
   handleGpxUploaded(detail: { file: File }): void {
-    // Refresh session data to show updated GPX info
-    if (this.currentSessionView === 'details') {
-      // You could reload session details here
-      console.log('GPX uploaded successfully:', detail.file.name);
-    }
+    // Refresh session list to show updated GPX info
+    console.log('GPX uploaded successfully:', detail.file.name);
   }
 
   generateTitle(sessionName: string): string {
@@ -783,7 +334,7 @@ export default class SessionManagementWidget
           </div>
         </div>
         <div class="session-actions">
-          <button class="manage-btn" data-session-id="${session.id}" onclick="this.getRootNode().host.showSessionDetailsById('${session.id}')">Manage</button>
+          <button class="manage-btn" data-session-id="${session.id}" onclick="this.getRootNode().host.navigateToSession('${session.name}')">View</button>
           <button class="delete-btn btn-danger" data-session-id="${session.id}" onclick="this.getRootNode().host.deleteSession('${session.name}')">Delete</button>
         </div>
       </div>
@@ -930,11 +481,6 @@ export default class SessionManagementWidget
 
       this.loadSessions();
       this.showMessage(this.formMessage, 'Session deleted successfully!', 'success');
-
-      // If we're in detail view of the deleted session, go back to list
-      if (this.currentSessionView === 'details') {
-        this.showSessionList();
-      }
     } catch (error: any) {
       this.showMessage(this.formMessage, error.message || 'Failed to delete session', 'error');
     }
@@ -1001,13 +547,6 @@ export default class SessionManagementWidget
     return this.sessions.find(s => s.id === sessionId) || null;
   }
 
-  showSessionDetailsById(sessionId: string): void {
-    const session = this.findSessionById(sessionId);
-    if (session) {
-      this.showSessionDetails(session);
-    }
-  }
-
   editSessionById(sessionId: string): void {
     const session = this.findSessionById(sessionId);
     if (session) {
@@ -1015,26 +554,28 @@ export default class SessionManagementWidget
     }
   }
 
-  /**
-   * Gets the current session information for child widgets
-   */
-  getCurrentSession(): { username: string; sessionName: string; sessionId: string } | null {
-    if (!this.currentSession || !this.user) {
-      return null;
-    }
-
-    return {
-      username: this.user.username,
-      sessionName: this.currentSession.name,
-      sessionId: this.currentSession.id,
-    };
-  }
-
   deleteSessionById(sessionId: string): void {
     const session = this.findSessionById(sessionId);
     if (session) {
       this.deleteSession(session.name);
     }
+  }
+
+  navigateToSession(sessionName: string): void {
+    if (!this.user) {
+      return;
+    }
+    const url = `/u/${this.user.username}/s/${sessionName}`;
+
+    // Hide the sessions view to show the map
+    const sessionsView = document.getElementById('sessions-view');
+    if (sessionsView) {
+      sessionsView.classList.add('hidden');
+    }
+
+    // Navigate to the session
+    window.history.pushState({}, '', url);
+    window.dispatchEvent(new PopStateEvent('popstate'));
   }
 }
 
