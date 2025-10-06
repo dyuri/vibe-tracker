@@ -127,6 +127,35 @@ button {
   margin-bottom: var(--spacing-sm);
 }
 
+/* Checkbox styling */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+
+.checkbox-label input[type='checkbox'] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.checkbox-label span {
+  user-select: none;
+}
+
+.help-text {
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+  margin-top: var(--spacing-xs);
+  margin-left: 26px;
+  line-height: 1.4;
+}
+
 /* Utility classes for profile functionality */
 .button-link {
   display: inline-block;

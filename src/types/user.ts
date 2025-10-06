@@ -9,6 +9,7 @@ export interface User {
   email: string;
   avatar?: string;
   token?: string;
+  default_session_public?: boolean;
   created?: string;
   updated?: string;
 }
@@ -24,6 +25,7 @@ export interface UpdateProfileRequest {
   email?: string;
   password?: string;
   oldPassword?: string;
+  default_session_public?: boolean;
 }
 
 export interface RefreshTokenRequest {

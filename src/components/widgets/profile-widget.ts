@@ -14,6 +14,7 @@ export default class ProfileWidget extends HTMLElement implements ProfileWidgetE
   private currentEmail!: HTMLElement;
   private usernameInput!: HTMLInputElement;
   private emailInput!: HTMLInputElement;
+  private defaultSessionPublicCheckbox!: HTMLInputElement;
   private updateBasicBtn!: HTMLButtonElement;
   private basicMessage!: HTMLElement;
 
@@ -64,7 +65,15 @@ export default class ProfileWidget extends HTMLElement implements ProfileWidgetE
             <div class="current-info" id="current-email"></div>
             <input type="email" id="email" placeholder="Enter new email">
           </div>
-          
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="default-session-public">
+              <span>New sessions are public by default</span>
+            </label>
+            <div class="help-text">When enabled, new tracking sessions will be publicly visible unless explicitly marked as private.</div>
+          </div>
+
           <button id="update-basic" type="button">Update Basic Info</button>
           <div id="basic-message"></div>
         </div>
@@ -166,6 +175,9 @@ export default class ProfileWidget extends HTMLElement implements ProfileWidgetE
     this.currentEmail = this.shadowRoot!.getElementById('current-email')!;
     this.usernameInput = this.shadowRoot!.getElementById('username')! as HTMLInputElement;
     this.emailInput = this.shadowRoot!.getElementById('email')! as HTMLInputElement;
+    this.defaultSessionPublicCheckbox = this.shadowRoot!.getElementById(
+      'default-session-public'
+    )! as HTMLInputElement;
     this.updateBasicBtn = this.shadowRoot!.getElementById('update-basic')! as HTMLButtonElement;
     this.basicMessage = this.shadowRoot!.getElementById('basic-message')!;
 
@@ -248,6 +260,9 @@ export default class ProfileWidget extends HTMLElement implements ProfileWidgetE
     this.currentUsername.textContent = `Current: ${this.user.username || 'Not set'}`;
     this.currentEmail.textContent = `Current: ${this.user.email || 'Not set'}`;
 
+    // Update default session public checkbox
+    this.defaultSessionPublicCheckbox.checked = this.user.default_session_public || false;
+
     // Update avatar
     this.updateAvatarDisplay();
 
@@ -286,9 +301,14 @@ export default class ProfileWidget extends HTMLElement implements ProfileWidgetE
   async handleUpdateBasicInfo(): Promise<void> {
     const username = this.usernameInput.value.trim();
     const email = this.emailInput.value.trim();
+    const defaultSessionPublic = this.defaultSessionPublicCheckbox.checked;
 
-    if (!username && !email) {
-      this.showMessage(this.basicMessage, 'Please enter a username or email to update', 'error');
+    // Check if user changed the default_session_public setting
+    const settingChanged =
+      this.user && defaultSessionPublic !== (this.user.default_session_public || false);
+
+    if (!username && !email && !settingChanged) {
+      this.showMessage(this.basicMessage, 'Please change a value to update', 'error');
       return;
     }
 
@@ -296,7 +316,12 @@ export default class ProfileWidget extends HTMLElement implements ProfileWidgetE
     this.updateBasicBtn.textContent = 'Updating...';
 
     try {
-      const updatedUser = await window.authService.updateProfile({ username, email });
+      const updateData: any = {};
+      if (username) {updateData.username = username;}
+      if (email) {updateData.email = email;}
+      if (settingChanged) {updateData.default_session_public = defaultSessionPublic;}
+
+      const updatedUser = await window.authService.updateProfile(updateData);
       this.user = updatedUser;
       this.populateUserInfo();
       this.showMessage(this.basicMessage, 'Basic information updated successfully!', 'success');
