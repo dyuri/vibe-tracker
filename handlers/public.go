@@ -227,10 +227,10 @@ func (h *PublicHandler) GetSessionData(c echo.Context) error {
 	session := c.PathParam("session")
 
 	if session == "_latest" {
-		// Find the most recently created session for this user
+		// Find the most recently created public session for this user
 		latestSessions, err := h.app.Dao().FindRecordsByFilter(
 			"sessions",
-			"user = {:user}",
+			"user = {:user} && public = true",
 			"-created",
 			1,
 			0,

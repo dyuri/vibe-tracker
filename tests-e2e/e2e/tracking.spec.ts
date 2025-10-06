@@ -245,8 +245,19 @@ test.describe('Location Tracking', () => {
     expect(publicLocationsResponse.data.features).toHaveLength(1);
     expect(publicLocationsResponse.data.features[0].properties.session).toBe(publicSessionName);
 
-    // Verify private session page still works (owner can see private sessions)
+    // Verify the user map page (/u/username) shows the latest PUBLIC session, not private
     const username = authData.record.username;
+    const userMapResponse = await page.evaluate(
+      user => fetch(`/api/session/${user}/_latest`).then(r => r.json()),
+      username
+    );
+
+    expect(userMapResponse.status).toBe('success');
+    expect(userMapResponse.data.type).toBe('FeatureCollection');
+    expect(userMapResponse.data.session.name).toBe(publicSessionName);
+    expect(userMapResponse.data.session.public).toBe(true);
+
+    // Verify private session page still works (owner can see private sessions)
     await page.goto(`/u/${username}/s/${privateSessionName}`);
     await page.waitForSelector('map-widget');
     await page.waitForTimeout(2000);
