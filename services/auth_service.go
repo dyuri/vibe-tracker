@@ -67,6 +67,11 @@ func (s *AuthService) UpdateProfile(record *models.Record, req appmodels.UpdateP
 		record.SetEmail(req.Email)
 	}
 
+	// Update default session public preference if provided
+	if req.DefaultSessionPublic != nil {
+		record.Set("default_session_public", *req.DefaultSessionPublic)
+	}
+
 	// Update password if provided
 	if req.Password != "" {
 		if req.OldPassword == "" {
@@ -122,11 +127,12 @@ func (s *AuthService) GetUserByID(userID string) (*models.Record, error) {
 // recordToUser converts a PocketBase record to a User model
 func (s *AuthService) recordToUser(record *models.Record) appmodels.User {
 	return appmodels.User{
-		ID:       record.Id,
-		Username: record.Username(),
-		Email:    record.Email(),
-		Avatar:   record.GetString("avatar"),
-		Created:  record.Created.String(),
-		Updated:  record.Updated.String(),
+		ID:                   record.Id,
+		Username:             record.Username(),
+		Email:                record.Email(),
+		Avatar:               record.GetString("avatar"),
+		DefaultSessionPublic: record.GetBool("default_session_public"),
+		Created:              record.Created.String(),
+		Updated:              record.Updated.String(),
 	}
 }

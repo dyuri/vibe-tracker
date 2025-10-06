@@ -8,10 +8,11 @@ type LoginRequest struct {
 
 // UpdateProfileRequest represents the request body for updating user profile
 type UpdateProfileRequest struct {
-	Username    string `json:"username,omitempty" validate:"omitempty,username,min=3,max=50"`
-	Email       string `json:"email,omitempty" validate:"omitempty,email"`
-	Password    string `json:"password,omitempty" validate:"omitempty,min=6,max=128"`
-	OldPassword string `json:"oldPassword,omitempty"`
+	Username             string `json:"username,omitempty" validate:"omitempty,username,min=3,max=50"`
+	Email                string `json:"email,omitempty" validate:"omitempty,email"`
+	Password             string `json:"password,omitempty" validate:"omitempty,min=6,max=128"`
+	OldPassword          string `json:"oldPassword,omitempty"`
+	DefaultSessionPublic *bool  `json:"default_session_public,omitempty"`
 }
 
 // LoginResponse represents the response for successful login
@@ -22,12 +23,13 @@ type LoginResponse struct {
 
 // User represents a user in the system
 type User struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Avatar   string `json:"avatar,omitempty"`
-	Created  string `json:"created,omitempty"`
-	Updated  string `json:"updated,omitempty"`
+	ID                   string `json:"id"`
+	Username             string `json:"username"`
+	Email                string `json:"email"`
+	Avatar               string `json:"avatar,omitempty"`
+	DefaultSessionPublic bool   `json:"default_session_public"`
+	Created              string `json:"created,omitempty"`
+	Updated              string `json:"updated,omitempty"`
 }
 
 // TokenResponse represents a token refresh response

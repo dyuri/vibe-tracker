@@ -58,7 +58,8 @@ func findOrCreateSession(dao *daos.Dao, sessionName string, user *models.Record)
 	session = models.NewRecord(sessionsCollection)
 	session.Set("name", sessionName)
 	session.Set("user", user.Id)
-	session.Set("public", false)
+	// Use user's default session privacy preference
+	session.Set("public", user.GetBool("default_session_public"))
 
 	// Generate a nice title from the session name
 	title := GenerateSessionTitle(sessionName)

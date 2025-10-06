@@ -7,7 +7,7 @@ type CreateSessionRequest struct {
 	Name        string `json:"name" validate:"required,session_name,min=1,max=100"`
 	Title       string `json:"title,omitempty" validate:"omitempty,max=200"`
 	Description string `json:"description,omitempty" validate:"omitempty,max=1000"`
-	Public      bool   `json:"public"`
+	Public      *bool  `json:"public,omitempty"` // Optional - uses user's default if not specified
 }
 
 // UpdateSessionRequest represents the request body for updating a session

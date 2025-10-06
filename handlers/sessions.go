@@ -199,12 +199,21 @@ func (h *SessionHandler) CreateSession(c echo.Context) error {
 		return apis.NewNotFoundError("sessions collection not found", err)
 	}
 
+	// Determine session privacy: use explicit value if provided, otherwise use user's default
+	isPublic := false // Default to private for safety
+	if data.Public != nil {
+		isPublic = *data.Public
+	} else {
+		// Use user's default preference
+		isPublic = record.GetBool("default_session_public")
+	}
+
 	session := models.NewRecord(sessionsCollection)
 	session.Set("name", data.Name)
 	session.Set("user", record.Id)
 	session.Set("title", data.Title)
 	session.Set("description", data.Description)
-	session.Set("public", data.Public)
+	session.Set("public", isPublic)
 
 	if err := h.app.Dao().SaveRecord(session); err != nil {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to create session", err)

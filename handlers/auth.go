@@ -93,10 +93,11 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 	userData := map[string]any{
 		"token": newToken,
 		"user": map[string]any{
-			"id":       record.Id,
-			"username": record.Username(),
-			"email":    record.Email(),
-			"avatar":   record.GetString("avatar"),
+			"id":                     record.Id,
+			"username":               record.Username(),
+			"email":                  record.Email(),
+			"avatar":                 record.GetString("avatar"),
+			"default_session_public": record.GetBool("default_session_public"),
 		},
 	}
 
@@ -121,11 +122,12 @@ func (h *AuthHandler) GetMe(c echo.Context) error {
 	}
 
 	userData := map[string]any{
-		"id":       info.Id,
-		"username": info.Username(),
-		"email":    info.Email(),
-		"avatar":   info.GetString("avatar"),
-		"token":    info.GetString("token"),
+		"id":                     info.Id,
+		"username":               info.Username(),
+		"email":                  info.Email(),
+		"avatar":                 info.GetString("avatar"),
+		"token":                  info.GetString("token"),
+		"default_session_public": info.GetBool("default_session_public"),
 	}
 
 	return utils.SendSuccess(c, http.StatusOK, userData, "")
@@ -163,11 +165,12 @@ func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 	}
 
 	userData := map[string]any{
-		"id":       record.Id,
-		"username": record.Username(),
-		"email":    record.Email(),
-		"avatar":   record.GetString("avatar"),
-		"token":    record.GetString("token"),
+		"id":                     record.Id,
+		"username":               record.Username(),
+		"email":                  record.Email(),
+		"avatar":                 record.GetString("avatar"),
+		"token":                  record.GetString("token"),
+		"default_session_public": record.GetBool("default_session_public"),
 	}
 
 	return utils.SendSuccess(c, http.StatusOK, userData, "Profile updated successfully")
@@ -207,11 +210,12 @@ func (h *AuthHandler) UploadAvatar(c echo.Context) error {
 
 	// Return updated user data
 	userData := map[string]any{
-		"id":       record.Id,
-		"username": record.Username(),
-		"email":    record.Email(),
-		"avatar":   record.GetString("avatar"),
-		"token":    record.GetString("token"),
+		"id":                     record.Id,
+		"username":               record.Username(),
+		"email":                  record.Email(),
+		"avatar":                 record.GetString("avatar"),
+		"token":                  record.GetString("token"),
+		"default_session_public": record.GetBool("default_session_public"),
 	}
 
 	return utils.SendSuccess(c, http.StatusOK, userData, "Avatar updated successfully")
@@ -243,11 +247,12 @@ func (h *AuthHandler) RegenerateToken(c echo.Context) error {
 	}
 
 	userData := map[string]any{
-		"id":       record.Id,
-		"username": record.Username(),
-		"email":    record.Email(),
-		"avatar":   record.GetString("avatar"),
-		"token":    newToken,
+		"id":                     record.Id,
+		"username":               record.Username(),
+		"email":                  record.Email(),
+		"avatar":                 record.GetString("avatar"),
+		"token":                  newToken,
+		"default_session_public": record.GetBool("default_session_public"),
 	}
 
 	return utils.SendSuccess(c, http.StatusOK, userData, "Token regenerated successfully")
