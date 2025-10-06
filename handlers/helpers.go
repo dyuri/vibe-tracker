@@ -8,6 +8,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/daos"
 	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/tools/security"
 
 	"vibe-tracker/utils"
 )
@@ -60,6 +61,8 @@ func findOrCreateSession(dao *daos.Dao, sessionName string, user *models.Record)
 	session.Set("user", user.Id)
 	// Use user's default session privacy preference
 	session.Set("public", user.GetBool("default_session_public"))
+	// Generate share token for private session sharing
+	session.Set("share_token", security.RandomString(32))
 
 	// Generate a nice title from the session name
 	title := GenerateSessionTitle(sessionName)

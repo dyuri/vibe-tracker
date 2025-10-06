@@ -9,6 +9,7 @@ import (
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
+	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tools/types"
 
 	"vibe-tracker/services"
@@ -247,8 +248,23 @@ func (h *PublicHandler) GetSessionData(c echo.Context) error {
 	var gpxTrackFile, trackName, trackDescription string
 	var sessionRecordId string
 	var sessionMetadata map[string]any
+	var sessionRecord *models.Record
 	if session != "" {
-		if sessionRecord, err := findSessionByNameAndUser(h.app.Dao(), session, user.Id); err == nil && sessionRecord != nil {
+		var err error
+		sessionRecord, err = findSessionByNameAndUser(h.app.Dao(), session, user.Id)
+		if err == nil && sessionRecord != nil {
+			// Check access: allow if public, or if owner, or if valid share_token
+			authRecord, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
+			isOwner := authRecord != nil && authRecord.Id == user.Id
+			isPublic := sessionRecord.GetBool("public")
+			shareToken := c.QueryParam("share_token")
+			storedShareToken := sessionRecord.GetString("share_token")
+			hasValidShareToken := shareToken != "" && storedShareToken != "" && shareToken == storedShareToken
+
+			if !isPublic && !isOwner && !hasValidShareToken {
+				return apis.NewForbiddenError("Access denied", nil)
+			}
+
 			sessionRecordId = sessionRecord.Id
 			if title := sessionRecord.GetString("title"); title != "" {
 				sessionTitle = title

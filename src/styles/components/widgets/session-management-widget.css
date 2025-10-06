@@ -122,6 +122,44 @@ button {
   font-size: var(--font-size-small);
 }
 
+.share-link-section {
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--border-light);
+}
+
+.share-link-section label {
+  display: block;
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.share-link-container {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.share-link-input {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-small);
+  font-family: monospace;
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.copy-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-small);
+  white-space: nowrap;
+  margin: 0;
+}
+
 .session-actions {
   display: flex;
   gap: var(--spacing-xs);

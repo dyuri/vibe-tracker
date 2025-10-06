@@ -11,6 +11,7 @@ interface Session {
   title?: string;
   description?: string;
   public: boolean;
+  share_token?: string;
   created: string;
   updated: string;
   gpx_track?: string;
@@ -316,8 +317,15 @@ export default class SessionManagementWidget
     }
 
     this.sessionList.innerHTML = this.sessions
-      .map(
-        session => `
+      .map(session => {
+        // Generate share link if share_token exists
+        const shareLink = session.public
+          ? `/u/${this.user!.username}/s/${session.name}`
+          : session.share_token
+            ? `/u/${this.user!.username}/s/${session.name}?share_token=${session.share_token}`
+            : null;
+
+        return `
       <div class="session-item" data-session-id="${session.id}">
         <div class="session-info">
           <div class="session-name">
@@ -332,14 +340,27 @@ export default class SessionManagementWidget
             <span>Created: ${new Date(session.created).toLocaleDateString()}</span>
             ${session.updated !== session.created ? `<span>Updated: ${new Date(session.updated).toLocaleDateString()}</span>` : ''}
           </div>
+          ${
+            shareLink
+              ? `
+          <div class="share-link-section">
+            <label>Share Link:</label>
+            <div class="share-link-container">
+              <input type="text" class="share-link-input" readonly value="${window.location.origin}${shareLink}">
+              <button class="copy-btn" onclick="this.getRootNode().host.copyShareLink('${window.location.origin}${shareLink}')">Copy</button>
+            </div>
+          </div>
+          `
+              : ''
+          }
         </div>
         <div class="session-actions">
           <button class="manage-btn" data-session-id="${session.id}" onclick="this.getRootNode().host.navigateToSession('${session.name}')">View</button>
           <button class="delete-btn btn-danger" data-session-id="${session.id}" onclick="this.getRootNode().host.deleteSession('${session.name}')">Delete</button>
         </div>
       </div>
-    `
-      )
+    `;
+      })
       .join('');
   }
 
@@ -576,6 +597,17 @@ export default class SessionManagementWidget
     // Navigate to the session
     window.history.pushState({}, '', url);
     window.dispatchEvent(new PopStateEvent('popstate'));
+  }
+
+  async copyShareLink(shareLink: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      // Show a temporary success message
+      this.showMessage(this.formMessage, 'Share link copied to clipboard!', 'success');
+    } catch (error) {
+      console.error('Failed to copy share link:', error);
+      this.showMessage(this.formMessage, 'Failed to copy link. Please copy manually.', 'error');
+    }
   }
 }
 

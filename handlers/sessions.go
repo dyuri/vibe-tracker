@@ -12,6 +12,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/tools/security"
 
 	"vibe-tracker/constants"
 	"vibe-tracker/middleware"
@@ -86,10 +87,14 @@ func (h *SessionHandler) ListSessions(c echo.Context) error {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to count sessions", err)
 	}
 
+	// Check if authenticated user is the owner
+	authRecord, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
+	isOwner := authRecord != nil && authRecord.Id == user.Id
+
 	// Format response
 	sessionList := make([]map[string]any, len(sessions))
 	for i, session := range sessions {
-		sessionList[i] = map[string]any{
+		sessionData := map[string]any{
 			"id":                session.Id,
 			"name":              session.GetString("name"),
 			"title":             session.GetString("title"),
@@ -101,6 +106,13 @@ func (h *SessionHandler) ListSessions(c echo.Context) error {
 			"track_name":        session.GetString("track_name"),
 			"track_description": session.GetString("track_description"),
 		}
+
+		// Include share_token only for owner
+		if isOwner {
+			sessionData["share_token"] = session.GetString("share_token")
+		}
+
+		sessionList[i] = sessionData
 	}
 
 	totalPages := (int(totalSessions) + perPage - 1) / perPage
@@ -140,6 +152,10 @@ func (h *SessionHandler) GetSession(c echo.Context) error {
 		return apis.NewNotFoundError("Session not found", err)
 	}
 
+	// Check if authenticated user is the owner
+	authRecord, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
+	isOwner := authRecord != nil && authRecord.Id == user.Id
+
 	sessionData := map[string]any{
 		"id":                session.Id,
 		"name":              session.GetString("name"),
@@ -151,6 +167,11 @@ func (h *SessionHandler) GetSession(c echo.Context) error {
 		"gpx_track":         session.GetString("gpx_track"),
 		"track_name":        session.GetString("track_name"),
 		"track_description": session.GetString("track_description"),
+	}
+
+	// Include share_token only for owner
+	if isOwner {
+		sessionData["share_token"] = session.GetString("share_token")
 	}
 
 	return utils.SendSuccess(c, http.StatusOK, sessionData, "")
@@ -214,6 +235,8 @@ func (h *SessionHandler) CreateSession(c echo.Context) error {
 	session.Set("title", data.Title)
 	session.Set("description", data.Description)
 	session.Set("public", isPublic)
+	// Generate share token for private session sharing
+	session.Set("share_token", security.RandomString(32))
 
 	if err := h.app.Dao().SaveRecord(session); err != nil {
 		return apis.NewApiError(http.StatusInternalServerError, "Failed to create session", err)
@@ -225,6 +248,7 @@ func (h *SessionHandler) CreateSession(c echo.Context) error {
 		"title":             session.GetString("title"),
 		"description":       session.GetString("description"),
 		"public":            session.GetBool("public"),
+		"share_token":       session.GetString("share_token"), // Always include for creator
 		"created":           session.GetDateTime("created").Time().Format(time.RFC3339),
 		"updated":           session.GetDateTime("updated").Time().Format(time.RFC3339),
 		"gpx_track":         session.GetString("gpx_track"),
@@ -293,6 +317,7 @@ func (h *SessionHandler) UpdateSession(c echo.Context) error {
 		"title":             session.GetString("title"),
 		"description":       session.GetString("description"),
 		"public":            session.GetBool("public"),
+		"share_token":       session.GetString("share_token"), // Always include for owner
 		"created":           session.GetDateTime("created").Time().Format(time.RFC3339),
 		"updated":           session.GetDateTime("updated").Time().Format(time.RFC3339),
 		"gpx_track":         session.GetString("gpx_track"),
@@ -476,9 +501,15 @@ func (h *SessionHandler) GetTrackData(c echo.Context) error {
 		return apis.NewNotFoundError("Session not found", err)
 	}
 
-	// Check if user has access to this session
+	// Check access: allow if public, or if owner, or if valid share_token
 	authRecord, _ := c.Get(apis.ContextAuthRecordKey).(*models.Record)
-	if !session.GetBool("public") && (authRecord == nil || authRecord.Id != user.Id) {
+	isOwner := authRecord != nil && authRecord.Id == user.Id
+	isPublic := session.GetBool("public")
+	shareToken := c.QueryParam("share_token")
+	storedShareToken := session.GetString("share_token")
+	hasValidShareToken := shareToken != "" && storedShareToken != "" && shareToken == storedShareToken
+
+	if !isPublic && !isOwner && !hasValidShareToken {
 		return apis.NewForbiddenError("Access denied", nil)
 	}
 

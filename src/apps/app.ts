@@ -407,9 +407,26 @@ function fetchData(isInitialLoad: boolean = false, useDelta: boolean = false): v
     apiUrl = `/api/session/${username}/_latest`;
   }
 
+  // Build query parameters
+  const queryParams = new URLSearchParams();
+
   // Add since parameter for delta fetching (only for user-specific views)
   if (username && useDelta && latestTimestamp) {
-    apiUrl += `?since=${latestTimestamp}`;
+    queryParams.set('since', latestTimestamp.toString());
+  }
+
+  // Add share_token if present in URL (for private session access)
+  if (username && session) {
+    const shareToken = new URLSearchParams(window.location.search).get('share_token');
+    if (shareToken) {
+      queryParams.set('share_token', shareToken);
+    }
+  }
+
+  // Append query parameters if any exist
+  const queryString = queryParams.toString();
+  if (queryString) {
+    apiUrl += `?${queryString}`;
   }
 
   fetch(apiUrl)

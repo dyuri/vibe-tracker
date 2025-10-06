@@ -112,6 +112,7 @@ export interface Session {
   title: string;
   description: string;
   public: boolean;
+  share_token?: string; // Only included for session owner
   user?: string;
   created: string;
   updated: string;

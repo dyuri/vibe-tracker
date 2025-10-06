@@ -24,6 +24,7 @@ type Session struct {
 	Title            string    `json:"title"`
 	Description      string    `json:"description"`
 	Public           bool      `json:"public"`
+	ShareToken       string    `json:"share_token,omitempty"` // Only included for owner
 	User             string    `json:"user,omitempty"`
 	GpxTrack         string    `json:"gpx_track,omitempty"`
 	TrackName        string    `json:"track_name,omitempty"`
