@@ -60,7 +60,7 @@ export default class SessionMapPanelWidget
     {
       id: 'overview',
       label: 'Overview',
-      visible: () => true, // Always visible for controls and location data
+      visible: () => true, // Always visible for location data
       component: 'session-overview',
     },
     {
@@ -101,6 +101,12 @@ export default class SessionMapPanelWidget
       label: 'Profile',
       visible: () => true, // Always visible (global tab)
       component: 'profile-panel',
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      visible: () => true, // Always visible (global tab)
+      component: 'settings-panel',
     },
   ];
 
@@ -299,45 +305,8 @@ export default class SessionMapPanelWidget
           <!-- Overview Tab -->
           <div class="tab-content active" data-tab="overview">
             <div class="overview-section">
-              <div class="overview-container">
-                <!-- Location & Display Controls Card -->
-                <div class="overview-card">
-                  <h4>Location & Display Controls</h4>
-                  <div class="control-grid">
-                    <div class="checkbox-group">
-                      <input type="checkbox" id="overview-refresh-checkbox">
-                      <label for="overview-refresh-checkbox" class="inline">Auto Refresh</label>
-                    </div>
-                    <div class="checkbox-group">
-                      <input type="checkbox" id="overview-show-position-checkbox">
-                      <label for="overview-show-position-checkbox" class="inline">Show Position</label>
-                    </div>
-                    <div class="checkbox-group">
-                      <input type="checkbox" id="overview-dark-theme-checkbox">
-                      <label for="overview-dark-theme-checkbox" class="inline">Dark Theme</label>
-                    </div>
-                    <div class="checkbox-group">
-                      <input type="checkbox" id="overview-dark-map-checkbox">
-                      <label for="overview-dark-map-checkbox" class="inline">Dark Map</label>
-                    </div>
-                    <div class="checkbox-group">
-                      <input type="checkbox" id="overview-wake-lock-checkbox">
-                      <label for="overview-wake-lock-checkbox" class="inline">Wake Lock</label>
-                    </div>
-                    <div class="checkbox-group">
-                      <input type="checkbox" id="overview-show-waypoints-checkbox">
-                      <label for="overview-show-waypoints-checkbox" class="inline">Show Waypoints</label>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Location Data Card -->
-                <div class="overview-card" id="overview-location-data">
-                  <h4>Location Data</h4>
-                  <div class="location-properties" id="overview-location-content">
-                    <p class="no-data">Select a point on the map to view location details</p>
-                  </div>
-                </div>
+              <div class="location-properties" id="overview-location-content">
+                <p class="no-data">Select a point on the map to view location details</p>
               </div>
             </div>
           </div>
@@ -433,6 +402,38 @@ export default class SessionMapPanelWidget
                     <li><a href="/profile" data-route="/profile">Profile</a></li>
                     <li><a href="/profile/sessions" data-route="/profile/sessions">Sessions</a></li>
                   </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Settings Tab -->
+          <div class="tab-content" data-tab="settings">
+            <div class="settings-section">
+              <div class="control-grid">
+                <div class="checkbox-group">
+                  <input type="checkbox" id="overview-refresh-checkbox">
+                  <label for="overview-refresh-checkbox" class="inline">Auto Refresh</label>
+                </div>
+                <div class="checkbox-group">
+                  <input type="checkbox" id="overview-show-position-checkbox">
+                  <label for="overview-show-position-checkbox" class="inline">Show Position</label>
+                </div>
+                <div class="checkbox-group">
+                  <input type="checkbox" id="overview-dark-theme-checkbox">
+                  <label for="overview-dark-theme-checkbox" class="inline">Dark Theme</label>
+                </div>
+                <div class="checkbox-group">
+                  <input type="checkbox" id="overview-dark-map-checkbox">
+                  <label for="overview-dark-map-checkbox" class="inline">Dark Map</label>
+                </div>
+                <div class="checkbox-group">
+                  <input type="checkbox" id="overview-wake-lock-checkbox">
+                  <label for="overview-wake-lock-checkbox" class="inline">Wake Lock</label>
+                </div>
+                <div class="checkbox-group">
+                  <input type="checkbox" id="overview-show-waypoints-checkbox">
+                  <label for="overview-show-waypoints-checkbox" class="inline">Show Waypoints</label>
                 </div>
               </div>
             </div>
@@ -698,8 +699,7 @@ export default class SessionMapPanelWidget
   }
 
   private updateSessionOverview(): void {
-    const overviewStats = this.shadowRoot!.getElementById('overview-stats');
-    if (!overviewStats || !this.currentSessionData) {
+    if (!this.currentSessionData) {
       return;
     }
 
@@ -712,71 +712,64 @@ export default class SessionMapPanelWidget
       track_name,
     } = this.currentSessionData;
 
-    // Update the overview container to include session information card
-    const overviewContainer = this.shadowRoot!.querySelector('.overview-container:last-child');
-    if (!overviewContainer) {
+    // Update the overview section to include session information
+    const overviewSection = this.shadowRoot!.querySelector('.overview-section');
+    if (!overviewSection) {
       return;
     }
 
-    // Create session information card and prepend it to the container
-    const sessionCard = document.createElement('div');
-    sessionCard.className = 'overview-card';
-    sessionCard.innerHTML = `
-      <h4>Session Information</h4>
-      <div class="info-row">
-        <span class="label">Name:</span>
-        <span class="value">${sessionName}</span>
+    // Create session information HTML
+    const sessionInfoHTML = `
+      <div class="session-info">
+        <div class="info-row">
+          <span class="label">Name:</span>
+          <span class="value">${sessionName}</span>
+        </div>
+        ${
+          title
+            ? `
+          <div class="info-row">
+            <span class="label">Title:</span>
+            <span class="value">${title}</span>
+          </div>
+        `
+            : ''
+        }
+        ${
+          description
+            ? `
+          <div class="info-row">
+            <span class="label">Description:</span>
+            <span class="value">${description}</span>
+          </div>
+        `
+            : ''
+        }
+        <div class="info-row">
+          <span class="label">Visibility:</span>
+          <span class="value ${isPublic ? 'public' : 'private'}">${isPublic ? 'Public' : 'Private'}</span>
+        </div>
+        ${
+          track_name
+            ? `
+          <div class="info-row">
+            <span class="label">GPX Track:</span>
+            <span class="value">✅ ${track_name}</span>
+          </div>
+        `
+            : ''
+        }
       </div>
-      ${
-        title
-          ? `
-        <div class="info-row">
-          <span class="label">Title:</span>
-          <span class="value">${title}</span>
-        </div>
-      `
-          : ''
-      }
-      ${
-        description
-          ? `
-        <div class="info-row">
-          <span class="label">Description:</span>
-          <span class="value">${description}</span>
-        </div>
-      `
-          : ''
-      }
-      <div class="info-row">
-        <span class="label">Visibility:</span>
-        <span class="value ${isPublic ? 'public' : 'private'}">${isPublic ? 'Public' : 'Private'}</span>
-      </div>
-      ${
-        track_name
-          ? `
-        <div class="info-row">
-          <span class="label">GPX Track:</span>
-          <span class="value">✅ ${track_name}</span>
-        </div>
-      `
-          : ''
-      }
     `;
 
-    // Remove existing session card if present
-    const existingSessionCard = overviewContainer.querySelector(
-      '.overview-card[data-session-info="true"]'
-    );
-    if (existingSessionCard) {
-      existingSessionCard.remove();
+    // Remove existing session info if present
+    const existingSessionInfo = overviewSection.querySelector('.session-info');
+    if (existingSessionInfo) {
+      existingSessionInfo.remove();
     }
 
-    // Mark the card and add it as the first card
-    sessionCard.setAttribute('data-session-info', 'true');
-    overviewContainer.insertBefore(sessionCard, overviewContainer.firstChild);
-
-    // Clear the overview-stats since we're now using the container
-    overviewStats.innerHTML = '';
+    // Insert session info at the beginning of overview section
+    overviewSection.insertAdjacentHTML('afterbegin', sessionInfoHTML);
   }
 
   private updateTrackComparison(): void {
@@ -1383,19 +1376,20 @@ export default class SessionMapPanelWidget
     }
 
     if (displayFeature?.properties) {
-      const { speed, heart_rate, timestamp, session, session_title } = displayFeature.properties;
+      const { speed, heart_rate, timestamp } = displayFeature.properties;
       const altitude = displayFeature.geometry.coordinates[2];
-      const sessionDisplay =
-        session_title && session_title !== session
-          ? `${session_title} (${session})`
-          : session || 'N/A';
+
+      // Add a header for location data
+      const header = document.createElement('h5');
+      header.textContent = 'Location Data';
+      header.style.marginBottom = 'var(--spacing-sm)';
+      locationContent.appendChild(header);
 
       this.showLocationProperty(
         locationContent,
         'Time',
         new Date(timestamp * 1000).toLocaleString()
       );
-      this.showLocationProperty(locationContent, 'Session', sessionDisplay);
       this.showLocationProperty(locationContent, 'Altitude', `${altitude.toFixed(2)} m`);
       this.showLocationProperty(locationContent, 'Speed', `${speed.toFixed(2)} km/h`);
       this.showLocationProperty(locationContent, 'Heart Rate', `${heart_rate} bpm`);
