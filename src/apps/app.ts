@@ -429,7 +429,13 @@ function fetchData(isInitialLoad: boolean = false, useDelta: boolean = false): v
     apiUrl += `?${queryString}`;
   }
 
-  fetch(apiUrl)
+  // Include auth token in headers if available (for private session access)
+  const headers: HeadersInit = {};
+  if (window.authService?.token) {
+    headers['Authorization'] = `Bearer ${window.authService.token}`;
+  }
+
+  fetch(apiUrl, { headers })
     .then(response => {
       if (!response.ok) {
         if (!username) {

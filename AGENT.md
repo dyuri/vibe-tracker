@@ -55,3 +55,4 @@ This sets up:
   - email: $TEST_EMAIL env variable
   - password: $TEST_PASSWORD env variable
 - there's usually some test data under `/u/dyuri`
+- starting the dev server with the test db: `go run . serve --dir=tests-e2e/fixtures --dev`
