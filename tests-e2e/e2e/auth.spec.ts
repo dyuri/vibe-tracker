@@ -15,16 +15,29 @@ test.describe('Authentication', () => {
   });
 
   test('should display login form when not authenticated', async ({ page }) => {
-    // Check that login widget is visible
-    await expect(page.locator('login-widget')).toBeVisible();
+    // Check that session-map-panel widget is visible
+    await expect(page.locator('session-map-panel-widget')).toBeVisible();
+
+    // Click Profile tab to access login form
+    await page.evaluate(() => {
+      const panel = document.querySelector('session-map-panel-widget') as any;
+      const shadowRoot = panel?.shadowRoot;
+      if (shadowRoot) {
+        const profileTab = shadowRoot.querySelector('[data-tab="profile"]') as HTMLElement;
+        if (profileTab) profileTab.click();
+      }
+    });
+
+    // Wait for profile tab to be active
+    await page.waitForTimeout(500);
 
     // Check that login form is displayed within shadow DOM
     const isFormVisible = await page.evaluate(() => {
-      const loginWidget = document.querySelector('login-widget') as any;
-      const shadowRoot = loginWidget?.shadowRoot;
+      const panel = document.querySelector('session-map-panel-widget') as any;
+      const shadowRoot = panel?.shadowRoot;
       if (shadowRoot) {
-        const loginForm = shadowRoot.querySelector('#login-form') as HTMLElement;
-        return loginForm && loginForm.style.display !== 'none';
+        const loginForm = shadowRoot.querySelector('#profile-login-form') as HTMLElement;
+        return loginForm && !loginForm.classList.contains('hidden');
       }
       return false;
     });
@@ -54,14 +67,26 @@ test.describe('Authentication', () => {
       password: 'wrongpassword',
     };
 
+    // Click Profile tab first
+    await page.evaluate(() => {
+      const panel = document.querySelector('session-map-panel-widget') as any;
+      const shadowRoot = panel?.shadowRoot;
+      if (shadowRoot) {
+        const profileTab = shadowRoot.querySelector('[data-tab="profile"]') as HTMLElement;
+        if (profileTab) profileTab.click();
+      }
+    });
+
+    await page.waitForTimeout(500);
+
     // Attempt login with invalid credentials
     await page.evaluate(credentials => {
-      const loginWidget = document.querySelector('login-widget') as any;
-      const shadowRoot = loginWidget?.shadowRoot;
+      const panel = document.querySelector('session-map-panel-widget') as any;
+      const shadowRoot = panel?.shadowRoot;
       if (shadowRoot) {
-        const emailInput = shadowRoot.querySelector('#email') as HTMLInputElement;
-        const passwordInput = shadowRoot.querySelector('#password') as HTMLInputElement;
-        const loginButton = shadowRoot.querySelector('#login-btn') as HTMLButtonElement;
+        const emailInput = shadowRoot.querySelector('#profile-email') as HTMLInputElement;
+        const passwordInput = shadowRoot.querySelector('#profile-password') as HTMLInputElement;
+        const loginButton = shadowRoot.querySelector('#profile-login-btn') as HTMLButtonElement;
 
         if (emailInput) emailInput.value = credentials.email;
         if (passwordInput) passwordInput.value = credentials.password;
@@ -74,11 +99,11 @@ test.describe('Authentication', () => {
 
     // Check that login form is still visible (login failed)
     const isFormVisible = await page.evaluate(() => {
-      const loginWidget = document.querySelector('login-widget') as any;
-      const shadowRoot = loginWidget?.shadowRoot;
+      const panel = document.querySelector('session-map-panel-widget') as any;
+      const shadowRoot = panel?.shadowRoot;
       if (shadowRoot) {
-        const loginForm = shadowRoot.querySelector('#login-form') as HTMLElement;
-        return loginForm && loginForm.style.display !== 'none';
+        const loginForm = shadowRoot.querySelector('#profile-login-form') as HTMLElement;
+        return loginForm && !loginForm.classList.contains('hidden');
       }
       return false;
     });
@@ -104,13 +129,24 @@ test.describe('Authentication', () => {
     const authenticated = await isAuthenticated(page);
     expect(authenticated).toBe(false);
 
-    // Verify login form is visible again
-    const isFormVisible = await page.evaluate(() => {
-      const loginWidget = document.querySelector('login-widget') as any;
-      const shadowRoot = loginWidget?.shadowRoot;
+    // Verify login form is visible again (need to open Profile tab)
+    await page.evaluate(() => {
+      const panel = document.querySelector('session-map-panel-widget') as any;
+      const shadowRoot = panel?.shadowRoot;
       if (shadowRoot) {
-        const loginForm = shadowRoot.querySelector('#login-form') as HTMLElement;
-        return loginForm && loginForm.style.display !== 'none';
+        const profileTab = shadowRoot.querySelector('[data-tab="profile"]') as HTMLElement;
+        if (profileTab) profileTab.click();
+      }
+    });
+
+    await page.waitForTimeout(500);
+
+    const isFormVisible = await page.evaluate(() => {
+      const panel = document.querySelector('session-map-panel-widget') as any;
+      const shadowRoot = panel?.shadowRoot;
+      if (shadowRoot) {
+        const loginForm = shadowRoot.querySelector('#profile-login-form') as HTMLElement;
+        return loginForm && !loginForm.classList.contains('hidden');
       }
       return false;
     });
@@ -129,7 +165,7 @@ test.describe('Authentication', () => {
     await page.reload();
 
     // Wait for page to load
-    await page.waitForSelector('login-widget');
+    await page.waitForSelector('session-map-panel-widget');
 
     // Verify user is still authenticated
     const authenticated = await isAuthenticated(page);

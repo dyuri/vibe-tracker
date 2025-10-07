@@ -58,6 +58,10 @@ test.describe('User Interface', () => {
     const credentials = getTestCredentials();
     await loginViaUI(page, credentials);
 
+    // Navigate to sessions page
+    await page.goto('/profile/sessions');
+    await page.waitForSelector('session-management-widget');
+
     // Block network requests to simulate network failure
     await page.route('**/api/**', route => {
       route.abort('failed');
@@ -145,6 +149,10 @@ test.describe('User Interface', () => {
     // Login to trigger loading states
     const credentials = getTestCredentials();
     await loginViaUI(page, credentials);
+
+    // Navigate to sessions page
+    await page.goto('/profile/sessions');
+    await page.waitForSelector('session-management-widget');
 
     // Try to perform an action that triggers loading (e.g., create session)
     await page.evaluate(() => {
