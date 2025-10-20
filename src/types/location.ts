@@ -240,14 +240,6 @@ export interface UpdateWaypointRequest extends Partial<CreateWaypointRequest> {
   id: string;
 }
 
-export interface PhotoWaypointUploadRequest {
-  photo: File;
-  session_id: string;
-  name?: string;
-  type?: WaypointType;
-  description?: string;
-}
-
 export interface SessionsListResponse {
   sessions: Session[];
   page: number;

@@ -491,10 +491,6 @@ function fetchData(isInitialLoad: boolean = false, useDelta: boolean = false): v
           }
 
           // Create session data from URL parameters and API response
-          console.log('DEBUG: data object:', data);
-          console.log('DEBUG: data.session:', data.session);
-          console.log('DEBUG: data.session?.id:', data.session?.id);
-
           const sessionData = {
             username: username,
             sessionName: sessionName || 'latest',

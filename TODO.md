@@ -1,5 +1,6 @@
 - bugs
   - token expiration / refresh
+  - EXIF check
 
 - better (location tracking) session management
   - multi-user sessions

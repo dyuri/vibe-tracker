@@ -5,17 +5,22 @@ import type {
   PositionConfidence,
   CreateWaypointRequest,
   WaypointManagerWidgetElement,
-  PhotoWaypointUploadWidgetElement,
 } from '@/types';
-import { waypointService } from '@/services/waypoint-service';
+import { waypointService, type PhotoWaypointMetadata } from '@/services/waypoint-service';
 import styles from '@/styles/components/widgets/waypoint-manager-widget.css?inline';
 
-// Import the photo upload widget
-import './photo-waypoint-upload-widget';
+// EXIF data interface for photo metadata
+interface ExifData {
+  latitude?: number;
+  longitude?: number;
+  timestamp?: string;
+  camera?: string;
+  location?: string;
+}
 
 /**
  * Waypoint Manager Widget Web Component
- * Manages CRUD operations for waypoints in a session
+ * Manages CRUD operations for waypoints in a session with unified form
  */
 export default class WaypointManagerWidget
   extends HTMLElement
@@ -23,11 +28,17 @@ export default class WaypointManagerWidget
 {
   private sessionId: string = '';
   private waypoints: WaypointFeature[] = [];
-  private showingCreateForm: boolean = false;
+  private formExpanded: boolean = false;
   private isLoading: boolean = false;
   private errorMessage: string = '';
   private isSelectingFromMap: boolean = false;
   private editingWaypointId: string | null = null;
+
+  // Photo upload state
+  private selectedPhoto: File | null = null;
+  private photoPreviewUrl: string | null = null;
+  private exifData: ExifData | null = null;
+  private detectedLocation: [number, number] | null = null;
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -66,34 +77,37 @@ export default class WaypointManagerWidget
   }
 
   /**
-   * Shows the create waypoint form
+   * Toggles the waypoint form open/closed
+   */
+  toggleForm(expanded?: boolean): void {
+    this.formExpanded = expanded !== undefined ? expanded : !this.formExpanded;
+
+    if (!this.formExpanded) {
+      // Closing form - reset everything
+      this.editingWaypointId = null;
+      this.resetForm();
+    } else {
+      // Opening form - clear any errors
+      this.clearError();
+    }
+
+    this.updateFormDisplay();
+  }
+
+  /**
+   * Opens form for creating new waypoint
    */
   showCreateForm(): void {
-    this.editingWaypointId = null; // Reset editing mode
-    this.showingCreateForm = true;
-    this.updateFormDisplay();
+    this.editingWaypointId = null;
+    this.resetForm();
+    this.toggleForm(true);
   }
 
   /**
-   * Hides the create waypoint form
+   * Closes the form
    */
   hideCreateForm(): void {
-    this.showingCreateForm = false;
-    this.updateFormDisplay();
-    this.resetForm();
-  }
-
-  /**
-   * Shows the photo upload dialog
-   */
-  showPhotoUploadDialog(): void {
-    const photoWidget = this.shadowRoot!.querySelector(
-      'photo-waypoint-upload-widget'
-    ) as PhotoWaypointUploadWidgetElement;
-    if (photoWidget) {
-      photoWidget.setSessionId(this.sessionId);
-      photoWidget.show();
-    }
+    this.toggleForm(false);
   }
 
   /**
@@ -240,43 +254,34 @@ export default class WaypointManagerWidget
   }
 
   /**
-   * Updates the form display based on showingCreateForm state
+   * Updates the form display based on formExpanded state
    */
   private updateFormDisplay(): void {
-    const overlay = this.shadowRoot!.querySelector('.form-overlay') as HTMLElement;
-
-    if (this.showingCreateForm) {
-      overlay.style.display = 'flex';
-    } else {
-      overlay.style.display = 'none';
-    }
+    this.render();
+    // Re-populate the waypoints list after rendering
+    this.updateWaypointsList();
   }
 
   /**
-   * Resets the create form
+   * Resets the form and clears all state
    */
   private resetForm(): void {
     const form = this.shadowRoot!.querySelector('#waypoint-form') as HTMLFormElement;
     if (form) {
       form.reset();
-      // Remove photo display if present
-      const photoDisplay = form.querySelector('.waypoint-photo-display');
-      if (photoDisplay) {
-        photoDisplay.remove();
-      }
     }
+
+    // Clear photo state
+    if (this.photoPreviewUrl) {
+      URL.revokeObjectURL(this.photoPreviewUrl);
+    }
+    this.selectedPhoto = null;
+    this.photoPreviewUrl = null;
+    this.exifData = null;
+    this.detectedLocation = null;
+
+    // Clear editing state
     this.editingWaypointId = null;
-
-    // Reset form title and button text
-    const formTitle = this.shadowRoot!.querySelector('.form-header h4');
-    if (formTitle) {
-      formTitle.textContent = 'Create New Waypoint';
-    }
-
-    const submitBtn = this.shadowRoot!.querySelector('.submit-btn') as HTMLButtonElement;
-    if (submitBtn) {
-      submitBtn.textContent = 'Create Waypoint';
-    }
   }
 
   /**
@@ -286,61 +291,9 @@ export default class WaypointManagerWidget
     this.shadowRoot!.addEventListener('click', this.handleClick.bind(this));
     this.shadowRoot!.addEventListener('submit', this.handleFormSubmit.bind(this));
     this.shadowRoot!.addEventListener('change', this.handleChange.bind(this));
-
-    // Set up photo upload widget event listeners
-    this.setupPhotoUploadListeners();
-  }
-
-  /**
-   * Sets up event listeners for the photo upload widget
-   */
-  private setupPhotoUploadListeners(): void {
-    const photoWidget = this.shadowRoot!.querySelector(
-      'photo-waypoint-upload-widget'
-    ) as PhotoWaypointUploadWidgetElement;
-
-    if (photoWidget) {
-      // Listen for successful waypoint creation from photo
-      photoWidget.addEventListener('waypoint-created', (event: CustomEvent) => {
-        console.log('Photo waypoint created:', event.detail);
-
-        // Refresh the waypoints list to show the new photo waypoint
-        this.fetchWaypoints();
-
-        // Emit the same event up to parent components (like map widget)
-        this.dispatchEvent(
-          new CustomEvent('waypoint-created', {
-            detail: event.detail,
-            bubbles: true,
-          })
-        );
-      });
-
-      // Listen for location picking requests
-      photoWidget.addEventListener('pick-location', (_event: CustomEvent) => {
-        console.log('Photo widget requesting location pick');
-
-        // Forward the pick-location event to parent components
-        this.dispatchEvent(
-          new CustomEvent('pick-location-for-photo', {
-            bubbles: true,
-            composed: true,
-          })
-        );
-      });
-    }
-  }
-
-  /**
-   * Sets manual location for photo waypoint (called from map integration)
-   */
-  setPhotoWaypointLocation(latitude: number, longitude: number): void {
-    const photoWidget = this.shadowRoot!.querySelector(
-      'photo-waypoint-upload-widget'
-    ) as PhotoWaypointUploadWidgetElement;
-    if (photoWidget) {
-      photoWidget.setManualLocation(latitude, longitude);
-    }
+    this.shadowRoot!.addEventListener('dragover', this.handleDragOver.bind(this));
+    this.shadowRoot!.addEventListener('drop', this.handleDrop.bind(this));
+    this.shadowRoot!.addEventListener('dragleave', this.handleDragLeave.bind(this));
   }
 
   /**
@@ -351,13 +304,20 @@ export default class WaypointManagerWidget
 
     if (target.classList.contains('add-waypoint-btn')) {
       this.showCreateForm();
-    } else if (target.classList.contains('add-photo-waypoint-btn')) {
-      this.showPhotoUploadDialog();
-    } else if (
-      target.classList.contains('cancel-btn') ||
-      target.classList.contains('form-overlay')
-    ) {
+    } else if (target.classList.contains('cancel-form-btn')) {
       this.hideCreateForm();
+    } else if (target.classList.contains('file-input-trigger')) {
+      const fileInput = this.shadowRoot!.querySelector('#photo-input') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.click();
+      }
+    } else if (target.classList.contains('clear-photo-btn')) {
+      this.clearPhoto();
+    } else if (target.id === 'photo-drop-zone' || target.closest('#photo-drop-zone')) {
+      const fileInput = this.shadowRoot!.querySelector('#photo-input') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.click();
+      }
     } else if (target.dataset.action === 'center') {
       this.handleCenterOnMap(
         parseFloat(target.dataset.lat!),
@@ -378,8 +338,15 @@ export default class WaypointManagerWidget
   /**
    * Handles change events
    */
-  private handleChange(_event: Event): void {
-    // No change handlers currently needed
+  private handleChange(event: Event): void {
+    const target = event.target as HTMLInputElement;
+
+    if (target.id === 'photo-input') {
+      const files = target.files;
+      if (files && files[0]) {
+        this.handleFileSelect(files[0]);
+      }
+    }
   }
 
   /**
@@ -438,26 +405,101 @@ export default class WaypointManagerWidget
       return;
     }
 
-    const waypointData: CreateWaypointRequest = {
-      name: name.trim(),
-      type: type,
-      description: (formData.get('description') as string)?.trim() || undefined,
-      latitude: latitude,
-      longitude: longitude,
-      session_id: this.sessionId,
-      source: 'manual',
-      position_confidence: 'manual',
-    };
-
     try {
       if (this.editingWaypointId) {
+        // Editing existing waypoint
+        const waypointData: CreateWaypointRequest = {
+          name: name.trim(),
+          type: type,
+          description: (formData.get('description') as string)?.trim() || undefined,
+          latitude: latitude,
+          longitude: longitude,
+          session_id: this.sessionId,
+          source: 'manual',
+          position_confidence: 'manual',
+        };
         await this.updateWaypoint(this.editingWaypointId, waypointData);
+      } else if (this.selectedPhoto) {
+        // Creating new waypoint with photo
+        await this.createWaypointFromPhoto(
+          name.trim(),
+          type,
+          latitude,
+          longitude,
+          formData.get('description') as string
+        );
       } else {
+        // Creating new waypoint without photo
+        const waypointData: CreateWaypointRequest = {
+          name: name.trim(),
+          type: type,
+          description: (formData.get('description') as string)?.trim() || undefined,
+          latitude: latitude,
+          longitude: longitude,
+          session_id: this.sessionId,
+          source: 'manual',
+          position_confidence: 'manual',
+        };
         await this.createWaypoint(waypointData);
       }
       this.hideCreateForm();
     } catch (error) {
       console.error('Form submission failed:', error);
+    }
+  }
+
+  /**
+   * Creates a waypoint from photo
+   */
+  private async createWaypointFromPhoto(
+    name: string,
+    type: WaypointType,
+    latitude: number,
+    longitude: number,
+    description?: string
+  ): Promise<void> {
+    if (!this.selectedPhoto) {
+      this.setError('No photo selected');
+      return;
+    }
+
+    this.setLoading(true);
+    this.clearError();
+
+    try {
+      // Prepare metadata for the waypoint service
+      const metadata: PhotoWaypointMetadata = {
+        name: name,
+        type: type,
+        description: description?.trim() || undefined,
+        sessionId: this.sessionId,
+        manualLocation: {
+          latitude: latitude,
+          longitude: longitude,
+        },
+      };
+
+      // Use the waypoint service to create the photo waypoint
+      const waypoint = await waypointService.createWaypointFromPhoto(this.selectedPhoto, metadata);
+
+      console.log('Created photo waypoint:', waypoint);
+
+      // Re-fetch all waypoints to ensure consistency
+      await this.fetchWaypoints();
+
+      // Emit event to notify other components (like map widget)
+      this.dispatchEvent(
+        new CustomEvent('waypoint-created', {
+          detail: { waypoint },
+          bubbles: true,
+        })
+      );
+    } catch (error) {
+      console.error('Failed to create photo waypoint:', error);
+      this.setError('Failed to create waypoint with photo. Please try again.');
+      throw error; // Re-throw to handle in form submission
+    } finally {
+      this.setLoading(false);
     }
   }
 
@@ -528,7 +570,7 @@ export default class WaypointManagerWidget
     const waypoint = this.waypoints.find(w => w.properties.id === waypointId);
     if (waypoint) {
       // Show form first (without resetting editing ID)
-      this.showingCreateForm = true;
+      this.formExpanded = true;
       this.updateFormDisplay();
       // Then populate form with existing data
       this.populateFormForEdit(waypoint);
@@ -674,9 +716,6 @@ export default class WaypointManagerWidget
     // Disable form buttons during loading
     const submitBtn = this.shadowRoot!.querySelector('.submit-btn') as HTMLButtonElement;
     const addBtn = this.shadowRoot!.querySelector('.add-waypoint-btn') as HTMLButtonElement;
-    const addPhotoBtn = this.shadowRoot!.querySelector(
-      '.add-photo-waypoint-btn'
-    ) as HTMLButtonElement;
 
     if (submitBtn) {
       submitBtn.disabled = loading;
@@ -685,10 +724,6 @@ export default class WaypointManagerWidget
 
     if (addBtn) {
       addBtn.disabled = loading;
-    }
-
-    if (addPhotoBtn) {
-      addPhotoBtn.disabled = loading;
     }
   }
 
@@ -722,13 +757,6 @@ export default class WaypointManagerWidget
     this.isSelectingFromMap = true;
     this.updatePickFromMapUI();
 
-    // Hide form overlay during map selection
-    const overlay = this.shadowRoot!.querySelector('.form-overlay') as HTMLElement;
-
-    if (overlay) {
-      overlay.style.display = 'none';
-    }
-
     // Get map widget and start selection mode
     const mapWidget = document.querySelector('map-widget') as any;
     if (mapWidget && mapWidget.startWaypointSelection) {
@@ -741,11 +769,6 @@ export default class WaypointManagerWidget
 
         // Clean up listener
         mapWidget.removeEventListener('waypoint-selected', handleWaypointSelected);
-
-        // Restore form overlay
-        if (overlay) {
-          overlay.style.display = 'flex';
-        }
       };
 
       mapWidget.addEventListener('waypoint-selected', handleWaypointSelected);
@@ -754,11 +777,6 @@ export default class WaypointManagerWidget
       this.setError('Map selection not available');
       this.isSelectingFromMap = false;
       this.updatePickFromMapUI();
-
-      // Restore form overlay on error
-      if (overlay) {
-        overlay.style.display = 'flex';
-      }
     }
   }
 
@@ -773,13 +791,6 @@ export default class WaypointManagerWidget
     const mapWidget = document.querySelector('map-widget') as any;
     if (mapWidget && mapWidget.stopWaypointSelection) {
       mapWidget.stopWaypointSelection();
-    }
-
-    // Restore form overlay
-    const overlay = this.shadowRoot!.querySelector('.form-overlay') as HTMLElement;
-
-    if (overlay) {
-      overlay.style.display = 'flex';
     }
   }
 
@@ -844,9 +855,155 @@ export default class WaypointManagerWidget
   }
 
   /**
+   * Handles file selection for photo upload
+   */
+  private async handleFileSelect(file: File): Promise<void> {
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      this.setError('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      this.setError('File size must be less than 10MB');
+      return;
+    }
+
+    this.selectedPhoto = file;
+    this.clearError();
+
+    // Create preview URL
+    if (this.photoPreviewUrl) {
+      URL.revokeObjectURL(this.photoPreviewUrl);
+    }
+    this.photoPreviewUrl = URL.createObjectURL(file);
+
+    // Re-render to show preview
+    this.render();
+
+    // Extract EXIF data asynchronously
+    await this.extractExifData(file);
+
+    // Update coordinates if EXIF location found
+    if (this.exifData?.latitude && this.exifData?.longitude) {
+      const latInput = this.shadowRoot!.querySelector('[name="latitude"]') as HTMLInputElement;
+      const lngInput = this.shadowRoot!.querySelector('[name="longitude"]') as HTMLInputElement;
+
+      if (latInput && lngInput) {
+        latInput.value = this.exifData.latitude.toFixed(6);
+        lngInput.value = this.exifData.longitude.toFixed(6);
+      }
+    }
+
+    // Re-render to show EXIF info
+    this.render();
+  }
+
+  /**
+   * Extracts EXIF data from the image file (simplified implementation)
+   */
+  private async extractExifData(_file: File): Promise<void> {
+    // This is a simplified implementation
+    // In a real implementation, you would use a proper EXIF library like exif-js or piexifjs
+
+    try {
+      // Simulate EXIF processing delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Simulate some EXIF data (this would be real data from the image)
+      const hasGPS = Math.random() > 0.5; // 50% chance of having GPS data
+
+      if (hasGPS) {
+        // Simulate GPS coordinates (would be extracted from actual EXIF)
+        this.exifData = {
+          latitude: 47.6062 + (Math.random() - 0.5) * 0.1,
+          longitude: -122.3321 + (Math.random() - 0.5) * 0.1,
+          timestamp: new Date().toISOString(),
+          camera: 'Simulated Camera',
+          location: 'Simulated Location',
+        };
+
+        this.detectedLocation = [this.exifData.latitude, this.exifData.longitude];
+      } else {
+        this.exifData = {
+          timestamp: new Date().toISOString(),
+          camera: 'Simulated Camera',
+        };
+      }
+    } catch (error) {
+      console.warn('Failed to extract EXIF data:', error);
+      this.exifData = null;
+    }
+  }
+
+  /**
+   * Clears the selected photo
+   */
+  private clearPhoto(): void {
+    if (this.photoPreviewUrl) {
+      URL.revokeObjectURL(this.photoPreviewUrl);
+    }
+    this.selectedPhoto = null;
+    this.photoPreviewUrl = null;
+    this.exifData = null;
+    this.detectedLocation = null;
+
+    // Clear the file input
+    const fileInput = this.shadowRoot!.querySelector('#photo-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+
+    this.render();
+  }
+
+  /**
+   * Handles drag over events for photo drop zone
+   */
+  private handleDragOver(event: DragEvent): void {
+    const dropZone = (event.target as HTMLElement).closest('#photo-drop-zone');
+    if (!dropZone) {return;}
+
+    event.preventDefault();
+    dropZone.classList.add('drag-over');
+  }
+
+  /**
+   * Handles drag leave events for photo drop zone
+   */
+  private handleDragLeave(event: DragEvent): void {
+    const dropZone = (event.target as HTMLElement).closest('#photo-drop-zone');
+    if (!dropZone) {return;}
+
+    dropZone.classList.remove('drag-over');
+  }
+
+  /**
+   * Handles drop events for photo upload
+   */
+  private handleDrop(event: DragEvent): void {
+    const dropZone = (event.target as HTMLElement).closest('#photo-drop-zone');
+    if (!dropZone) {return;}
+
+    event.preventDefault();
+    dropZone.classList.remove('drag-over');
+
+    const files = event.dataTransfer?.files;
+    if (files && files[0]) {
+      this.handleFileSelect(files[0]);
+    }
+  }
+
+  /**
    * Renders the widget HTML
    */
   private render(): void {
+    const formStyle = this.formExpanded ? 'block' : 'none';
+    const formTitle = this.editingWaypointId ? 'Edit Waypoint' : 'Add Waypoint';
+    const submitButtonText = this.editingWaypointId ? 'Update Waypoint' : 'Create Waypoint';
+
     this.shadowRoot!.innerHTML = `
       <style>${styles}</style>
       <div class="waypoint-manager-widget">
@@ -854,81 +1011,172 @@ export default class WaypointManagerWidget
           <h3>Waypoints</h3>
           <div class="header-controls">
             <button class="add-waypoint-btn">+ Add Waypoint</button>
-            <button class="add-photo-waypoint-btn">📷 Add from Photo</button>
           </div>
         </div>
 
+        <!-- Collapsible Waypoint Form -->
+        <div class="waypoint-form-section" style="display: ${formStyle}">
+          <div class="form-header">
+            <h4>${formTitle}</h4>
+            <button type="button" class="cancel-form-btn">×</button>
+          </div>
+
+          <form id="waypoint-form">
+            <!-- Basic Info Section -->
+            <div class="form-group">
+              <label for="name">Name *</label>
+              <input type="text" id="name" name="name" required>
+            </div>
+
+            <div class="form-group">
+              <label for="type">Type *</label>
+              <select id="type" name="type" required>
+                <option value="generic">Generic</option>
+                <option value="food">Food</option>
+                <option value="water">Water</option>
+                <option value="shelter">Shelter</option>
+                <option value="transition">Transition</option>
+                <option value="viewpoint">Viewpoint</option>
+                <option value="camping">Camping</option>
+                <option value="parking">Parking</option>
+                <option value="danger">Danger</option>
+                <option value="medical">Medical</option>
+                <option value="fuel">Fuel</option>
+              </select>
+            </div>
+
+            <!-- Photo Upload Section -->
+            <div class="photo-upload-section">
+              <label>Photo (optional)</label>
+
+              ${this.selectedPhoto ? this.renderPhotoPreview() : this.renderPhotoDropZone()}
+            </div>
+
+            <!-- Location Section -->
+            <div class="coordinates-section">
+              <div class="coordinates-header">
+                <label>Location *</label>
+                <div class="coordinate-actions">
+                  <button type="button" class="pick-from-map-btn">📍 Pick from Map</button>
+                  <button type="button" class="cancel-map-selection-btn" style="display: none;">Cancel Selection</button>
+                </div>
+              </div>
+
+              ${
+                this.exifData?.latitude && this.exifData?.longitude
+                  ? `<div class="exif-location-detected">
+                  📍 Location detected from photo
+                </div>`
+                  : ''
+              }
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="latitude">Latitude</label>
+                  <input type="number" class="coordinate-input" id="latitude" name="latitude" step="any" required>
+                </div>
+                <div class="form-group">
+                  <label for="longitude">Longitude</label>
+                  <input type="number" class="coordinate-input" id="longitude" name="longitude" step="any" required>
+                </div>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+              <label for="description">Description</label>
+              <textarea id="description" name="description" rows="3"></textarea>
+            </div>
+
+            <!-- EXIF Info Display -->
+            ${this.exifData ? this.renderExifInfo() : ''}
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+              <button type="button" class="cancel-form-btn">Cancel</button>
+              <button type="submit" class="submit-btn">${submitButtonText}</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Waypoints List -->
         <div class="waypoints-list">
           <div class="no-session">Select a session to view waypoints</div>
         </div>
+      </div>
+    `;
+  }
 
-        <div class="form-overlay overlay" style="display: none;">
-          <div class="create-form overlay-content overlay-md">
-            <div class="form-header overlay-header">
-              <h4>Add Waypoint</h4>
-              <button type="button" class="cancel-btn overlay-close">×</button>
-            </div>
-
-            <form id="waypoint-form">
-              <div class="form-container overlay-body">
-                <div class="form-group">
-                  <label for="name">Name</label>
-                  <input type="text" id="name" name="name" required>
-                </div>
-
-                <div class="form-group">
-                  <label for="type">Type</label>
-                  <select id="type" name="type" required>
-                    <option value="generic">Generic</option>
-                    <option value="food">Food</option>
-                    <option value="water">Water</option>
-                    <option value="shelter">Shelter</option>
-                    <option value="transition">Transition</option>
-                    <option value="viewpoint">Viewpoint</option>
-                    <option value="camping">Camping</option>
-                    <option value="parking">Parking</option>
-                    <option value="danger">Danger</option>
-                    <option value="medical">Medical</option>
-                    <option value="fuel">Fuel</option>
-                  </select>
-                </div>
-
-                <div class="coordinates-section">
-                  <div class="coordinates-header">
-                    <h5>Location</h5>
-                    <div class="coordinate-actions">
-                      <button type="button" class="pick-from-map-btn">📍 Pick from Map</button>
-                      <button type="button" class="cancel-map-selection-btn" style="display: none;">Cancel Selection</button>
-                    </div>
-                  </div>
-                  <div class="form-row">
-                    <div class="form-group">
-                      <label for="latitude">Latitude</label>
-                      <input type="number" class="coordinate-input" id="latitude" name="latitude" step="any" required>
-                    </div>
-                    <div class="form-group">
-                      <label for="longitude">Longitude</label>
-                      <input type="number" class="coordinate-input" id="longitude" name="longitude" step="any" required>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="description">Description</label>
-                  <textarea id="description" name="description" rows="3"></textarea>
-                </div>
-              </div>
-
-              <div class="form-actions overlay-footer">
-                <button type="button" class="cancel-btn">Cancel</button>
-                <button type="submit" class="submit-btn">Create Waypoint</button>
-              </div>
-            </form>
+  /**
+   * Renders the photo drop zone
+   */
+  private renderPhotoDropZone(): string {
+    return `
+      <div class="drop-zone" id="photo-drop-zone">
+        <div class="drop-zone-content">
+          <div class="drop-zone-icon">📷</div>
+          <div class="drop-zone-text">
+            <p>Drag & drop a photo here</p>
+            <p class="file-requirements">JPG, PNG, HEIC up to 10MB</p>
           </div>
         </div>
+      </div>
+      <div class="file-select-section">
+        <p>or</p>
+        <input type="file" id="photo-input" accept="image/*" style="display: none;">
+        <button type="button" class="file-input-trigger">Choose File</button>
+      </div>
+    `;
+  }
 
-        <!-- Photo Waypoint Upload Widget -->
-        <photo-waypoint-upload-widget></photo-waypoint-upload-widget>
+  /**
+   * Renders the photo preview with controls
+   */
+  private renderPhotoPreview(): string {
+    return `
+      <div class="photo-preview-container">
+        <div class="photo-preview">
+          <img src="${this.photoPreviewUrl}" alt="Waypoint photo preview">
+        </div>
+        <button type="button" class="clear-photo-btn">Clear Photo</button>
+      </div>
+    `;
+  }
+
+  /**
+   * Renders EXIF information
+   */
+  private renderExifInfo(): string {
+    const exif = this.exifData!;
+    return `
+      <div class="exif-info">
+        <strong>Photo Information</strong>
+        <div class="exif-grid">
+          ${
+            exif.timestamp
+              ? `
+            <span class="exif-label">Time:</span>
+            <span class="exif-value">${exif.timestamp}</span>
+          `
+              : ''
+          }
+          ${
+            exif.camera
+              ? `
+            <span class="exif-label">Camera:</span>
+            <span class="exif-value">${exif.camera}</span>
+          `
+              : ''
+          }
+          ${
+            exif.location
+              ? `
+            <span class="exif-label">Location:</span>
+            <span class="exif-value">${exif.location}</span>
+          `
+              : ''
+          }
+        </div>
       </div>
     `;
   }

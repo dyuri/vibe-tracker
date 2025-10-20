@@ -137,7 +137,6 @@ export default class SessionMapPanelWidget
    * Set session data and update the interface
    */
   setSessionData(sessionData: SessionData): void {
-    console.log('SessionMapPanel setSessionData called with:', sessionData);
     this.currentSessionData = sessionData;
     this.populateEditForm();
 
@@ -192,8 +191,8 @@ export default class SessionMapPanelWidget
     const waypointWidget = this.shadowRoot!.querySelector(
       'waypoint-manager-widget'
     ) as WaypointManagerWidgetElement;
-    if (waypointWidget) {
-      waypointWidget.loadWaypointsFromData(this.currentSessionData?.sessionId || '', data);
+    if (waypointWidget && this.currentSessionData?.sessionId) {
+      waypointWidget.loadWaypointsFromData(this.currentSessionData.sessionId, data);
     }
 
     // Also display waypoints on the map
@@ -648,12 +647,21 @@ export default class SessionMapPanelWidget
               this.centerMapOnLocation(latitude, longitude, waypointId);
             });
 
-            // Load waypoints data if available
-            if (this.currentWaypoints && this.currentSessionData) {
-              waypointWidget.loadWaypointsFromData(
-                this.currentSessionData.sessionId,
-                this.currentWaypoints
-              );
+            // Always set sessionId if we have session data, even if no waypoints yet
+            if (this.currentSessionData?.sessionId) {
+              if (this.currentWaypoints) {
+                // Load with existing waypoints data
+                waypointWidget.loadWaypointsFromData(
+                  this.currentSessionData.sessionId,
+                  this.currentWaypoints
+                );
+              } else {
+                // No waypoints yet, but still set sessionId so user can create new ones
+                waypointWidget.loadWaypointsFromData(this.currentSessionData.sessionId, {
+                  type: 'FeatureCollection',
+                  features: [],
+                });
+              }
             }
           }
           break;
