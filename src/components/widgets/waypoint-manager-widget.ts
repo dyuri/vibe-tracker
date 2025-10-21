@@ -8,6 +8,7 @@ import type {
 } from '@/types';
 import { waypointService, type PhotoWaypointMetadata } from '@/services/waypoint-service';
 import styles from '@/styles/components/widgets/waypoint-manager-widget.css?inline';
+import exifr from 'exifr';
 
 // EXIF data interface for photo metadata
 interface ExifData {
@@ -880,61 +881,92 @@ export default class WaypointManagerWidget
     }
     this.photoPreviewUrl = URL.createObjectURL(file);
 
+    // Save current form state before re-rendering
+    const formState = this.saveFormState();
+
     // Re-render to show preview
     this.render();
+
+    // Restore form state after rendering
+    this.restoreFormState(formState);
 
     // Extract EXIF data asynchronously
     await this.extractExifData(file);
 
-    // Update coordinates if EXIF location found
+    // Save form state again (in case user typed while EXIF was extracting)
+    const formStateBeforeExif = this.saveFormState();
+
+    // Re-render to show EXIF info and populate coordinates
+    this.render();
+
+    // Restore form state, but allow GPS coordinates to be set if they weren't manually entered
+    this.restoreFormState(formStateBeforeExif);
+
+    // If EXIF data has GPS and the user hasn't manually entered coordinates, populate them
     if (this.exifData?.latitude && this.exifData?.longitude) {
       const latInput = this.shadowRoot!.querySelector('[name="latitude"]') as HTMLInputElement;
       const lngInput = this.shadowRoot!.querySelector('[name="longitude"]') as HTMLInputElement;
 
-      if (latInput && lngInput) {
+      // Only set if fields are empty or contain the default EXIF value
+      if (latInput && (!latInput.value || latInput.value === this.exifData.latitude.toFixed(6))) {
         latInput.value = this.exifData.latitude.toFixed(6);
+      }
+      if (lngInput && (!lngInput.value || lngInput.value === this.exifData.longitude.toFixed(6))) {
         lngInput.value = this.exifData.longitude.toFixed(6);
       }
     }
-
-    // Re-render to show EXIF info
-    this.render();
   }
 
   /**
-   * Extracts EXIF data from the image file (simplified implementation)
+   * Extracts EXIF data from the image file using exifr library
    */
-  private async extractExifData(_file: File): Promise<void> {
-    // This is a simplified implementation
-    // In a real implementation, you would use a proper EXIF library like exif-js or piexifjs
-
+  private async extractExifData(file: File): Promise<void> {
     try {
-      // Simulate EXIF processing delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Extract GPS coordinates using exifr
+      const gpsData = await exifr.gps(file);
 
-      // Simulate some EXIF data (this would be real data from the image)
-      const hasGPS = Math.random() > 0.5; // 50% chance of having GPS data
-
-      if (hasGPS) {
-        // Simulate GPS coordinates (would be extracted from actual EXIF)
+      if (gpsData && gpsData.latitude !== undefined && gpsData.longitude !== undefined) {
+        // GPS data found
         this.exifData = {
-          latitude: 47.6062 + (Math.random() - 0.5) * 0.1,
-          longitude: -122.3321 + (Math.random() - 0.5) * 0.1,
-          timestamp: new Date().toISOString(),
-          camera: 'Simulated Camera',
-          location: 'Simulated Location',
+          latitude: gpsData.latitude,
+          longitude: gpsData.longitude,
         };
 
-        this.detectedLocation = [this.exifData.latitude, this.exifData.longitude];
+        this.detectedLocation = [gpsData.latitude, gpsData.longitude];
+        console.log('GPS coordinates extracted from photo:', gpsData);
       } else {
-        this.exifData = {
-          timestamp: new Date().toISOString(),
-          camera: 'Simulated Camera',
-        };
+        // No GPS data in photo
+        this.exifData = null;
+        this.detectedLocation = null;
+        console.log('No GPS coordinates found in photo');
+      }
+
+      // Optionally extract additional EXIF data (timestamp, camera info)
+      try {
+        const exifData = await exifr.parse(file, {
+          pick: ['DateTimeOriginal', 'CreateDate', 'Make', 'Model'],
+        });
+
+        if (exifData && this.exifData) {
+          // Add timestamp if available
+          const timestamp = exifData.DateTimeOriginal || exifData.CreateDate;
+          if (timestamp) {
+            this.exifData.timestamp = timestamp.toISOString();
+          }
+
+          // Add camera info if available
+          if (exifData.Make || exifData.Model) {
+            this.exifData.camera = [exifData.Make, exifData.Model].filter(Boolean).join(' ');
+          }
+        }
+      } catch (exifError) {
+        // Ignore errors when extracting additional EXIF data
+        console.debug('Could not extract additional EXIF data:', exifError);
       }
     } catch (error) {
-      console.warn('Failed to extract EXIF data:', error);
+      console.warn('Failed to extract GPS from photo:', error);
       this.exifData = null;
+      this.detectedLocation = null;
     }
   }
 
@@ -956,7 +988,13 @@ export default class WaypointManagerWidget
       fileInput.value = '';
     }
 
+    // Save form state before re-rendering
+    const formState = this.saveFormState();
+
     this.render();
+
+    // Restore form state after rendering
+    this.restoreFormState(formState);
   }
 
   /**
@@ -964,7 +1002,9 @@ export default class WaypointManagerWidget
    */
   private handleDragOver(event: DragEvent): void {
     const dropZone = (event.target as HTMLElement).closest('#photo-drop-zone');
-    if (!dropZone) {return;}
+    if (!dropZone) {
+      return;
+    }
 
     event.preventDefault();
     dropZone.classList.add('drag-over');
@@ -975,7 +1015,9 @@ export default class WaypointManagerWidget
    */
   private handleDragLeave(event: DragEvent): void {
     const dropZone = (event.target as HTMLElement).closest('#photo-drop-zone');
-    if (!dropZone) {return;}
+    if (!dropZone) {
+      return;
+    }
 
     dropZone.classList.remove('drag-over');
   }
@@ -985,7 +1027,9 @@ export default class WaypointManagerWidget
    */
   private handleDrop(event: DragEvent): void {
     const dropZone = (event.target as HTMLElement).closest('#photo-drop-zone');
-    if (!dropZone) {return;}
+    if (!dropZone) {
+      return;
+    }
 
     event.preventDefault();
     dropZone.classList.remove('drag-over');
@@ -994,6 +1038,43 @@ export default class WaypointManagerWidget
     if (files && files[0]) {
       this.handleFileSelect(files[0]);
     }
+  }
+
+  /**
+   * Saves current form state before re-rendering
+   */
+  private saveFormState(): Record<string, string> {
+    const form = this.shadowRoot?.querySelector('#waypoint-form') as HTMLFormElement;
+    if (!form) {return {};}
+
+    const formData = new FormData(form);
+    const state: Record<string, string> = {};
+
+    formData.forEach((value, key) => {
+      state[key] = value.toString();
+    });
+
+    return state;
+  }
+
+  /**
+   * Restores form state after re-rendering
+   */
+  private restoreFormState(state: Record<string, string>): void {
+    if (!state || Object.keys(state).length === 0) {return;}
+
+    const form = this.shadowRoot?.querySelector('#waypoint-form') as HTMLFormElement;
+    if (!form) {return;}
+
+    Object.entries(state).forEach(([key, value]) => {
+      const input = form.querySelector(`[name="${key}"]`) as
+        | HTMLInputElement
+        | HTMLTextAreaElement
+        | HTMLSelectElement;
+      if (input && value) {
+        input.value = value;
+      }
+    });
   }
 
   /**
@@ -1073,11 +1154,11 @@ export default class WaypointManagerWidget
               <div class="form-row">
                 <div class="form-group">
                   <label for="latitude">Latitude</label>
-                  <input type="number" class="coordinate-input" id="latitude" name="latitude" step="any" required>
+                  <input type="number" class="coordinate-input" id="latitude" name="latitude" step="any" required ${this.exifData?.latitude ? `value="${this.exifData.latitude.toFixed(6)}"` : ''}>
                 </div>
                 <div class="form-group">
                   <label for="longitude">Longitude</label>
-                  <input type="number" class="coordinate-input" id="longitude" name="longitude" step="any" required>
+                  <input type="number" class="coordinate-input" id="longitude" name="longitude" step="any" required ${this.exifData?.longitude ? `value="${this.exifData.longitude.toFixed(6)}"` : ''}>
                 </div>
               </div>
             </div>

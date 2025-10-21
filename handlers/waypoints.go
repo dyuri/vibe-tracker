@@ -539,10 +539,10 @@ func (h *WaypointHandler) DeleteWaypoint(c echo.Context) error {
 	return utils.SendSuccess(c, http.StatusOK, nil, "Waypoint deleted successfully")
 }
 
-// UploadPhotoWaypoint uploads a photo and creates a waypoint with intelligent positioning
+// UploadPhotoWaypoint uploads a photo and creates a waypoint with GPS data from frontend
 //
 //	@Summary		Upload photo waypoint
-//	@Description	Uploads a photo and creates a waypoint with GPS data from EXIF or intelligent fallback positioning
+//	@Description	Uploads a photo and creates a waypoint with GPS data extracted by the frontend
 //	@Tags			Waypoints
 //	@Accept			multipart/form-data
 //	@Produce		json
@@ -551,6 +551,9 @@ func (h *WaypointHandler) DeleteWaypoint(c echo.Context) error {
 //	@Param			name		formData	string	false	"Waypoint name (optional, will be generated if not provided)"
 //	@Param			type		formData	string	false	"Waypoint type (default: generic)"
 //	@Param			description	formData	string	false	"Waypoint description (optional)"
+//	@Param			latitude	formData	number	true	"Latitude (extracted from photo by frontend)"
+//	@Param			longitude	formData	number	true	"Longitude (extracted from photo by frontend)"
+//	@Param			altitude	formData	number	false	"Altitude (optional, extracted from photo by frontend)"
 //	@Param			photo		formData	file	true	"Photo file to upload"
 //	@Success		201			{object}	models.SuccessResponse	"Photo waypoint created successfully"
 //	@Failure		400			{object}	models.ErrorResponse	"Invalid request or file"
@@ -586,51 +589,67 @@ func (h *WaypointHandler) UploadPhotoWaypoint(c echo.Context) error {
 	}
 	defer file.Close()
 
-	// Validate file type
-	if !utils.IsValidImageFormat(fileHeader.Filename, fileHeader.Header.Get("Content-Type")) {
-		return apis.NewBadRequestError("Invalid image format. Supported formats: JPEG, TIFF", nil)
+	// Validate file type - only JPEG is supported for now
+	contentType := fileHeader.Header.Get("Content-Type")
+	filename := fileHeader.Filename
+	isValidFormat := false
+
+	// Check content type
+	if contentType == "image/jpeg" || contentType == "image/jpg" {
+		isValidFormat = true
 	}
 
-	// Extract EXIF data
-	exifData, err := utils.ExtractEXIFData(file)
-	if err != nil {
-		return apis.NewApiError(http.StatusInternalServerError, "Failed to extract EXIF data", err)
-	}
-
-	// Reset file reader for EXIF extraction (will be re-read by form handler)
-	file.Seek(0, 0)
-
-	// Determine position and confidence
-	var latitude, longitude, altitude *float64
-	var positionConfidence string
-
-	if exifData.HasGPS && exifData.Latitude != nil && exifData.Longitude != nil {
-		// Use GPS coordinates from EXIF
-		latitude = exifData.Latitude
-		longitude = exifData.Longitude
-		altitude = exifData.Altitude
-		positionConfidence = "gps"
-	} else {
-		// Use intelligent fallback positioning
-		lat, lon, alt, confidence, err := h.getFallbackPosition(sessionID, exifData.Timestamp, record.Id)
-		if err != nil {
-			return apis.NewApiError(http.StatusInternalServerError,
-				fmt.Sprintf("No GPS data in photo and fallback positioning failed: %v", err), err)
+	// Also check file extension
+	if len(filename) > 4 {
+		ext := filename[len(filename)-4:]
+		if ext == ".jpg" || filename[len(filename)-5:] == ".jpeg" {
+			isValidFormat = true
 		}
-		latitude = lat
-		longitude = lon
-		altitude = alt
-		positionConfidence = confidence
+	}
+
+	if !isValidFormat {
+		return apis.NewBadRequestError("Invalid image format. Only JPEG files are supported.", nil)
+	}
+
+	// Get GPS coordinates from form data (extracted by frontend)
+	latitudeStr := c.FormValue("latitude")
+	longitudeStr := c.FormValue("longitude")
+
+	if latitudeStr == "" || longitudeStr == "" {
+		return apis.NewBadRequestError("GPS coordinates (latitude and longitude) are required. Please ensure the photo contains GPS data.", nil)
+	}
+
+	// Parse coordinates
+	latitude, err := strconv.ParseFloat(latitudeStr, 64)
+	if err != nil {
+		return apis.NewBadRequestError("Invalid latitude value", err)
+	}
+
+	longitude, err := strconv.ParseFloat(longitudeStr, 64)
+	if err != nil {
+		return apis.NewBadRequestError("Invalid longitude value", err)
+	}
+
+	// Validate coordinate ranges
+	if latitude < -90 || latitude > 90 {
+		return apis.NewBadRequestError("Latitude must be between -90 and 90", nil)
+	}
+	if longitude < -180 || longitude > 180 {
+		return apis.NewBadRequestError("Longitude must be between -180 and 180", nil)
+	}
+
+	// Get optional altitude
+	var altitude *float64
+	if altitudeStr := c.FormValue("altitude"); altitudeStr != "" {
+		if alt, err := strconv.ParseFloat(altitudeStr, 64); err == nil {
+			altitude = &alt
+		}
 	}
 
 	// Generate waypoint name if not provided
 	name := c.FormValue("name")
 	if name == "" {
-		if exifData.Timestamp != nil {
-			name = fmt.Sprintf("Photo %s", exifData.Timestamp.Format("15:04"))
-		} else {
-			name = fmt.Sprintf("Photo %s", time.Now().Format("15:04"))
-		}
+		name = fmt.Sprintf("Photo %s", time.Now().Format("15:04"))
 	}
 
 	// Get waypoint type, default to generic
@@ -654,10 +673,10 @@ func (h *WaypointHandler) UploadPhotoWaypoint(c echo.Context) error {
 	waypoint.Set("name", name)
 	waypoint.Set("type", waypointType)
 	waypoint.Set("description", description)
-	waypoint.Set("latitude", *latitude)
-	waypoint.Set("longitude", *longitude)
+	waypoint.Set("latitude", latitude)
+	waypoint.Set("longitude", longitude)
 	waypoint.Set("source", "photo")
-	waypoint.Set("position_confidence", positionConfidence)
+	waypoint.Set("position_confidence", "gps")
 
 	if altitude != nil {
 		waypoint.Set("altitude", *altitude)
@@ -678,176 +697,7 @@ func (h *WaypointHandler) UploadPhotoWaypoint(c echo.Context) error {
 
 	waypointData := h.formatWaypointResponse(waypoint)
 
-	response := map[string]interface{}{
-		"waypoint": waypointData,
-		"exif_info": map[string]interface{}{
-			"has_gps":         exifData.HasGPS,
-			"has_timestamp":   exifData.Timestamp != nil,
-			"camera_make":     exifData.Make,
-			"camera_model":    exifData.Model,
-			"position_source": positionConfidence,
-		},
-	}
-
-	return utils.SendSuccess(c, http.StatusCreated, response, "Photo waypoint created successfully")
-}
-
-// getFallbackPosition implements the intelligent positioning fallback logic
-func (h *WaypointHandler) getFallbackPosition(sessionID string, photoTimestamp *time.Time, userID string) (*float64, *float64, *float64, string, error) {
-	// Priority 1: Time-based proximity matching with tracked locations
-	if photoTimestamp != nil {
-		if lat, lon, alt, err := h.findTimeMatchedLocation(sessionID, *photoTimestamp); err == nil {
-			return lat, lon, alt, "time_matched", nil
-		}
-	}
-
-	// Priority 2: End of tracked locations for current session
-	if lat, lon, alt, err := h.findLastTrackedLocation(sessionID); err == nil {
-		return lat, lon, alt, "tracked", nil
-	}
-
-	// Priority 3: End of GPX track for current session
-	if lat, lon, alt, err := h.findLastGPXTrackPoint(sessionID); err == nil {
-		return lat, lon, alt, "gpx_track", nil
-	}
-
-	// Priority 4: Last known location from user's history
-	if lat, lon, alt, err := h.findLastKnownUserLocation(userID); err == nil {
-		return lat, lon, alt, "last_known", nil
-	}
-
-	// Priority 5: Manual placement (return error to indicate manual placement needed)
-	return nil, nil, nil, "manual", fmt.Errorf("no fallback position available, manual placement required")
-}
-
-// findTimeMatchedLocation finds the closest tracked location by timestamp
-func (h *WaypointHandler) findTimeMatchedLocation(sessionID string, photoTime time.Time) (*float64, *float64, *float64, error) {
-	// Look for locations within 30 minutes of the photo timestamp
-	timeWindow := 30 * time.Minute
-	startTime := photoTime.Add(-timeWindow)
-	endTime := photoTime.Add(timeWindow)
-
-	locations, err := h.app.Dao().FindRecordsByFilter(
-		"locations",
-		"session = {:session} && timestamp >= {:start_time} && timestamp <= {:end_time}",
-		"timestamp ASC",
-		10, 0, // Get up to 10 closest locations
-		dbx.Params{
-			"session":    sessionID,
-			"start_time": startTime.Unix(),
-			"end_time":   endTime.Unix(),
-		},
-	)
-
-	if err != nil || len(locations) == 0 {
-		return nil, nil, nil, fmt.Errorf("no locations found within time window")
-	}
-
-	// Find the location with the smallest time difference
-	var closestLocation *models.Record
-	var minTimeDiff time.Duration = timeWindow + 1 // Initialize with a value larger than window
-
-	for _, location := range locations {
-		locationTime := location.GetDateTime("timestamp").Time()
-		timeDiff := photoTime.Sub(locationTime)
-		if timeDiff < 0 {
-			timeDiff = -timeDiff
-		}
-
-		if timeDiff < minTimeDiff {
-			minTimeDiff = timeDiff
-			closestLocation = location
-		}
-	}
-
-	if closestLocation == nil {
-		return nil, nil, nil, fmt.Errorf("no suitable time-matched location found")
-	}
-
-	lat := closestLocation.GetFloat("latitude")
-	lon := closestLocation.GetFloat("longitude")
-	var alt *float64
-	if altitude := closestLocation.GetFloat("altitude"); altitude != 0 {
-		alt = &altitude
-	}
-
-	return &lat, &lon, alt, nil
-}
-
-// findLastTrackedLocation finds the last tracked location for a session
-func (h *WaypointHandler) findLastTrackedLocation(sessionID string) (*float64, *float64, *float64, error) {
-	locations, err := h.app.Dao().FindRecordsByFilter(
-		"locations",
-		"session = {:session}",
-		"-timestamp", // Order by newest first
-		1, 0,         // Get only the last location
-		dbx.Params{"session": sessionID},
-	)
-
-	if err != nil || len(locations) == 0 {
-		return nil, nil, nil, fmt.Errorf("no tracked locations found for session")
-	}
-
-	location := locations[0]
-	lat := location.GetFloat("latitude")
-	lon := location.GetFloat("longitude")
-	var alt *float64
-	if altitude := location.GetFloat("altitude"); altitude != 0 {
-		alt = &altitude
-	}
-
-	return &lat, &lon, alt, nil
-}
-
-// findLastGPXTrackPoint finds the last point in the GPX track for a session
-func (h *WaypointHandler) findLastGPXTrackPoint(sessionID string) (*float64, *float64, *float64, error) {
-	trackPoints, err := h.app.Dao().FindRecordsByFilter(
-		"gpx_tracks",
-		"session_id = {:session_id}",
-		"-sequence", // Order by highest sequence (last point) first
-		1, 0,        // Get only the last point
-		dbx.Params{"session_id": sessionID},
-	)
-
-	if err != nil || len(trackPoints) == 0 {
-		return nil, nil, nil, fmt.Errorf("no GPX track points found for session")
-	}
-
-	point := trackPoints[0]
-	lat := point.GetFloat("latitude")
-	lon := point.GetFloat("longitude")
-	var alt *float64
-	if altitude := point.GetFloat("altitude"); altitude != 0 {
-		alt = &altitude
-	}
-
-	return &lat, &lon, alt, nil
-}
-
-// findLastKnownUserLocation finds the most recent location from any of the user's sessions
-func (h *WaypointHandler) findLastKnownUserLocation(userID string) (*float64, *float64, *float64, error) {
-	// Find the most recent location from any session belonging to this user
-	locations, err := h.app.Dao().FindRecordsByFilter(
-		"locations",
-		"user = {:user}",
-		"-timestamp", // Order by newest first
-		1, 0,         // Get only the last location
-		dbx.Params{"user": userID},
-	)
-
-	if err != nil || len(locations) == 0 {
-		return nil, nil, nil, fmt.Errorf("no previous locations found for user")
-	}
-
-	location := locations[0]
-	lat := location.GetFloat("latitude")
-	lon := location.GetFloat("longitude")
-	var alt *float64
-	if altitude := location.GetFloat("altitude"); altitude != 0 {
-		alt = &altitude
-	}
-
-	return &lat, &lon, alt, nil
+	return utils.SendSuccess(c, http.StatusCreated, waypointData, "Photo waypoint created successfully")
 }
 
 // formatWaypointResponse formats a waypoint record for API response
