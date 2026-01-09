@@ -8,20 +8,6 @@ module.exports = {
   clientsClaim: true,
   runtimeCaching: [
     {
-      urlPattern: /^https:\/\/unpkg\.com\/leaflet/,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'leaflet-cache',
-        expiration: {
-          maxEntries: 10,
-          maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
-        },
-        cacheKeyWillBeUsed: async ({ request }) => {
-          return `${request.url}?v=1.9.4`; // Version the cache key
-        },
-      },
-    },
-    {
       urlPattern: /^http:\/\/localhost:8090\/api\//,
       handler: 'NetworkFirst',
       options: {

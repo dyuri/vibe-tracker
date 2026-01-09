@@ -158,7 +158,7 @@ test.describe('Integration Workflows', () => {
       const mapWidget = document.querySelector('map-widget') as any;
       const shadowRoot = mapWidget?.shadowRoot;
       if (shadowRoot) {
-        const markers = shadowRoot.querySelectorAll('.leaflet-marker-icon');
+        const markers = shadowRoot.querySelectorAll('.maplibregl-marker');
         return markers.length;
       }
       return 0;
@@ -411,7 +411,7 @@ test.describe('Integration Workflows', () => {
       const mapWidget = document.querySelector('map-widget') as any;
       const shadowRoot = mapWidget?.shadowRoot;
       if (shadowRoot) {
-        const markers = shadowRoot.querySelectorAll('.leaflet-marker-icon');
+        const markers = shadowRoot.querySelectorAll('.maplibregl-marker');
         return markers.length;
       }
       return 0;

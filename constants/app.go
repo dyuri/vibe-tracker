@@ -93,7 +93,9 @@ const (
 	CSPDefaultSrc = "'self'"
 	CSPScriptSrc  = "'self' 'unsafe-inline' https://unpkg.com"
 	CSPStyleSrc   = "'self' 'unsafe-inline' https://unpkg.com"
-	CSPImgSrc     = "'self' data: blob: http: https:"
-	CSPConnectSrc = "'self'"
-	CSPFontSrc    = "'self' https://unpkg.com"
+	CSPImgSrc     = "'self' data: blob: https:"
+	CSPConnectSrc = "'self' https://demotiles.maplibre.org https://api.maptiler.com ws: wss:"
+	CSPFontSrc    = "'self' data: https: https://unpkg.com"
+	CSPWorkerSrc  = "'self' blob:"
+	CSPManifestSrc = "'self'"
 )

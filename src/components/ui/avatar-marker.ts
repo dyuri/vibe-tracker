@@ -1,13 +1,17 @@
 import type { LocationProperties } from '@/types';
 import { generateUserColor } from '@/utils';
 
-// Leaflet global (loaded via script tag)
-declare const L: typeof import('leaflet');
-
 type LatLng = [number, number]; // [latitude, longitude] coordinates
 
 /**
- * Creates a custom droplet-shaped marker with user avatar
+ * Marker wrapper that provides getElement() method
+ */
+interface MarkerWrapper {
+  getElement(): HTMLElement;
+}
+
+/**
+ * Creates a custom droplet-shaped marker element with user avatar
  */
 export function createAvatarMarker(
   latlng: LatLng,
@@ -15,7 +19,7 @@ export function createAvatarMarker(
   userId: string,
   avatar: string | null | undefined,
   size: number = 40
-): L.Marker {
+): MarkerWrapper {
   const userColor = generateUserColor(username) || '#007cff';
   const avatarSize = Math.round(size * 0.6); // Avatar is 60% of marker size
   const _padding = Math.round(size * 0.05); // 5% padding
@@ -25,13 +29,13 @@ export function createAvatarMarker(
   if (avatar && avatar.trim()) {
     // Use avatar image
     avatarContent = `
-      <img 
-        src="/api/files/users/${userId}/${avatar}" 
-        alt="${username}" 
+      <img
+        src="/api/files/users/${userId}/${avatar}"
+        alt="${username}"
         style="
-          width: ${avatarSize}px; 
-          height: ${avatarSize}px; 
-          border-radius: 50%; 
+          width: ${avatarSize}px;
+          height: ${avatarSize}px;
+          border-radius: 50%;
           object-fit: cover;
           border: 2px solid ${userColor};
         "
@@ -39,9 +43,9 @@ export function createAvatarMarker(
       />
       <div style="
         display: none;
-        width: ${avatarSize}px; 
-        height: ${avatarSize}px; 
-        border-radius: 50%; 
+        width: ${avatarSize}px;
+        height: ${avatarSize}px;
+        border-radius: 50%;
         background: white;
         align-items: center;
         justify-content: center;
@@ -57,9 +61,9 @@ export function createAvatarMarker(
     // Use initials fallback
     avatarContent = `
       <div style="
-        width: ${avatarSize}px; 
-        height: ${avatarSize}px; 
-        border-radius: 50%; 
+        width: ${avatarSize}px;
+        height: ${avatarSize}px;
+        border-radius: 50%;
         background: white;
         display: flex;
         align-items: center;
@@ -76,13 +80,13 @@ export function createAvatarMarker(
 
   // Calculate dimensions for proper droplet shape
   const circleRadius = size * 0.3; // Circle radius (60% of marker width)
-  const triangleHeight = size * 0.35; // Triangle height (increased from 0.25)
-  const triangleWidth = circleRadius * 0.8; // Triangle width (increased from 0.6)
+  const triangleHeight = size * 0.35; // Triangle height
+  const triangleWidth = circleRadius * 0.8; // Triangle width
   const totalHeight = circleRadius * 2 + triangleHeight;
   const centerX = size / 2;
   const centerY = circleRadius; // Circle center
 
-  // Create the droplet-shaped marker SVG
+  // Create the droplet-shaped marker HTML
   const markerHtml = `
     <div style="
       position: relative;
@@ -95,13 +99,13 @@ export function createAvatarMarker(
       <!-- Main droplet shape -->
       <svg width="${size}" height="${totalHeight}" style="position: absolute; z-index: 2;">
         <!-- Triangle pointing down -->
-        <polygon points="${centerX - triangleWidth},${centerY + circleRadius * 0.6} ${centerX + triangleWidth},${centerY + circleRadius * 0.6} ${centerX},${totalHeight - 4}" 
-                 fill="${userColor}" 
-                 stroke="white" 
-                 stroke-width="1" 
+        <polygon points="${centerX - triangleWidth},${centerY + circleRadius * 0.6} ${centerX + triangleWidth},${centerY + circleRadius * 0.6} ${centerX},${totalHeight - 4}"
+                 fill="${userColor}"
+                 stroke="white"
+                 stroke-width="1"
                  stroke-linejoin="round" />
       </svg>
-      
+
       <!-- Avatar container positioned in the circle -->
       <div style="
         position: absolute;
@@ -118,17 +122,42 @@ export function createAvatarMarker(
     </div>
   `;
 
-  // Create custom icon
-  const customIcon = L.divIcon({
-    html: markerHtml,
-    className: 'avatar-marker',
-    iconSize: [size, totalHeight],
-    iconAnchor: [centerX, totalHeight - 2], // Point to the bottom tip of the triangle
-    popupAnchor: [0, -(totalHeight - 10)], // Popup appears above the marker
-  });
+  // Create custom HTML element
+  const element = document.createElement('div');
+  element.className = 'avatar-marker';
+  element.innerHTML = markerHtml;
+  element.style.width = `${size}px`;
+  element.style.height = `${totalHeight}px`;
 
-  // Create and return the marker
-  return L.marker(latlng, { icon: customIcon });
+  return {
+    getElement: () => element,
+  };
+}
+
+/**
+ * Creates a simple default marker element
+ */
+function createDefaultMarker(): MarkerWrapper {
+  const element = document.createElement('div');
+  element.className = 'default-marker';
+  element.innerHTML = `
+    <div style="
+      width: 25px;
+      height: 41px;
+      position: relative;
+    ">
+      <svg viewBox="0 0 27 43" xmlns="http://www.w3.org/2000/svg">
+        <path d="M13.5,0 C6.044,0 0,6.044 0,13.5 C0,23.8125 13.5,43 13.5,43 C13.5,43 27,23.8125 27,13.5 C27,6.044 20.956,0 13.5,0 Z" fill="#3388ff" stroke="white" stroke-width="2"/>
+        <circle cx="13.5" cy="13.5" r="5" fill="white"/>
+      </svg>
+    </div>
+  `;
+  element.style.width = '25px';
+  element.style.height = '41px';
+
+  return {
+    getElement: () => element,
+  };
 }
 
 /**
@@ -138,7 +167,7 @@ export function createMarker(
   latlng: LatLng,
   properties: LocationProperties,
   size: number = 40
-): L.Marker {
+): MarkerWrapper {
   // Check if this point has username and avatar (indicates it's a latest point)
   if (properties.username && properties.user_id && properties.avatar !== undefined) {
     return createAvatarMarker(
@@ -149,7 +178,7 @@ export function createMarker(
       size
     );
   } else {
-    // Use default Leaflet marker for historical points
-    return L.marker(latlng);
+    // Use default marker for historical points
+    return createDefaultMarker();
   }
 }

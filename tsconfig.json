@@ -19,7 +19,7 @@
     "noEmit": true,
     "downlevelIteration": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "types": ["leaflet", "vite/client"],
+    "types": ["vite/client"],
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {

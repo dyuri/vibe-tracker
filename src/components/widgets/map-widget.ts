@@ -13,26 +13,23 @@ import type {
 } from '@/types';
 import { createMarker } from '@/components/ui';
 import styles from '@/styles/components/widgets/map-widget.css?inline';
-import * as L from 'leaflet';
-import leafletCSS from 'leaflet/dist/leaflet.css?inline';
+import maplibregl from 'maplibre-gl';
+import maplibreCSS from 'maplibre-gl/dist/maplibre-gl.css?inline';
 
 /**
  * Map Widget Web Component
- * Interactive Leaflet map for displaying location data with heart rate visualization
+ * Interactive MapLibre map for displaying location data with heart rate visualization
  */
 export default class MapWidget extends HTMLElement implements MapWidgetElement {
-  private map: L.Map | null = null;
-  private dataLayerGroup: L.LayerGroup | null = null;
-  private currentPositionLayerGroup: L.LayerGroup | null = null;
-  private hoverMarkerLayerGroup: L.LayerGroup | null = null;
-  private eventMarkerLayerGroup: L.LayerGroup | null = null;
-  // New layer groups for GPX tracks and waypoints
-  private gpxTrackLayerGroup: L.LayerGroup | null = null;
-  private waypointsLayerGroup: L.LayerGroup | null = null;
+  private map: maplibregl.Map | null = null;
+  private markers: Map<string, maplibregl.Marker> = new Map();
+  private currentPositionMarker: maplibregl.Marker | null = null;
+  private hoverMarker: maplibregl.Marker | null = null;
+  private waypointMarkers: Map<string, maplibregl.Marker> = new Map();
   private currentFeatureCollection: LocationsResponse | null = null;
   // Waypoint selection properties
   private waypointSelectionMode: boolean = false;
-  private waypointSelectionMarker: L.Marker | null = null;
+  private waypointSelectionMarker: maplibregl.Marker | null = null;
   private selectedWaypointCoords: [number, number] | null = null;
   private colorScale: Array<Array<number>> = [
     [0, 0, 255], // Blue
@@ -47,7 +44,7 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     this.attachShadow({ mode: 'open' });
 
     this.shadowRoot!.innerHTML = `
-      <style>${leafletCSS}</style>
+      <style>${maplibreCSS}</style>
       <style>${styles}</style>
       <div id="map"></div>
     `;
@@ -55,38 +52,28 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
 
   /**
    * Called when the element is connected to the DOM
-   * Initializes the Leaflet map and sets up event listeners
+   * Initializes the MapLibre map and sets up event listeners
    */
   connectedCallback(): void {
     try {
-      // Fix Leaflet default icon paths for Vite/webpack builds
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).href,
-        iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).href,
-        shadowUrl: new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).href,
+      // Option 1: MapLibre demo tiles (no API key needed, good for testing)
+      const style = 'https://demotiles.maplibre.org/style.json';
+
+      // Option 2: Maptiler (requires free API key from https://www.maptiler.com/)
+      // const style = 'https://api.maptiler.com/maps/streets/style.json?key=YOUR_API_KEY';
+
+      this.map = new maplibregl.Map({
+        container: this.shadowRoot!.getElementById('map')!,
+        style: style,
+        center: [0, 0], // [lng, lat] - will be updated from URL hash or data
+        zoom: 2,
+        // TODO fix attributionControl: true,
       });
 
-      this.map = L.map(this.shadowRoot!.getElementById('map')!);
-
-      // Create custom map panes for proper layering control
-      this.map.createPane('gpxPane');
-      this.map.getPane('gpxPane')!.style.zIndex = '400'; // Lower z-index for GPX tracks
-      this.map.getPane('overlayPane')!.style.zIndex = '600'; // Higher z-index for main tracks
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }).addTo(this.map);
-
-      // Initialize GPX and waypoint layer groups with custom pane (bottom layers)
-      this.gpxTrackLayerGroup = L.layerGroup().addTo(this.map);
-      this.waypointsLayerGroup = L.layerGroup().addTo(this.map);
-      // Initialize main data layers on top (uses default overlay pane with zIndex 600)
-      this.dataLayerGroup = L.layerGroup().addTo(this.map);
-      this.currentPositionLayerGroup = L.layerGroup().addTo(this.map);
-      this.hoverMarkerLayerGroup = L.layerGroup().addTo(this.map);
-      this.eventMarkerLayerGroup = L.layerGroup().addTo(this.map);
+      // Wait for map to load before adding sources
+      this.map.on('load', () => {
+        this.initializeMapSources();
+      });
 
       this.map.on('moveend', () => this.updateUrlHash());
       this.map.on('zoomend', () => this.updateUrlHash());
@@ -96,6 +83,139 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       console.error('Failed to initialize map widget:', error);
       this.shadowRoot!.getElementById('map')!.innerHTML =
         '<div class="map-error">Map initialization failed</div>';
+    }
+  }
+
+  /**
+   * Initialize all GeoJSON sources for map layers
+   */
+  private initializeMapSources(): void {
+    if (!this.map) {return;}
+
+    // Source for main tracking data (polylines)
+    this.map.addSource('tracking-data', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    });
+
+    // Source for GPX planned tracks
+    this.map.addSource('gpx-track', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    });
+
+    // Source for current position accuracy circle
+    this.map.addSource('current-position-circle', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    });
+
+    // Add layers for tracking data
+    // Black outline layer (bottom)
+    this.map.addLayer({
+      id: 'tracking-outline',
+      type: 'line',
+      source: 'tracking-data',
+      filter: ['==', ['get', 'layer'], 'outline'],
+      paint: {
+        'line-color': 'black',
+        'line-width': 7,
+      },
+    });
+
+    // Colored tracking line layer (top)
+    this.map.addLayer({
+      id: 'tracking-line',
+      type: 'line',
+      source: 'tracking-data',
+      filter: ['==', ['get', 'layer'], 'main'],
+      paint: {
+        'line-color': ['get', 'color'],
+        'line-width': 5,
+        'line-opacity': ['coalesce', ['get', 'opacity'], 1],
+      },
+      layout: {
+        'line-cap': 'round',
+        'line-join': 'round',
+      },
+    });
+
+    // GPX planned track layer
+    this.map.addLayer({
+      id: 'gpx-track-line',
+      type: 'line',
+      source: 'gpx-track',
+      paint: {
+        'line-color': 'hsl(320, 100%, 60%)',
+        'line-width': 4,
+        'line-opacity': 0.8,
+        'line-dasharray': [2, 3],
+      },
+    });
+
+    // Accuracy circle layer
+    this.map.addLayer({
+      id: 'accuracy-circle',
+      type: 'circle',
+      source: 'current-position-circle',
+      paint: {
+        'circle-radius': ['get', 'radiusPixels'],
+        'circle-color': '#ff901e',
+        'circle-opacity': 0.2,
+        'circle-stroke-color': '#ff901e',
+        'circle-stroke-width': 2,
+      },
+    });
+
+    // Add click handler for tracking lines
+    this.map.on('click', 'tracking-line', (e: maplibregl.MapMouseEvent) => {
+      this.handleTrackLineClick(e);
+    });
+
+    // Change cursor on hover
+    this.map.on('mouseenter', 'tracking-line', () => {
+      if (this.map) {this.map.getCanvas().style.cursor = 'pointer';}
+    });
+    this.map.on('mouseleave', 'tracking-line', () => {
+      if (this.map) {this.map.getCanvas().style.cursor = '';}
+    });
+  }
+
+  /**
+   * Handle click on tracking line to find closest point
+   */
+  private handleTrackLineClick(e: maplibregl.MapMouseEvent): void {
+    if (!this.currentFeatureCollection) {return;}
+
+    const points = this.currentFeatureCollection.features;
+    let closestPoint: GeoJSONFeature | null = null;
+    let minDistance = Infinity;
+
+    const clickLngLat = e.lngLat;
+
+    points.forEach(p => {
+      const pointLngLat = new maplibregl.LngLat(
+        p.geometry.coordinates[0],
+        p.geometry.coordinates[1]
+      );
+      const distance = clickLngLat.distanceTo(pointLngLat);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestPoint = p;
+      }
+    });
+
+    if (closestPoint) {
+      const pointIndex = points.findIndex(f => f === closestPoint);
+      if (pointIndex !== -1) {
+        this.dispatchEvent(
+          new CustomEvent('map-point-click', {
+            detail: { feature: closestPoint, index: pointIndex },
+            bubbles: true,
+            composed: true,
+          })
+        );
+      }
     }
   }
 
@@ -112,8 +232,9 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
           const lon = parseFloat(parts[1]);
           const zoom = parseInt(parts[2], 10);
           if (!isNaN(lat) && !isNaN(lon) && !isNaN(zoom)) {
-            this.map!.setView([lat, lon], zoom);
-            // Note: waypoint parameter is handled in displayWaypoints() after waypoints are loaded
+            // MapLibre uses [lng, lat], but we keep lat/lng in URL for backwards compat
+            this.map!.setCenter([lon, lat]);
+            this.map!.setZoom(zoom);
             return true;
           }
         }
@@ -123,16 +244,16 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   }
 
   updateUrlHash(waypointId?: string): void {
-    const center = this.map!.getCenter();
-    const zoom = this.map!.getZoom();
-    let hash = `#map=${center.lat.toFixed(6)}/${center.lng.toFixed(6)}/${zoom}`;
+    if (!this.map) {return;}
 
-    // If waypointId is explicitly provided, use it
-    // If not provided but we want to preserve existing waypoint, extract it from current URL
+    const center = this.map.getCenter();
+    const zoom = this.map.getZoom();
+    // Keep lat/lng order in URL for backwards compatibility
+    let hash = `#map=${center.lat.toFixed(6)}/${center.lng.toFixed(6)}/${Math.round(zoom)}`;
+
     if (waypointId) {
       hash += `&wp=${waypointId}`;
     } else {
-      // Preserve existing waypoint parameter if present
       const currentHash = window.location.hash;
       if (currentHash.includes('&wp=')) {
         const wpMatch = currentHash.match(/&wp=([^&]+)/);
@@ -142,52 +263,44 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       }
     }
 
-    history.replaceState(null, null, hash);
+    history.replaceState(null, '', hash);
   }
 
   /**
    * Removes waypoint parameter from URL
    */
   private clearWaypointFromUrl(): void {
-    const center = this.map!.getCenter();
-    const zoom = this.map!.getZoom();
-    const hash = `#map=${center.lat.toFixed(6)}/${center.lng.toFixed(6)}/${zoom}`;
-    history.replaceState(null, null, hash);
+    if (!this.map) {return;}
+    const center = this.map.getCenter();
+    const zoom = this.map.getZoom();
+    const hash = `#map=${center.lat.toFixed(6)}/${center.lng.toFixed(6)}/${Math.round(zoom)}`;
+    history.replaceState(null, '', hash);
   }
 
   /**
    * Opens a waypoint popup by waypoint ID
    */
   private openWaypointPopupById(waypointId: string): void {
-    if (!this.waypointsLayerGroup) {
-      return;
+    const marker = this.waypointMarkers.get(waypointId);
+    if (marker) {
+      marker.togglePopup();
     }
-
-    // Search through all waypoint markers to find the matching one
-    this.waypointsLayerGroup.eachLayer((layer: any) => {
-      if (layer.waypointId === waypointId) {
-        // Found the marker, open its popup
-        if (layer.openPopup) {
-          layer.openPopup();
-        }
-      }
-    });
   }
 
   /**
    * Displays location data on the map
    */
   displayData(data: LocationResponse | LocationsResponse): void {
-    if (!this.map || !this.dataLayerGroup) {
+    if (!this.map) {
       console.warn('Map not initialized, cannot display data');
       return;
     }
 
     if (data.type === 'FeatureCollection') {
-      this.currentFeatureCollection = data; // Store current data
+      this.currentFeatureCollection = data;
       this.displayFeatureCollection(data);
     } else {
-      this.currentFeatureCollection = null; // Single point mode
+      this.currentFeatureCollection = null;
       this.displayPoint(data);
     }
   }
@@ -196,14 +309,16 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    * Displays GPX track data as a planned route
    */
   displayGpxTrack(data: GpxTrackPointsResponse): void {
-    if (!this.map || !this.gpxTrackLayerGroup) {
+    if (!this.map) {
       console.warn('Map not initialized, cannot display GPX track');
       return;
     }
 
-    this.gpxTrackLayerGroup.clearLayers();
+    const source = this.map.getSource('gpx-track') as maplibregl.GeoJSONSource;
+    if (!source) {return;}
 
     if (!data.features || data.features.length === 0) {
+      source.setData({ type: 'FeatureCollection', features: [] });
       return;
     }
 
@@ -212,42 +327,40 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       (a, b) => a.properties.sequence - b.properties.sequence
     );
 
-    // Create the planned track polyline (dashed blue)
-    const trackCoordinates: [number, number][] = sortedPoints.map(point => [
-      point.geometry.coordinates[1], // latitude
-      point.geometry.coordinates[0], // longitude
-    ]);
+    // Create GeoJSON LineString for the planned track
+    const lineFeature: GeoJSON.Feature<GeoJSON.LineString> = {
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: sortedPoints.map(point => [
+          point.geometry.coordinates[0], // longitude
+          point.geometry.coordinates[1], // latitude
+        ]),
+      },
+      properties: {
+        points: sortedPoints.length,
+        type: 'GPX Track',
+      },
+    };
 
-    const plannedTrack = L.polyline(trackCoordinates, {
-      color: 'hsl(320, 100%, 60%)', // Bright pink color for planned track
-      weight: 4,
-      opacity: 0.8,
-      dashArray: '10, 15', // Dashed line with bigger gaps to distinguish from actual track
-      pane: 'gpxPane', // Use custom GPX pane with lower z-index
+    source.setData({
+      type: 'FeatureCollection',
+      features: [lineFeature],
     });
-
-    // Add popup to show track information
-    plannedTrack.bindPopup(`
-      <div class="gpx-track-popup">
-        <h4>Planned Track</h4>
-        <b>Points:</b> ${sortedPoints.length}<br>
-        <b>Type:</b> GPX Track
-      </div>
-    `);
-
-    this.gpxTrackLayerGroup.addLayer(plannedTrack);
   }
 
   /**
    * Displays waypoints on the map
    */
   displayWaypoints(data: WaypointsResponse): void {
-    if (!this.map || !this.waypointsLayerGroup) {
+    if (!this.map) {
       console.warn('Map not initialized, cannot display waypoints');
       return;
     }
 
-    this.waypointsLayerGroup.clearLayers();
+    // Clear existing waypoint markers
+    this.waypointMarkers.forEach(marker => marker.remove());
+    this.waypointMarkers.clear();
 
     if (!data.features || data.features.length === 0) {
       return;
@@ -255,21 +368,23 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
 
     data.features.forEach(waypoint => {
       const marker = this.createWaypointMarker(waypoint);
-
       const popupContent = this.createWaypointPopupContent(waypoint);
-      marker.bindPopup(popupContent);
+
+      const popup = new maplibregl.Popup({ offset: 10 }).setHTML(popupContent);
+
+      marker.setPopup(popup);
 
       // Update URL when popup is opened
-      marker.on('popupopen', () => {
+      marker.getElement().addEventListener('click', () => {
         this.updateUrlHash(waypoint.properties.id);
       });
 
-      // Remove waypoint parameter when popup is closed
-      marker.on('popupclose', () => {
+      popup.on('close', () => {
         this.clearWaypointFromUrl();
       });
 
-      this.waypointsLayerGroup!.addLayer(marker);
+      this.waypointMarkers.set(waypoint.properties.id, marker);
+      marker.addTo(this.map!);
     });
 
     // After waypoints are loaded, check if URL has a waypoint parameter to open
@@ -278,7 +393,6 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       const wpMatch = hash.match(/&wp=([^&]+)/);
       if (wpMatch) {
         const waypointId = wpMatch[1];
-        // Use setTimeout to ensure markers are fully added to the map
         setTimeout(() => {
           this.openWaypointPopupById(waypointId);
         }, 100);
@@ -289,35 +403,32 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   /**
    * Creates a marker for a waypoint with appropriate icon
    */
-  createWaypointMarker(waypoint: WaypointFeature): L.Marker {
+  createWaypointMarker(waypoint: WaypointFeature): maplibregl.Marker {
     const [longitude, latitude] = waypoint.geometry.coordinates;
-    const icon = this.getWaypointIcon(
+    const el = this.createWaypointElement(
       waypoint.properties.type,
       waypoint.properties.position_confidence
     );
 
-    const marker = L.marker([latitude, longitude], { icon });
-    // Store waypoint ID on marker for later retrieval
-    (marker as any).waypointId = waypoint.properties.id;
-    return marker;
+    return new maplibregl.Marker({ element: el }).setLngLat([longitude, latitude]);
   }
 
   /**
-   * Returns appropriate icon for waypoint type and confidence
+   * Creates HTML element for waypoint marker
    */
-  getWaypointIcon(type: WaypointType, confidence: PositionConfidence): L.DivIcon {
+  createWaypointElement(type: WaypointType, confidence: PositionConfidence): HTMLElement {
     const config = this.getWaypointConfig(type);
     const confidenceStyle = this.getConfidenceStyle(confidence);
 
-    return L.divIcon({
-      className: `waypoint-marker waypoint-marker-${type}`,
-      html: `<div class="waypoint-marker-content" style="background-color: ${config.color}; ${confidenceStyle}">
-               <span class="waypoint-marker-icon">${config.icon}</span>
-             </div>`,
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
-      popupAnchor: [0, -10],
-    });
+    const el = document.createElement('div');
+    el.className = `waypoint-marker waypoint-marker-${type}`;
+    el.innerHTML = `<div class="waypoint-marker-content" style="background-color: ${config.color}; ${confidenceStyle}">
+                     <span class="waypoint-marker-icon">${config.icon}</span>
+                   </div>`;
+    el.style.width = '20px';
+    el.style.height = '20px';
+
+    return el;
   }
 
   /**
@@ -346,12 +457,12 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    */
   getConfidenceStyle(confidence: PositionConfidence): string {
     const styles: Record<PositionConfidence, string> = {
-      gps: 'border: 2px solid #28a745;', // Green border for GPS
-      time_matched: 'border: 2px solid #007bff;', // Blue border
-      tracked: 'border: 2px solid #17a2b8;', // Cyan border
-      gpx_track: 'border: 2px solid #6f42c1;', // Purple border
-      last_known: 'border: 2px solid #fd7e14;', // Orange border
-      manual: 'border: 2px solid #6c757d;', // Gray border
+      gps: 'border: 2px solid #28a745;',
+      time_matched: 'border: 2px solid #007bff;',
+      tracked: 'border: 2px solid #17a2b8;',
+      gpx_track: 'border: 2px solid #6f42c1;',
+      last_known: 'border: 2px solid #fd7e14;',
+      manual: 'border: 2px solid #6c757d;',
     };
 
     return styles[confidence] || styles.manual;
@@ -368,7 +479,6 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     const altitudeText = altitude ? `<b>Altitude:</b> ${altitude} m<br>` : '';
     const descriptionText = description ? `<b>Description:</b> ${description}<br>` : '';
 
-    // Add photo display if available
     let photoHtml = '';
     if (photo) {
       const photoUrl = `/api/files/waypoints/${id}/${photo}`;
@@ -400,8 +510,9 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    * Clears GPX track from the map
    */
   clearGpxTrack(): void {
-    if (this.gpxTrackLayerGroup) {
-      this.gpxTrackLayerGroup.clearLayers();
+    const source = this.map?.getSource('gpx-track') as maplibregl.GeoJSONSource;
+    if (source) {
+      source.setData({ type: 'FeatureCollection', features: [] });
     }
   }
 
@@ -409,9 +520,8 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    * Clears waypoints from the map
    */
   clearWaypoints(): void {
-    if (this.waypointsLayerGroup) {
-      this.waypointsLayerGroup.clearLayers();
-    }
+    this.waypointMarkers.forEach(marker => marker.remove());
+    this.waypointMarkers.clear();
   }
 
   /**
@@ -422,184 +532,102 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       return;
     }
 
-    // Get the latest timestamp from existing data
     const existingFeatures = this.currentFeatureCollection.features;
     let latestExistingTimestamp = 0;
     if (existingFeatures.length > 0) {
       latestExistingTimestamp = Math.max(...existingFeatures.map(f => f.properties.timestamp));
     }
 
-    // Filter new features to only include truly new ones (timestamp > latest existing)
     const trulyNewFeatures = newData.features.filter(
       feature => feature.properties.timestamp > latestExistingTimestamp
     );
 
-    // Only proceed if we have truly new features
     if (trulyNewFeatures.length === 0) {
       return;
     }
 
-    // Merge truly new features with existing ones
     this.currentFeatureCollection.features.push(...trulyNewFeatures);
-
-    // Re-render with the combined data
     this.displayFeatureCollection(this.currentFeatureCollection);
   }
 
   displayFeatureCollection(data: LocationsResponse): void {
-    if (!this.dataLayerGroup || !this.eventMarkerLayerGroup) {
+    if (!this.map) {
       console.warn('Map not initialized, cannot display feature collection');
       return;
     }
 
-    this.dataLayerGroup.clearLayers();
-    this.eventMarkerLayerGroup.clearLayers();
+    // Clear existing markers
+    this.markers.forEach(marker => marker.remove());
+    this.markers.clear();
 
     const points = data.features;
     if (points.length === 0) {
       return;
     }
 
-    // Check if this is multi-user data (different usernames) or single-user track data
+    // Check if multi-user data
     const usernames = [...new Set(points.map(p => p.properties.username).filter(u => u))];
     const isMultiUser = usernames.length > 1;
 
     if (isMultiUser) {
-      // Multi-user mode: display individual markers for each user's location
+      // Multi-user mode: display individual markers
       points.forEach(point => {
-        const [longitude, latitude, _altitude] = point.geometry.coordinates;
-
+        const [longitude, latitude] = point.geometry.coordinates;
         const marker = createMarker([latitude, longitude], point.properties);
+
         const coords: [number, number, number] =
           point.geometry.coordinates.length === 2
             ? ([...point.geometry.coordinates, 0] as [number, number, number])
             : (point.geometry.coordinates as [number, number, number]);
+
         const popupContent = this.createPopupContent(point.properties, coords);
-        marker.bindPopup(popupContent);
-        this.dataLayerGroup!.addLayer(marker);
+        const popup = new maplibregl.Popup({ offset: 25 }).setHTML(popupContent);
+
+        const mapMarker = new maplibregl.Marker({ element: marker.getElement() })
+          .setLngLat([longitude, latitude])
+          .setPopup(popup)
+          .addTo(this.map!);
+
+        this.markers.set(`${point.properties.timestamp}`, mapMarker);
       });
     } else {
-      // Single-user track mode: display connected lines with heart rate coloring
-      // Find min and max heart rate for color scaling
-      const heartRates = points
-        .map(p => p.properties.heart_rate)
-        .filter(hr => hr !== null && hr !== undefined);
-      const minHeartRate = Math.min(...heartRates);
-      const maxHeartRate = Math.max(...heartRates);
+      // Single-user track mode: create polylines with heart rate coloring
+      this.renderTrackPolylines(points);
 
-      // Create black outlines first
-      for (let i = 0; i < points.length - 1; i++) {
-        const startPoint = points[i];
-        const endPoint = points[i + 1];
-        const outline = L.polyline(
-          [
-            [startPoint.geometry.coordinates[1], startPoint.geometry.coordinates[0]],
-            [endPoint.geometry.coordinates[1], endPoint.geometry.coordinates[0]],
-          ],
-          { color: 'black', weight: 7 }
-        );
-        this.dataLayerGroup!.addLayer(outline);
-      }
-
-      // Create colored lines on top
-      for (let i = 0; i < points.length - 1; i++) {
-        const startPoint = points[i];
-        const endPoint = points[i + 1];
-        const heartRate = startPoint.properties.heart_rate;
-        const status = startPoint.properties.status;
-
-        // Determine line color - use status-specific colors only if both points have the same status
-        const endStatus = endPoint.properties.status;
-        let color: string;
-        let statusStyle: { dashArray?: string; opacity?: number } = {};
-
-        if (status === 'stopped' && endStatus === 'stopped') {
-          color = '#dc3545'; // Red for stopped
-          statusStyle = this.getLineStyleForStatus('stopped');
-        } else if (status === 'paused' && endStatus === 'paused') {
-          color = '#fd7e14'; // Orange for paused
-          statusStyle = this.getLineStyleForStatus('paused');
-        } else {
-          color = this.getHeartRateColor(heartRate, minHeartRate, maxHeartRate);
-        }
-
-        const lineOptions = {
-          color: color,
-          weight: 5,
-          ...statusStyle,
-        };
-
-        const line = L.polyline(
-          [
-            [startPoint.geometry.coordinates[1], startPoint.geometry.coordinates[0]],
-            [endPoint.geometry.coordinates[1], endPoint.geometry.coordinates[0]],
-          ],
-          lineOptions
-        );
-        this.dataLayerGroup!.addLayer(line);
-      }
-
-      // Add event markers for points with events
-      points.forEach(point => {
-        if (point.properties.event) {
-          const eventMarker = this.createEventMarker(point, point.properties.event);
-          this.eventMarkerLayerGroup!.addLayer(eventMarker);
-        }
-      });
-
-      // Create a transparent, clickable line
-      const clickableLine = L.polyline(
-        points.map(p => [p.geometry.coordinates[1], p.geometry.coordinates[0]]),
-        { opacity: 0, weight: 10 }
-      );
-      clickableLine.on('click', (e: L.LeafletMouseEvent) => {
-        let closestPoint: GeoJSONFeature | null = null;
-        let minDistance = Infinity;
-
-        points.forEach(p => {
-          const latlng = L.latLng(p.geometry.coordinates[1], p.geometry.coordinates[0]);
-          const distance = e.latlng.distanceTo(latlng);
-          if (distance < minDistance) {
-            minDistance = distance;
-            closestPoint = p;
-          }
-        });
-
-        if (closestPoint) {
-          // Dispatch event for chart synchronization and location data display
-          const pointIndex =
-            this.currentFeatureCollection?.features.findIndex(f => f === closestPoint) ?? -1;
-          if (pointIndex !== -1) {
-            this.dispatchEvent(
-              new CustomEvent('map-point-click', {
-                detail: { feature: closestPoint, index: pointIndex },
-                bubbles: true,
-                composed: true,
-              })
-            );
-          }
-        }
-      });
-      this.dataLayerGroup!.addLayer(clickableLine);
+      // Add event markers
+      this.renderEventMarkers(points);
 
       // Add only the latest point as a marker
       const latestPoint = points[points.length - 1];
-      const [longitude, latitude, _altitude] = latestPoint.geometry.coordinates;
+      const [longitude, latitude] = latestPoint.geometry.coordinates;
       const marker = createMarker([latitude, longitude], latestPoint.properties);
+
       const coords: [number, number, number] =
         latestPoint.geometry.coordinates.length === 2
           ? ([...latestPoint.geometry.coordinates, 0] as [number, number, number])
           : (latestPoint.geometry.coordinates as [number, number, number]);
+
       const popupContent = this.createPopupContent(latestPoint.properties, coords);
-      marker.bindPopup(popupContent);
-      this.dataLayerGroup!.addLayer(marker);
+      const popup = new maplibregl.Popup({ offset: 25 }).setHTML(popupContent);
+
+      const mapMarker = new maplibregl.Marker({ element: marker.getElement() })
+        .setLngLat([longitude, latitude])
+        .setPopup(popup)
+        .addTo(this.map!);
+
+      this.markers.set('latest', mapMarker);
     }
 
+    // Fit bounds
     if (!this.setViewFromUrlHash()) {
-      this.map!.fitBounds(L.geoJSON(data).getBounds());
+      const bounds = new maplibregl.LngLatBounds();
+      points.forEach(p => {
+        bounds.extend([p.geometry.coordinates[0], p.geometry.coordinates[1]]);
+      });
+      this.map!.fitBounds(bounds, { padding: 50 });
     }
 
-    // For single-user mode, dispatch location update for the latest point
+    // Dispatch location update
     if (!isMultiUser && points.length > 0) {
       const latestPoint = points[points.length - 1];
       this.dispatchEvent(
@@ -608,100 +636,129 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     }
   }
 
-  displayPoint(data: LocationResponse): void {
-    if (!this.dataLayerGroup) {
-      console.warn('Map not initialized, cannot display point');
-      return;
+  /**
+   * Render track polylines with heart rate coloring
+   */
+  private renderTrackPolylines(points: GeoJSONFeature[]): void {
+    const source = this.map?.getSource('tracking-data') as maplibregl.GeoJSONSource;
+    if (!source) {return;}
+
+    const heartRates = points
+      .map(p => p.properties.heart_rate)
+      .filter(hr => hr !== null && hr !== undefined);
+    const minHeartRate = Math.min(...heartRates);
+    const maxHeartRate = Math.max(...heartRates);
+
+    const features: GeoJSON.Feature[] = [];
+
+    // Create line segments for both outline and colored lines
+    for (let i = 0; i < points.length - 1; i++) {
+      const startPoint = points[i];
+      const endPoint = points[i + 1];
+      const heartRate = startPoint.properties.heart_rate;
+      const status = startPoint.properties.status;
+      const endStatus = endPoint.properties.status;
+
+      // Determine line color
+      let color: string;
+      let opacity = 1;
+
+      if (status === 'stopped' && endStatus === 'stopped') {
+        color = '#dc3545';
+        opacity = 0.6;
+      } else if (status === 'paused' && endStatus === 'paused') {
+        color = '#fd7e14';
+        opacity = 0.7;
+      } else {
+        color = this.getHeartRateColor(heartRate, minHeartRate, maxHeartRate);
+      }
+
+      // Outline feature
+      features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [startPoint.geometry.coordinates[0], startPoint.geometry.coordinates[1]],
+            [endPoint.geometry.coordinates[0], endPoint.geometry.coordinates[1]],
+          ],
+        },
+        properties: {
+          layer: 'outline',
+        },
+      });
+
+      // Main colored line feature
+      features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [startPoint.geometry.coordinates[0], startPoint.geometry.coordinates[1]],
+            [endPoint.geometry.coordinates[0], endPoint.geometry.coordinates[1]],
+          ],
+        },
+        properties: {
+          layer: 'main',
+          color: color,
+          opacity: opacity,
+        },
+      });
     }
 
-    this.dataLayerGroup.clearLayers();
-    const [longitude, latitude, _altitude] = data.geometry.coordinates;
-
-    if (!this.setViewFromUrlHash()) {
-      this.map!.setView([latitude, longitude], 15);
-    }
-    const coords: [number, number, number] =
-      data.geometry.coordinates.length === 2
-        ? ([...data.geometry.coordinates, 0] as [number, number, number])
-        : (data.geometry.coordinates as [number, number, number]);
-    const popupContent = this.createPopupContent(data.properties, coords);
-    const marker = createMarker([latitude, longitude], data.properties)
-      .bindPopup(popupContent)
-      .openPopup();
-    this.dataLayerGroup!.addLayer(marker);
-
-    this.dispatchEvent(
-      new CustomEvent('location-update', { detail: data, bubbles: true, composed: true })
-    );
-  }
-
-  getHeartRateColor(heartRate: number | null, min: number, max: number): string {
-    if (heartRate === null || heartRate === undefined || max === min) {
-      return '#808080'; // Grey for no data
-    }
-    const ratio = (heartRate - min) / (max - min);
-    const rgb = this.interpolateColor(ratio, this.colorScale);
-    return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
-  }
-
-  interpolateColor(ratio: number, colorStops: Array<Array<number>>): Array<number> {
-    const numStops = colorStops.length;
-    if (ratio <= 0) {
-      return colorStops[0];
-    }
-    if (ratio >= 1) {
-      return colorStops[numStops - 1];
-    }
-
-    const segment = 1 / (numStops - 1);
-    const segmentIndex = Math.floor(ratio / segment);
-    const localRatio = (ratio % segment) / segment;
-
-    const color1 = colorStops[segmentIndex];
-    const color2 = colorStops[Math.min(segmentIndex + 1, numStops - 1)];
-
-    const r = Math.round(color1[0] + (color2[0] - color1[0]) * localRatio);
-    const g = Math.round(color1[1] + (color2[1] - color1[1]) * localRatio);
-    const b = Math.round(color1[2] + (color2[2] - color1[2]) * localRatio);
-
-    return [r, g, b];
+    source.setData({
+      type: 'FeatureCollection',
+      features: features,
+    });
   }
 
   /**
-   * Creates an event marker for a specific event type
+   * Render event markers on the map
    */
-  createEventMarker(feature: GeoJSONFeature, eventType: string): L.Marker {
-    const [longitude, latitude] = feature.geometry.coordinates;
-    const icon = this.getEventMarkerIcon(eventType);
+  private renderEventMarkers(points: GeoJSONFeature[]): void {
+    points.forEach(point => {
+      if (point.properties.event) {
+        const [longitude, latitude] = point.geometry.coordinates;
+        const el = this.createEventMarkerElement(point.properties.event);
 
-    const marker = L.marker([latitude, longitude], { icon });
+        const coords: [number, number, number] =
+          point.geometry.coordinates.length === 2
+            ? ([...point.geometry.coordinates, 0] as [number, number, number])
+            : (point.geometry.coordinates as [number, number, number]);
 
-    // Create popup content for the event
-    const coords: [number, number, number] =
-      feature.geometry.coordinates.length === 2
-        ? ([...feature.geometry.coordinates, 0] as [number, number, number])
-        : (feature.geometry.coordinates as [number, number, number]);
-    const popupContent = this.createEventPopupContent(feature.properties, coords, eventType);
-    marker.bindPopup(popupContent);
+        const popupContent = this.createEventPopupContent(
+          point.properties,
+          coords,
+          point.properties.event
+        );
 
-    return marker;
+        const popup = new maplibregl.Popup({ offset: 10 }).setHTML(popupContent);
+
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat([longitude, latitude])
+          .setPopup(popup)
+          .addTo(this.map!);
+
+        this.markers.set(`event-${point.properties.timestamp}`, marker);
+      }
+    });
   }
 
   /**
-   * Returns appropriate icon for event type
+   * Creates HTML element for event marker
    */
-  getEventMarkerIcon(eventType: string): L.DivIcon {
+  createEventMarkerElement(eventType: string): HTMLElement {
     const eventConfig = this.getEventConfig(eventType);
 
-    return L.divIcon({
-      className: `event-marker event-marker-${eventType}`,
-      html: `<div class="event-marker-content" style="background-color: ${eventConfig.color}">
-               <span class="event-marker-icon">${eventConfig.icon}</span>
-             </div>`,
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
-      popupAnchor: [0, -10],
-    });
+    const el = document.createElement('div');
+    el.className = `event-marker event-marker-${eventType}`;
+    el.innerHTML = `<div class="event-marker-content" style="background-color: ${eventConfig.color}">
+                     <span class="event-marker-icon">${eventConfig.icon}</span>
+                   </div>`;
+    el.style.width = '20px';
+    el.style.height = '20px';
+
+    return el;
   }
 
   /**
@@ -717,7 +774,7 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       reset: { color: '#6c757d', icon: '↻' },
     };
 
-    return configs[eventType] || { color: '#6f42c1', icon: '●' }; // Default purple for unknown events
+    return configs[eventType] || { color: '#6f42c1', icon: '●' };
   }
 
   /**
@@ -752,19 +809,71 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     `;
   }
 
-  /**
-   * Returns line style configuration based on status
-   */
-  getLineStyleForStatus(status: string | null | undefined): {
-    dashArray?: string;
-    opacity?: number;
-  } {
-    const statusConfig: Record<string, { dashArray?: string; opacity?: number }> = {
-      stopped: { dashArray: '10, 5', opacity: 0.6 }, // Dashed red lines with reduced opacity
-      paused: { dashArray: '5, 5', opacity: 0.7 }, // Dotted lines with reduced opacity
-    };
+  displayPoint(data: LocationResponse): void {
+    if (!this.map) {
+      console.warn('Map not initialized, cannot display point');
+      return;
+    }
 
-    return statusConfig[status || ''] || {}; // Default/active - no special styling
+    this.markers.forEach(marker => marker.remove());
+    this.markers.clear();
+
+    const [longitude, latitude] = data.geometry.coordinates;
+
+    if (!this.setViewFromUrlHash()) {
+      this.map.setCenter([longitude, latitude]);
+      this.map.setZoom(15);
+    }
+
+    const coords: [number, number, number] =
+      data.geometry.coordinates.length === 2
+        ? ([...data.geometry.coordinates, 0] as [number, number, number])
+        : (data.geometry.coordinates as [number, number, number]);
+
+    const popupContent = this.createPopupContent(data.properties, coords);
+    const marker = createMarker([latitude, longitude], data.properties);
+
+    const popup = new maplibregl.Popup({ offset: 25 }).setHTML(popupContent).addTo(this.map);
+
+    const mapMarker = new maplibregl.Marker({ element: marker.getElement() })
+      .setLngLat([longitude, latitude])
+      .setPopup(popup)
+      .addTo(this.map);
+
+    mapMarker.togglePopup(); // Open popup
+    this.markers.set('single', mapMarker);
+
+    this.dispatchEvent(
+      new CustomEvent('location-update', { detail: data, bubbles: true, composed: true })
+    );
+  }
+
+  getHeartRateColor(heartRate: number | null, min: number, max: number): string {
+    if (heartRate === null || heartRate === undefined || max === min) {
+      return '#808080';
+    }
+    const ratio = (heartRate - min) / (max - min);
+    const rgb = this.interpolateColor(ratio, this.colorScale);
+    return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+  }
+
+  interpolateColor(ratio: number, colorStops: Array<Array<number>>): Array<number> {
+    const numStops = colorStops.length;
+    if (ratio <= 0) {return colorStops[0];}
+    if (ratio >= 1) {return colorStops[numStops - 1];}
+
+    const segment = 1 / (numStops - 1);
+    const segmentIndex = Math.floor(ratio / segment);
+    const localRatio = (ratio % segment) / segment;
+
+    const color1 = colorStops[segmentIndex];
+    const color2 = colorStops[Math.min(segmentIndex + 1, numStops - 1)];
+
+    const r = Math.round(color1[0] + (color2[0] - color1[0]) * localRatio);
+    const g = Math.round(color1[1] + (color2[1] - color1[1]) * localRatio);
+    const b = Math.round(color1[2] + (color2[2] - color1[2]) * localRatio);
+
+    return [r, g, b];
   }
 
   createPopupContent(
@@ -809,31 +918,59 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    * Shows the current position on the map with accuracy circle
    */
   showCurrentPosition(coords: GeolocationCoordinates): void {
-    if (!this.currentPositionLayerGroup) {
+    if (!this.map) {
       console.warn('Map not initialized, cannot show current position');
       return;
     }
 
-    this.currentPositionLayerGroup.clearLayers();
     const { latitude, longitude, accuracy } = coords;
-    const marker = L.marker([latitude, longitude]);
-    const circle = L.circle([latitude, longitude], {
-      radius: accuracy,
-      color: '#ff901e',
-      fillColor: '#ff901e',
-      fillOpacity: 0.2,
-    });
-    this.currentPositionLayerGroup!.addLayer(marker);
-    this.currentPositionLayerGroup!.addLayer(circle);
+
+    // Remove existing marker if any
+    if (this.currentPositionMarker) {
+      this.currentPositionMarker.remove();
+    }
+
+    // Create marker for current position
+    this.currentPositionMarker = new maplibregl.Marker({ color: '#ff901e' })
+      .setLngLat([longitude, latitude])
+      .addTo(this.map);
+
+    // Update accuracy circle
+    const source = this.map.getSource('current-position-circle') as maplibregl.GeoJSONSource;
+    if (source) {
+      // Convert meters to pixels at current zoom level
+      const metersPerPixel =
+        (156543.03392 * Math.cos((latitude * Math.PI) / 180)) / Math.pow(2, this.map.getZoom());
+      const radiusPixels = accuracy / metersPerPixel;
+
+      source.setData({
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [longitude, latitude],
+            },
+            properties: {
+              radiusPixels: radiusPixels,
+            },
+          },
+        ],
+      });
+    }
   }
 
   hideCurrentPosition(): void {
-    if (!this.currentPositionLayerGroup) {
-      console.warn('Map not initialized, cannot hide current position');
-      return;
+    if (this.currentPositionMarker) {
+      this.currentPositionMarker.remove();
+      this.currentPositionMarker = null;
     }
 
-    this.currentPositionLayerGroup.clearLayers();
+    const source = this.map?.getSource('current-position-circle') as maplibregl.GeoJSONSource;
+    if (source) {
+      source.setData({ type: 'FeatureCollection', features: [] });
+    }
   }
 
   /**
@@ -852,19 +989,19 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     let zoom: number | undefined;
     let waypointId: string | undefined;
 
-    // Handle overloaded parameters
     if (typeof zoomOrWaypointId === 'number') {
       zoom = zoomOrWaypointId;
     } else if (typeof zoomOrWaypointId === 'string') {
       waypointId = zoomOrWaypointId;
     }
 
-    this.map.setView([latitude, longitude], zoom || this.map.getZoom());
+    this.map.setCenter([longitude, latitude]);
+    if (zoom !== undefined) {
+      this.map.setZoom(zoom);
+    }
 
-    // Update URL hash with waypoint ID if provided
     if (waypointId) {
       this.updateUrlHash(waypointId);
-      // Also open the waypoint popup
       this.openWaypointPopupById(waypointId);
     }
   }
@@ -873,85 +1010,57 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    * Show temporary hover marker at specific coordinates
    */
   showHoverMarker(latitude: number, longitude: number): void {
-    if (!this.hoverMarkerLayerGroup) {
+    if (!this.map) {
       console.warn('Map not initialized, cannot show hover marker');
       return;
     }
 
-    // Clear any existing hover marker
-    this.hoverMarkerLayerGroup.clearLayers();
+    if (this.hoverMarker) {
+      this.hoverMarker.remove();
+    }
 
-    // Create a distinctive hover marker
-    const hoverMarker = L.circleMarker([latitude, longitude], {
-      radius: 8,
-      fillColor: '#ff0000',
-      color: '#ffffff',
-      weight: 2,
-      opacity: 1,
-      fillOpacity: 0.8,
-    });
+    const el = document.createElement('div');
+    el.className = 'hover-marker';
+    el.style.width = '16px';
+    el.style.height = '16px';
+    el.style.borderRadius = '50%';
+    el.style.backgroundColor = '#ff0000';
+    el.style.border = '2px solid #ffffff';
 
-    this.hoverMarkerLayerGroup.addLayer(hoverMarker);
+    this.hoverMarker = new maplibregl.Marker({ element: el })
+      .setLngLat([longitude, latitude])
+      .addTo(this.map);
   }
 
   /**
    * Hide hover marker
    */
   hideHoverMarker(): void {
-    if (!this.hoverMarkerLayerGroup) {
-      console.warn('Map not initialized, cannot hide hover marker');
-      return;
+    if (this.hoverMarker) {
+      this.hoverMarker.remove();
+      this.hoverMarker = null;
     }
-
-    this.hoverMarkerLayerGroup.clearLayers();
   }
 
   /**
    * Show persistent selected marker at specific coordinates
    */
   showSelectedMarker(latitude: number, longitude: number): void {
-    if (!this.hoverMarkerLayerGroup) {
-      console.warn('Map not initialized, cannot show selected marker');
-      return;
-    }
-
-    // Clear any existing markers (both hover and selected use same layer group)
-    this.hoverMarkerLayerGroup.clearLayers();
-
-    // Create a distinctive selected marker (same visual as hover marker for now)
-    const selectedMarker = L.circleMarker([latitude, longitude], {
-      radius: 8,
-      fillColor: '#ff0000',
-      color: '#ffffff',
-      weight: 2,
-      opacity: 1,
-      fillOpacity: 0.8,
-    });
-
-    this.hoverMarkerLayerGroup.addLayer(selectedMarker);
+    this.showHoverMarker(latitude, longitude);
   }
 
   /**
    * Hide selected marker
    */
   hideSelectedMarker(): void {
-    if (!this.hoverMarkerLayerGroup) {
-      console.warn('Map not initialized, cannot hide selected marker');
-      return;
-    }
-
-    this.hoverMarkerLayerGroup.clearLayers();
+    this.hideHoverMarker();
   }
 
   /**
    * Check if a marker is currently shown
    */
   hasSelectedMarker(): boolean {
-    if (!this.hoverMarkerLayerGroup) {
-      return false;
-    }
-
-    return this.hoverMarkerLayerGroup.getLayers().length > 0;
+    return this.hoverMarker !== null;
   }
 
   /**
@@ -966,14 +1075,11 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     this.waypointSelectionMode = true;
     this.selectedWaypointCoords = null;
 
-    // Change cursor to crosshair
-    const mapContainer = this.map.getContainer();
-    mapContainer.style.cursor = 'crosshair';
+    const canvas = this.map.getCanvas();
+    canvas.style.cursor = 'crosshair';
 
-    // Add click handler for waypoint selection
-    this.map.on('click', this.handleWaypointSelection.bind(this));
+    this.map.on('click', this.handleWaypointSelectionClick);
 
-    // Show instruction overlay
     this.showWaypointSelectionInstructions();
 
     console.log('Started waypoint selection mode');
@@ -990,20 +1096,16 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     this.waypointSelectionMode = false;
     this.selectedWaypointCoords = null;
 
-    // Reset cursor
-    const mapContainer = this.map.getContainer();
-    mapContainer.style.cursor = '';
+    const canvas = this.map.getCanvas();
+    canvas.style.cursor = '';
 
-    // Remove click handler
-    this.map.off('click', this.handleWaypointSelection);
+    this.map.off('click', this.handleWaypointSelectionClick);
 
-    // Clear selection marker
     if (this.waypointSelectionMarker) {
-      this.map.removeLayer(this.waypointSelectionMarker);
+      this.waypointSelectionMarker.remove();
       this.waypointSelectionMarker = null;
     }
 
-    // Hide instruction overlay
     this.hideWaypointSelectionInstructions();
 
     console.log('Stopped waypoint selection mode');
@@ -1026,32 +1128,27 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   /**
    * Handle waypoint selection click
    */
-  private handleWaypointSelection(e: L.LeafletMouseEvent): void {
+  private handleWaypointSelectionClick = (e: maplibregl.MapMouseEvent): void => {
     if (!this.waypointSelectionMode || !this.map) {
       return;
     }
 
-    const { lat, lng } = e.latlng;
+    const { lat, lng } = e.lngLat;
     this.selectedWaypointCoords = [lat, lng];
 
-    // Clear existing selection marker
     if (this.waypointSelectionMarker) {
-      this.map.removeLayer(this.waypointSelectionMarker);
+      this.waypointSelectionMarker.remove();
     }
 
-    // Create new selection marker
-    this.waypointSelectionMarker = L.marker([lat, lng], {
-      icon: L.divIcon({
-        html: `<div class="waypoint-selection-marker">📍</div>`,
-        className: 'waypoint-selection-marker-container',
-        iconSize: [30, 30],
-        iconAnchor: [15, 30],
-      }),
-    });
+    const el = document.createElement('div');
+    el.className = 'waypoint-selection-marker';
+    el.innerHTML = '📍';
+    el.style.fontSize = '30px';
 
-    this.map.addLayer(this.waypointSelectionMarker);
+    this.waypointSelectionMarker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+      .setLngLat([lng, lat])
+      .addTo(this.map);
 
-    // Dispatch event with selected coordinates
     this.dispatchEvent(
       new CustomEvent('waypoint-selected', {
         detail: {
@@ -1064,7 +1161,7 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     );
 
     console.log('Waypoint selected at:', lat, lng);
-  }
+  };
 
   /**
    * Show waypoint selection instructions
@@ -1072,7 +1169,6 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   private showWaypointSelectionInstructions(): void {
     const mapContainer = this.shadowRoot!.getElementById('map')!;
 
-    // Check if instruction overlay already exists
     if (mapContainer.querySelector('.waypoint-instructions')) {
       return;
     }
