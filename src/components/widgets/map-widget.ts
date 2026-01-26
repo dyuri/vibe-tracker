@@ -15,6 +15,11 @@ import { createMarker } from '@/components/ui';
 import styles from '@/styles/components/widgets/map-widget.css?inline';
 import maplibregl from 'maplibre-gl';
 import maplibreCSS from 'maplibre-gl/dist/maplibre-gl.css?inline';
+import { Protocol } from 'pmtiles';
+
+// Register PMTiles protocol with MapLibre
+const protocol = new Protocol();
+maplibregl.addProtocol('pmtiles', protocol.tile);
 
 /**
  * Map Widget Web Component
@@ -56,11 +61,8 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    */
   connectedCallback(): void {
     try {
-      // Option 1: MapLibre demo tiles (no API key needed, good for testing)
-      const style = 'https://demotiles.maplibre.org/style.json';
-
-      // Option 2: Maptiler (requires free API key from https://www.maptiler.com/)
-      // const style = 'https://api.maptiler.com/maps/streets/style.json?key=YOUR_API_KEY';
+      // Custom self-hosted tile server
+      const style = 'https://map.horak.hu/style.json';
 
       this.map = new maplibregl.Map({
         container: this.shadowRoot!.getElementById('map')!,
@@ -90,7 +92,9 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    * Initialize all GeoJSON sources for map layers
    */
   private initializeMapSources(): void {
-    if (!this.map) {return;}
+    if (!this.map) {
+      return;
+    }
 
     // Source for main tracking data (polylines)
     this.map.addSource('tracking-data', {
@@ -174,10 +178,14 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
 
     // Change cursor on hover
     this.map.on('mouseenter', 'tracking-line', () => {
-      if (this.map) {this.map.getCanvas().style.cursor = 'pointer';}
+      if (this.map) {
+        this.map.getCanvas().style.cursor = 'pointer';
+      }
     });
     this.map.on('mouseleave', 'tracking-line', () => {
-      if (this.map) {this.map.getCanvas().style.cursor = '';}
+      if (this.map) {
+        this.map.getCanvas().style.cursor = '';
+      }
     });
   }
 
@@ -185,7 +193,9 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    * Handle click on tracking line to find closest point
    */
   private handleTrackLineClick(e: maplibregl.MapMouseEvent): void {
-    if (!this.currentFeatureCollection) {return;}
+    if (!this.currentFeatureCollection) {
+      return;
+    }
 
     const points = this.currentFeatureCollection.features;
     let closestPoint: GeoJSONFeature | null = null;
@@ -244,7 +254,9 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   }
 
   updateUrlHash(waypointId?: string): void {
-    if (!this.map) {return;}
+    if (!this.map) {
+      return;
+    }
 
     const center = this.map.getCenter();
     const zoom = this.map.getZoom();
@@ -270,7 +282,9 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    * Removes waypoint parameter from URL
    */
   private clearWaypointFromUrl(): void {
-    if (!this.map) {return;}
+    if (!this.map) {
+      return;
+    }
     const center = this.map.getCenter();
     const zoom = this.map.getZoom();
     const hash = `#map=${center.lat.toFixed(6)}/${center.lng.toFixed(6)}/${Math.round(zoom)}`;
@@ -315,7 +329,9 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     }
 
     const source = this.map.getSource('gpx-track') as maplibregl.GeoJSONSource;
-    if (!source) {return;}
+    if (!source) {
+      return;
+    }
 
     if (!data.features || data.features.length === 0) {
       source.setData({ type: 'FeatureCollection', features: [] });
@@ -641,7 +657,9 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
    */
   private renderTrackPolylines(points: GeoJSONFeature[]): void {
     const source = this.map?.getSource('tracking-data') as maplibregl.GeoJSONSource;
-    if (!source) {return;}
+    if (!source) {
+      return;
+    }
 
     const heartRates = points
       .map(p => p.properties.heart_rate)
@@ -859,8 +877,12 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
 
   interpolateColor(ratio: number, colorStops: Array<Array<number>>): Array<number> {
     const numStops = colorStops.length;
-    if (ratio <= 0) {return colorStops[0];}
-    if (ratio >= 1) {return colorStops[numStops - 1];}
+    if (ratio <= 0) {
+      return colorStops[0];
+    }
+    if (ratio >= 1) {
+      return colorStops[numStops - 1];
+    }
 
     const segment = 1 / (numStops - 1);
     const segmentIndex = Math.floor(ratio / segment);

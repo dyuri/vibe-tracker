@@ -53,13 +53,7 @@ const DEFAULT_SECURITY_CONFIG: SecurityConfig = {
       'style-src': ["'self'", "'unsafe-inline'"],
       'img-src': ["'self'", 'data:', 'blob:', 'https:'],
       'font-src': ["'self'", 'data:', 'https:'],
-      'connect-src': [
-        "'self'",
-        'https://demotiles.maplibre.org',
-        'https://api.maptiler.com',
-        'ws:',
-        'wss:',
-      ],
+      'connect-src': ["'self'", 'https://map.horak.hu', 'pmtiles:', 'blob:', 'ws:', 'wss:'],
       'media-src': ["'self'"],
       'object-src': ["'none'"],
       'frame-src': ["'none'"],
@@ -217,7 +211,7 @@ class SecurityManager {
 
     // Check if it has map-related classes or IDs
     const mapSelectors = [
-      'leaflet-', // Leaflet CSS classes
+      'maplibregl-', // MapLibre GL CSS classes
       'map-', // Map-related CSS classes
       'tile', // Map tiles
       'marker', // Map markers

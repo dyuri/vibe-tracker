@@ -13,7 +13,7 @@
 }
 
 /* MapLibre map */
-:host([data-map-theme='dark']) {
+:host(:not([data-map-theme='dark'])) {
   .maplibregl-canvas,
   .maplibregl-ctrl-zoom-in,
   .maplibregl-ctrl-zoom-out,
