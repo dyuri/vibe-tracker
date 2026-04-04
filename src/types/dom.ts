@@ -143,14 +143,6 @@ declare global {
   function clearInterval(intervalId: number): void;
 }
 
-// Leaflet map integration types (extending @types/leaflet)
-export interface LeafletMapOptions {
-  center?: [number, number];
-  zoom?: number;
-  minZoom?: number;
-  maxZoom?: number;
-}
-
 // CSS custom properties for theming
 export interface CSSCustomProperties {
   '--bg-panel'?: string;

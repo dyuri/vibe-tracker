@@ -27,6 +27,9 @@ maplibregl.addProtocol('pmtiles', protocol.tile);
  */
 export default class MapWidget extends HTMLElement implements MapWidgetElement {
   private map: maplibregl.Map | null = null;
+  private mapSourcesReady: boolean = false;
+  private pendingData: (LocationResponse | LocationsResponse) | null = null;
+  private pendingGpxTrack: GpxTrackPointsResponse | null = null;
   private markers: Map<string, maplibregl.Marker> = new Map();
   private currentPositionMarker: maplibregl.Marker | null = null;
   private hoverMarker: maplibregl.Marker | null = null;
@@ -72,9 +75,20 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
         // TODO fix attributionControl: true,
       });
 
+      this.map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
       // Wait for map to load before adding sources
       this.map.on('load', () => {
         this.initializeMapSources();
+        this.mapSourcesReady = true;
+        if (this.pendingData) {
+          this.displayData(this.pendingData);
+          this.pendingData = null;
+        }
+        if (this.pendingGpxTrack) {
+          this.displayGpxTrack(this.pendingGpxTrack);
+          this.pendingGpxTrack = null;
+        }
       });
 
       this.map.on('moveend', () => this.updateUrlHash());
@@ -263,16 +277,19 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
     // Keep lat/lng order in URL for backwards compatibility
     let hash = `#map=${center.lat.toFixed(6)}/${center.lng.toFixed(6)}/${Math.round(zoom)}`;
 
+    const currentHash = window.location.hash;
+
     if (waypointId) {
       hash += `&wp=${waypointId}`;
-    } else {
-      const currentHash = window.location.hash;
-      if (currentHash.includes('&wp=')) {
-        const wpMatch = currentHash.match(/&wp=([^&]+)/);
-        if (wpMatch) {
-          hash += `&wp=${wpMatch[1]}`;
-        }
+    } else if (currentHash.includes('&wp=')) {
+      const wpMatch = currentHash.match(/&wp=([^&]+)/);
+      if (wpMatch) {
+        hash += `&wp=${wpMatch[1]}`;
       }
+    }
+
+    if (currentHash.includes('&refresh=1')) {
+      hash += '&refresh=1';
     }
 
     history.replaceState(null, '', hash);
@@ -310,6 +327,11 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       return;
     }
 
+    if (!this.mapSourcesReady) {
+      this.pendingData = data;
+      return;
+    }
+
     if (data.type === 'FeatureCollection') {
       this.currentFeatureCollection = data;
       this.displayFeatureCollection(data);
@@ -325,6 +347,11 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
   displayGpxTrack(data: GpxTrackPointsResponse): void {
     if (!this.map) {
       console.warn('Map not initialized, cannot display GPX track');
+      return;
+    }
+
+    if (!this.mapSourcesReady) {
+      this.pendingGpxTrack = data;
       return;
     }
 

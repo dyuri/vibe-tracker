@@ -588,6 +588,11 @@ function initializeMainView(): void {
   // Update the page header based on the current view
   updatePageHeader();
 
+  // Seed localStorage from URL hash so the checkbox initializes correctly
+  if (window.location.hash.includes('&refresh=1')) {
+    localStorage.setItem('refresh-enabled', 'true');
+  }
+
   if (username) {
     // User-specific view - enable all features
     // Location controls are now integrated into the session panel widget
