@@ -356,14 +356,14 @@ export default class GpxUploadWidget extends HTMLElement implements GpxUploadWid
       return null;
     }
 
-    // Try to extract session name from URL
+    // Try to extract session name from URL (/u/[username]/s/[session])
     const pathParts = window.location.pathname.split('/');
     const userIndex = pathParts.findIndex(part => part === user.username);
-    if (userIndex !== -1 && pathParts[userIndex + 1]) {
+    if (userIndex !== -1 && pathParts[userIndex + 1] === 's' && pathParts[userIndex + 2]) {
       return {
         username: user.username,
-        sessionName: pathParts[userIndex + 1],
-        sessionId: pathParts[userIndex + 1], // For now, using session name as ID
+        sessionName: pathParts[userIndex + 2],
+        sessionId: pathParts[userIndex + 2],
       };
     }
 
