@@ -1,6 +1,6 @@
 # Vibe Tracker
 
-A comprehensive location tracker web application built with Go, PocketBase, and Leaflet.js. Track your journeys, manage sessions, and share your adventures with others.
+A comprehensive location tracker web application built with Go, PocketBase, and MapLibre GL JS. Track your journeys, manage sessions, and share your adventures with others.
 
 ![Vibe Tracker Screenshot](vibe-tracker.jpg)
 
@@ -91,6 +91,8 @@ The frontend is built with modern TypeScript, Web Components, and Vite for an en
 - **TypeScript** - Full type safety with modern ES2020+ features
 - **Web Components** - Native custom elements with Shadow DOM
 - **Vite** - Modern build tool with HMR and optimized builds
+- **MapLibre GL JS** - Hardware-accelerated vector tile map rendering
+- **Self-hosted tile server** - Vector tiles served from `map.horak.hu` (PMTiles format)
 - **Path Mappings** - Clean imports with `@/types`, `@/components`, etc.
 - **Barrel Exports** - Organized module structure
 - **External CSS** - Component-specific stylesheets with CSS variables
