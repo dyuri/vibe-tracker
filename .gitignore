@@ -92,3 +92,6 @@ coverage/                  # Test coverage reports
 
 # Temporary files
 .tmp/
+
+# dora code context index
+.dora/

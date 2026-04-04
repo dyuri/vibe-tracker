@@ -32,7 +32,7 @@ test.describe('Location Tracking', () => {
     // Wait for map to initialize
     await page.waitForTimeout(2000);
 
-    // Check that Leaflet map is initialized within shadow DOM
+    // Check that MapLibre map is initialized within shadow DOM
     const isMapInitialized = await page.evaluate(() => {
       const mapWidget = document.querySelector('map-widget') as any;
       const shadowRoot = mapWidget?.shadowRoot;
@@ -90,7 +90,7 @@ test.describe('Location Tracking', () => {
       const shadowRoot = mapWidget?.shadowRoot;
       if (shadowRoot) {
         const mapContainer = shadowRoot.querySelector('#map');
-        const markers = mapContainer?.querySelectorAll('.leaflet-marker-icon');
+        const markers = mapContainer?.querySelectorAll('.maplibregl-marker');
         return markers?.length || 0;
       }
       return 0;
@@ -139,7 +139,7 @@ test.describe('Location Tracking', () => {
       const shadowRoot = mapWidget?.shadowRoot;
       if (shadowRoot) {
         const mapContainer = shadowRoot.querySelector('#map');
-        const markers = mapContainer?.querySelectorAll('.leaflet-marker-icon');
+        const markers = mapContainer?.querySelectorAll('.maplibregl-marker');
         return markers?.length || 0;
       }
       return 0;
@@ -154,8 +154,9 @@ test.describe('Location Tracking', () => {
       const shadowRoot = mapWidget?.shadowRoot;
       if (shadowRoot) {
         const mapContainer = shadowRoot.querySelector('#map');
-        const polylines = mapContainer?.querySelectorAll('.leaflet-interactive[fill="none"]');
-        return polylines?.length > 0;
+        // MapLibre uses canvas rendering, so check for canvas element instead
+        const canvas = mapContainer?.querySelector('.maplibregl-canvas');
+        return canvas !== null;
       }
       return false;
     });
@@ -193,7 +194,7 @@ test.describe('Location Tracking', () => {
       const shadowRoot = mapWidget?.shadowRoot;
       if (shadowRoot) {
         const mapContainer = shadowRoot.querySelector('#map');
-        const markers = mapContainer?.querySelectorAll('.leaflet-marker-icon');
+        const markers = mapContainer?.querySelectorAll('.maplibregl-marker');
         return markers?.length || 0;
       }
       return 0;
@@ -225,7 +226,7 @@ test.describe('Location Tracking', () => {
       const shadowRoot = mapWidget?.shadowRoot;
       if (shadowRoot) {
         const mapContainer = shadowRoot.querySelector('#map');
-        const markers = mapContainer?.querySelectorAll('.leaflet-marker-icon');
+        const markers = mapContainer?.querySelectorAll('.maplibregl-marker');
         return markers?.length || 0;
       }
       return 0;
@@ -267,7 +268,7 @@ test.describe('Location Tracking', () => {
       const shadowRoot = mapWidget?.shadowRoot;
       if (shadowRoot) {
         const mapContainer = shadowRoot.querySelector('#map');
-        const markers = mapContainer?.querySelectorAll('.leaflet-marker-icon');
+        const markers = mapContainer?.querySelectorAll('.maplibregl-marker');
         return markers?.length || 0;
       }
       return 0;
@@ -307,7 +308,7 @@ test.describe('Location Tracking', () => {
       const mapWidget = document.querySelector('map-widget') as any;
       const shadowRoot = mapWidget?.shadowRoot;
       if (shadowRoot) {
-        const marker = shadowRoot.querySelector('.leaflet-marker-icon');
+        const marker = shadowRoot.querySelector('.maplibregl-marker');
         if (marker) {
           marker.click();
         }
@@ -322,8 +323,8 @@ test.describe('Location Tracking', () => {
       const mapWidget = document.querySelector('map-widget') as any;
       const shadowRoot = mapWidget?.shadowRoot;
       if (shadowRoot) {
-        const popup = shadowRoot.querySelector('.leaflet-popup');
-        return popup && popup.style.display !== 'none';
+        const popup = shadowRoot.querySelector('.maplibregl-popup');
+        return popup !== null;
       }
       return false;
     });
@@ -382,7 +383,7 @@ test.describe('Location Tracking', () => {
       const shadowRoot = mapWidget?.shadowRoot;
       if (shadowRoot) {
         const mapContainer = shadowRoot.querySelector('#map');
-        const markers = mapContainer?.querySelectorAll('.leaflet-marker-icon');
+        const markers = mapContainer?.querySelectorAll('.maplibregl-marker');
         return markers?.length || 0;
       }
       return 0;
@@ -402,7 +403,7 @@ test.describe('Location Tracking', () => {
       const shadowRoot = mapWidget?.shadowRoot;
       if (shadowRoot) {
         const mapContainer = shadowRoot.querySelector('#map');
-        const markers = mapContainer?.querySelectorAll('.leaflet-marker-icon');
+        const markers = mapContainer?.querySelectorAll('.maplibregl-marker');
         return markers?.length || 0;
       }
       return 0;
@@ -421,7 +422,7 @@ test.describe('Location Tracking', () => {
       const shadowRoot = mapWidget?.shadowRoot;
       if (shadowRoot) {
         const mapContainer = shadowRoot.querySelector('#map');
-        const markers = mapContainer?.querySelectorAll('.leaflet-marker-icon');
+        const markers = mapContainer?.querySelectorAll('.maplibregl-marker');
         return markers?.length || 0;
       }
       return 0;

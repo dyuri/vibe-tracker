@@ -48,7 +48,7 @@ export default class SessionMapPanelWidget
   private currentGpxTrack: GpxTrackPointsResponse | null = null;
   private currentWaypoints: WaypointsResponse | null = null;
   private activeTab: string = 'overview';
-  private isCollapsed: boolean = false;
+  private isCollapsed: boolean = true;
   private loadedWidgets = new Set<string>();
   private locationControls: LocationControls = {
     watchId: null,
@@ -292,12 +292,12 @@ export default class SessionMapPanelWidget
   private render(): void {
     this.shadowRoot!.innerHTML = `
       <style>${styles}</style>
-      <div class="session-map-panel">
+      <div class="session-map-panel collapsed">
         <div class="panel-header">
           <div class="panel-tabs" id="panel-tabs">
             <!-- Tabs will be dynamically rendered by updateTabVisibility -->
           </div>
-          <button id="collapse-btn" class="collapse-btn" title="Collapse Panel">↓</button>
+          <button id="collapse-btn" class="collapse-btn" title="Collapse Panel">↑</button>
         </div>
         
         <div class="panel-content" id="panel-content">
@@ -1115,6 +1115,17 @@ export default class SessionMapPanelWidget
     refreshCheckbox?.addEventListener('change', (e: Event) => {
       const target = e.target as HTMLInputElement;
       localStorage.setItem('refresh-enabled', target.checked.toString());
+
+      // Sync refresh state into URL hash
+      const currentHash = window.location.hash;
+      if (target.checked) {
+        if (!currentHash.includes('&refresh=1')) {
+          history.replaceState(null, '', currentHash + '&refresh=1');
+        }
+      } else {
+        history.replaceState(null, '', currentHash.replace('&refresh=1', ''));
+      }
+
       const event = new CustomEvent('refresh-change', {
         detail: { checked: target.checked },
         bubbles: true,

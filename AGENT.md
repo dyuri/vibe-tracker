@@ -1,7 +1,16 @@
 # Vibe Tracker
 
 This is a simple location tracker website built with Go/PocketBase for the backend and
-Leaflet.js for the frontend.
+MapLibre GL JS for the frontend map (migrated from Leaflet).
+
+## Map
+
+- Map library: **MapLibre GL JS** (`maplibre-gl` npm package, v5+)
+- Tile server: self-hosted at `https://map.horak.hu` (PMTiles format via `pmtiles` protocol)
+- Map widget: `src/components/widgets/map-widget.ts`
+- Avatar marker: `src/components/ui/avatar-marker.ts`
+- URL hash format: `#map=lat/lng/zoom[&wp=waypointId][&refresh=1]`
+  - `&refresh=1` enables auto-refresh on load (useful for sharing live hikes)
 
 ## Generic rules
 
