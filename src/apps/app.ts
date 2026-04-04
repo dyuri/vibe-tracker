@@ -621,10 +621,14 @@ function initializeMainView(): void {
     sessionPanelWidget?.addEventListener('chart-hover-out', handleChartHoverOut);
     sessionPanelWidget?.addEventListener('chart-click', handleChartClick);
 
-    // Only do initial fetch if refresh is not already enabled (to avoid duplicate fetches)
+    // Always fetch initial data for this session
+    latestTimestamp = null;
+    fetchData(true);
+
+    // Restart refresh interval if it was enabled (it gets cleared above)
     const savedRefresh = localStorage.getItem('refresh-enabled');
-    if (savedRefresh !== 'true') {
-      fetchData(true);
+    if (savedRefresh === 'true') {
+      refreshIntervalId = setInterval(fetchDeltaData, 60000) as unknown as number;
     }
   } else {
     // Public locations view - limited features
@@ -648,7 +652,11 @@ function handleRefreshChange(e: Event): void {
     // Clear any existing interval first
     clearRefreshInterval();
 
-    fetchData(true); // Initial fetch
+    // Only fetch if not recently fetched (avoids double-fetch when refresh-change
+    // fires on widget init 100ms after initializeMainView already fetched)
+    if (Date.now() - lastRequestTime > 2000) {
+      fetchData(true);
+    }
 
     // Increase interval to 60 seconds to reduce API load
     console.log('Starting refresh interval (60s)');

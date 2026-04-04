@@ -143,6 +143,12 @@ export class Router {
         });
       }
     });
+
+    // Also handle popstate for programmatic pushState navigation (e.g. navigateToSession)
+    // The Navigation API does not fire 'navigate' for history.pushState calls
+    window.addEventListener('popstate', () => {
+      this.handleRoute(window.location.pathname);
+    });
   }
 
   /**

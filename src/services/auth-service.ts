@@ -95,6 +95,10 @@ export default class AuthService {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          this.clearAuthData();
+          this.dispatchAuthChange();
+        }
         const error = await response.json();
         throw new Error(error.message || 'Failed to get user info');
       }

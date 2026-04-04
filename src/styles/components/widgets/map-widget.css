@@ -12,16 +12,6 @@
   --font-size-base: 14px;
 }
 
-/* MapLibre map */
-:host(:not([data-map-theme='dark'])) {
-  .maplibregl-canvas,
-  .maplibregl-ctrl-zoom-in,
-  .maplibregl-ctrl-zoom-out,
-  .maplibregl-ctrl-attrib {
-    filter: invert(100%) hue-rotate(180deg) brightness(0.9) contrast(0.9);
-  }
-}
-
 /* MapLibre popup theming */
 .maplibregl-popup-content {
   background-color: var(--bg-panel) !important;

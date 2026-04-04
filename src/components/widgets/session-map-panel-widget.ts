@@ -423,10 +423,6 @@ export default class SessionMapPanelWidget
                   <label for="overview-dark-theme-checkbox" class="inline">Dark Theme</label>
                 </div>
                 <div class="checkbox-group">
-                  <input type="checkbox" id="overview-dark-map-checkbox">
-                  <label for="overview-dark-map-checkbox" class="inline">Dark Map</label>
-                </div>
-                <div class="checkbox-group">
                   <input type="checkbox" id="overview-wake-lock-checkbox">
                   <label for="overview-wake-lock-checkbox" class="inline">Wake Lock</label>
                 </div>
@@ -1198,25 +1194,6 @@ export default class SessionMapPanelWidget
       document.dispatchEvent(event);
     });
 
-    // Dark map control
-    const darkMapCheckbox = this.shadowRoot!.getElementById(
-      'overview-dark-map-checkbox'
-    ) as HTMLInputElement;
-    darkMapCheckbox?.addEventListener('change', (e: Event) => {
-      const target = e.target as HTMLInputElement;
-      localStorage.setItem('dark-map-enabled', target.checked.toString());
-
-      // Find the map widget and set/remove the attribute
-      const mapWidget = document.querySelector('map-widget');
-      if (mapWidget) {
-        if (target.checked) {
-          mapWidget.setAttribute('data-map-theme', 'dark');
-        } else {
-          mapWidget.removeAttribute('data-map-theme');
-        }
-      }
-    });
-
     // Wake lock control
     const wakeLockCheckbox = this.shadowRoot!.getElementById(
       'overview-wake-lock-checkbox'
@@ -1334,23 +1311,6 @@ export default class SessionMapPanelWidget
         const customEvent = e as CustomEvent;
         darkThemeCheckbox.checked = customEvent.detail.theme === 'dark';
       });
-    }
-
-    // Dark map
-    const darkMapCheckbox = this.shadowRoot!.getElementById(
-      'overview-dark-map-checkbox'
-    ) as HTMLInputElement;
-    const savedDarkMap = localStorage.getItem('dark-map-enabled');
-    if (savedDarkMap !== null && darkMapCheckbox) {
-      darkMapCheckbox.checked = savedDarkMap === 'true';
-      const mapWidget = document.querySelector('map-widget');
-      if (mapWidget) {
-        if (darkMapCheckbox.checked) {
-          mapWidget.setAttribute('data-map-theme', 'dark');
-        } else {
-          mapWidget.removeAttribute('data-map-theme');
-        }
-      }
     }
 
     // Show waypoints - default to enabled if no saved preference

@@ -185,16 +185,7 @@ class GlobalErrorHandler {
    * Get user ID if available
    */
   private getUserId(): string | undefined {
-    try {
-      const user = window.authService?.getCurrentUser();
-      // Handle both promise and direct user object
-      if (user && typeof user === 'object' && 'id' in user) {
-        return (user as any).id;
-      }
-      return undefined;
-    } catch (_error) {
-      return undefined;
-    }
+    return window.authService?.user?.id;
   }
 
   /**

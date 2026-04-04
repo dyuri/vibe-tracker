@@ -67,11 +67,34 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       // Custom self-hosted tile server
       const style = 'https://map.horak.hu/style.json';
 
+      // Parse URL hash for initial position to avoid animated zoom from default
+      let initialCenter: [number, number] = [0, 0];
+      let initialZoom = 2;
+      const hash = window.location.hash;
+      if (hash.startsWith('#map=')) {
+        const mapParam = hash
+          .substring(1)
+          .split('&')
+          .find(p => p.startsWith('map='));
+        if (mapParam) {
+          const parts = mapParam.substring(4).split('/');
+          if (parts.length === 3) {
+            const lat = parseFloat(parts[0]);
+            const lon = parseFloat(parts[1]);
+            const zoom = parseInt(parts[2], 10);
+            if (!isNaN(lat) && !isNaN(lon) && !isNaN(zoom)) {
+              initialCenter = [lon, lat];
+              initialZoom = zoom;
+            }
+          }
+        }
+      }
+
       this.map = new maplibregl.Map({
         container: this.shadowRoot!.getElementById('map')!,
         style: style,
-        center: [0, 0], // [lng, lat] - will be updated from URL hash or data
-        zoom: 2,
+        center: initialCenter,
+        zoom: initialZoom,
         // TODO fix attributionControl: true,
       });
 
@@ -667,7 +690,7 @@ export default class MapWidget extends HTMLElement implements MapWidgetElement {
       points.forEach(p => {
         bounds.extend([p.geometry.coordinates[0], p.geometry.coordinates[1]]);
       });
-      this.map!.fitBounds(bounds, { padding: 50 });
+      this.map!.fitBounds(bounds, { padding: 50, animate: false });
     }
 
     // Dispatch location update
